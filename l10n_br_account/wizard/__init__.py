@@ -1,7 +1,7 @@
-# -*- encoding: utf-8 -*-
 #################################################################################
 #                                                                               #
-# Copyright (C) 2009  Renato Lima - Akretion                                    #
+# Copyright (C) 2009  Renato Lima - Akretion, Vinicius Dittgen - PROGE, Leonardo#
+#Santagada - PROGE                                                              #
 #                                                                               #
 #This program is free software: you can redistribute it and/or modify           #
 #it under the terms of the GNU Affero General Public License as published by    #
@@ -11,14 +11,10 @@
 #This program is distributed in the hope that it will be useful,                #
 #but WITHOUT ANY WARRANTY; without even the implied warranty of                 #
 #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                  #
-#GNU Affero General Public License for more details.                            #
+#GNU General Public License for more details.                                   #
 #                                                                               #
-#You should have received a copy of the GNU Affero General Public License       #
+#You should have received a copy of the GNU General Public License              #
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.          #
 #################################################################################
-
 import l10n_br_account_nfe_export
-import l10n_br_account_nfe_reexport
-
-# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
-
+import nfe_export_from_invoice

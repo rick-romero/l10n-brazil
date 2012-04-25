@@ -1,8 +1,8 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #################################################################################
 #                                                                               #
-# Copyright (C) 2009  Renato Lima - Akretion, Vinicius Dittgen - PROGE, Leonardo#
-#Santagada - PROGE                                                              #
+# Copyright (C) 2009  Renato Lima - Akretion                                    #
+# Copyright (C) 2011  Vinicius Dittgen - PROGE, Leonardo Santagada - PROGE      #
 #                                                                               #
 #This program is free software: you can redistribute it and/or modify           #
 #it under the terms of the GNU Affero General Public License as published by    #
@@ -12,7 +12,7 @@
 #This program is distributed in the hope that it will be useful,                #
 #but WITHOUT ANY WARRANTY; without even the implied warranty of                 #
 #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                  #
-#GNU General Public License for more details.                                   #
+#GNU Affero General Public License for more details.                            #
 #                                                                               #
 #You should have received a copy of the GNU General Public License              #
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.          #
@@ -64,3 +64,4 @@
     'installable': True,
     'auto_install': True,
 }
+

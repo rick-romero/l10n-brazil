@@ -419,12 +419,76 @@ class account_invoice(osv.osv):
                     i -= 1
         return result
 
+    def finalize_invoice_move_lines(self, cr, uid, invoice_browse, move_lines):
+        """finalize_invoice_move_lines(cr, uid, invoice, move_lines) -> move_lines
+        Hook method to be overridden in additional modules to verify and possibly alter the
+        move lines to be created by an invoice, for special cases.
+
+        * remove move lines without credit and debit, we have to see where l10n_br modules are creating these error entries;
+        * fix move entreis when we have tax_retain
+
+        :param invoice_browse: browsable record of the invoice that is generating the move lines
+        :param move_lines: list of dictionaries with the account.move.lines (as for create())
+        :return: the (possibly updated) final move_lines to create for this invoice
+        """
+        total_taxes_credit = 0
+        move_lines_tmp = []
+        remove_itens = []
+        tax_retained_itens = []
+        mv_tmp_tuple = []
+        final_credit_ind = -1
+
+        for ind, move_line in enumerate(move_lines):
+            move_line_item = move_line[2]
+
+            # get itens without credit and debit line - brazilian localization bug
+            if not move_line_item['credit'] and not move_line_item['debit']:
+                remove_itens.append(ind)
+ 
+            # fix final debit line
+            elif move_line_item['account_id'] == invoice_browse.account_id.id and not move_line_item['credit']:
+                move_line_item['debit'] = invoice_browse.amount_total
+ 
+            # get tax_retain values and fix the entry sign
+            elif move_line_item['tax_amount'] < 0:
+                move_line_item['tax_amount'] = - move_line_item['tax_amount']
+                tax_retained_itens.append(ind)
+ 
+            # sum tax credit lines
+            elif move_line_item['credit'] > 0 and move_line_item['credit'] != invoice_browse.amount_untaxed:
+                total_taxes_credit += move_line_item['credit']
+
+            # get final invoice credit line 
+            elif move_line_item['credit'] == invoice_browse.amount_untaxed:
+                final_credit_ind = ind
+ 
+        if final_credit_ind > -1:
+            move_lines[final_credit_ind][2]['credit'] = invoice_browse.amount_total - total_taxes_credit
+
+        # create a credit entry for each debit entry for tax_retain
+        for mv_ind in tax_retained_itens:
+            mv_tmp = move_lines[mv_ind][2].copy()
+            mv_tmp['credit'] = mv_tmp['debit']
+            mv_tmp['debit'] = False
+            mv_tmp_tuple = 0, 0, mv_tmp
+            move_lines_tmp.append(mv_tmp_tuple)
+
+        # remove itens without credit and debit line - brazilian localization bug
+        while remove_itens:
+            move_lines.pop(remove_itens.pop())
+
+        # add new credit entries for tax_retain 
+        while move_lines_tmp:
+            move_lines.append(move_lines_tmp.pop())
+ 
+        return move_lines
+
     def nfe_dv(self, key):
         #Testing
         return '2'
 
     def nfe_check(self, cr, uid, ids, context=None):
-        strErro = ''
+        strErro = u''
         
         if context is None:
             context = {}
@@ -442,102 +506,102 @@ class account_invoice(osv.osv):
                 strErro = u'Nota Fiscal - Série da nota fiscal\n'
             
             if not inv.fiscal_document_id:
-                strErro = u'Nota Fiscal - Tipo de documento fiscal\n'
+                strErro += u'Nota Fiscal - Tipo de documento fiscal\n'
             
             #if not inv.date_invoice:
             #    strErro = 'Nota Fiscal - Data da nota fiscal\n'
             
             if not inv.document_serie_id.internal_sequence_id:
-                strErro = u'Nota Fiscal - Número da nota fiscal, a série deve ter uma sequencia interna\n'
+                strErro += u'Nota Fiscal - Número da nota fiscal, a série deve ter uma sequencia interna\n'
 
             #Emitente
             if not inv.company_id.partner_id.legal_name:
-                strErro = u'Emitente - Razão Social\n'
+                strErro += u'Emitente - Razão Social\n'
 
             if not inv.company_id.partner_id.name:
-                strErro = u'Emitente - Fantasia\n'
+                strErro += u'Emitente - Fantasia\n'
 
             if not inv.company_id.partner_id.cnpj_cpf:
-                strErro = u'Emitente - CNPJ/CPF\n'
+                strErro += u'Emitente - CNPJ/CPF\n'
 
             if not company_addr_default.street:
-                strErro = u'Emitente / Endereço - Logradouro\n'
+                strErro += u'Emitente / Endereço - Logradouro\n'
             
             if not company_addr_default.number:
-                strErro = u'Emitente / Endereço - Número\n'
+                strErro += u'Emitente / Endereço - Número\n'
                 
             if not company_addr_default.zip:
-                strErro = u'Emitente / Endereço - CEP\n'
+                strErro += u'Emitente / Endereço - CEP\n'
 
             if not inv.company_id.cnae_main_id:
-                strErro = u'Emitente / CNAE Principal\n'
+                strErro += u'Emitente / CNAE Principal\n'
                 
             if not inv.company_id.partner_id.inscr_est:
-                strErro = u'Emitente / Inscrição Estadual\n'
+                strErro += u'Emitente / Inscrição Estadual\n'
 
             if not company_addr_default.state_id:
-                strErro = u'Emitente / Endereço - Estado\n'
+                strErro += u'Emitente / Endereço - Estado\n'
             else:
                 if not company_addr_default.state_id.ibge_code:
-                    strErro = u'Emitente / Endereço - Código do IBGE do estado\n'
+                    strErro += u'Emitente / Endereço - Código do IBGE do estado\n'
                 if not company_addr_default.state_id.name:
-                    strErro = u'Emitente / Endereço - Nome do estado\n'
+                    strErro += u'Emitente / Endereço - Nome do estado\n'
                       
             if not company_addr_default.l10n_br_city_id:
-                strErro = u'Emitente / Endereço - município\n'
+                strErro += u'Emitente / Endereço - município\n'
             else:
                 if not company_addr_default.l10n_br_city_id.name:
-                    strErro = u'Emitente / Endereço - Nome do município\n'
+                    strErro += u'Emitente / Endereço - Nome do município\n'
                 if not company_addr_default.l10n_br_city_id.ibge_code:
-                    strErro = u'Emitente / Endereço - Código do IBGE do município\n'
+                    strErro += u'Emitente / Endereço - Código do IBGE do município\n'
                     
             if not company_addr_default.country_id:
-                strErro = u'Emitente / Endereço - país\n'
+                strErro += u'Emitente / Endereço - país\n'
             else:
                 if not company_addr_default.country_id.name:
-                    strErro = u'Emitente / Endereço - Nome do país\n'
+                    strErro += u'Emitente / Endereço - Nome do país\n'
                 if not company_addr_default.country_id.bc_code:
-                    strErro = u'Emitente / Endereço - Codigo do BC do país\n'
+                    strErro += u'Emitente / Endereço - Código do BC do país\n'
         
             #Destinatário
-            if not inv.partner_id.legal_name:
-                strErro = u'Destinatário - Razão Social\n'
+            if inv.partner_id.tipo_pessoa == 'J' and not inv.partner_id.legal_name:
+                strErro += u'Destinatário - Razão Social\n'
             
             if not inv.partner_id.cnpj_cpf:
-                strErro = u'Destinatário - CNPJ/CPF\n'
+                strErro += u'Destinatário - CNPJ/CPF\n'
             
             if not inv.address_invoice_id.street:
-                strErro = u'Destinatário / Endereço - Logradouro\n'
+                strErro += u'Destinatário / Endereço - Logradouro\n'
             
             if not inv.address_invoice_id.number:
-                strErro = u'Destinatário / Endereço - Numero\n'
+                strErro += u'Destinatário / Endereço - Número\n'
                 
             if not inv.address_invoice_id.zip:
-                strErro = u'Destinatário / Endereço - CEP\n'
+                strErro += u'Destinatário / Endereço - CEP\n'
 
             if not inv.address_invoice_id.state_id:
-                strErro = u'Destinatário / Endereço - Estado\n'
+                strErro += u'Destinatário / Endereço - Estado\n'
             else:
                 if not inv.address_invoice_id.state_id.ibge_code:
-                    strErro = u'Destinatário / Endereço - Código do IBGE do estado\n'
+                    strErro += u'Destinatário / Endereço - Código do IBGE do estado\n'
                 if not inv.address_invoice_id.state_id.name:
-                    strErro = u'Destinatário / Endereço - Nome do estado\n'
+                    strErro += u'Destinatário / Endereço - Nome do estado\n'
                       
             if not inv.address_invoice_id.l10n_br_city_id:
-                strErro = u'Destinatário / Endereço - Municipio\n'
+                strErro += u'Destinatário / Endereço - Município\n'
             else:
                 if not inv.address_invoice_id.l10n_br_city_id.name:
-                    strErro = u'Destinatário / Endereço - Nome do municipio\n'
+                    strErro += u'Destinatário / Endereço - Nome do município\n'
                 if not inv.address_invoice_id.l10n_br_city_id.ibge_code:
-                    strErro = u'Destinatário / Endereço - Código do IBGE do municipio\n'
+                    strErro += u'Destinatário / Endereço - Código do IBGE do município\n'
 
             if not inv.address_invoice_id.country_id:
-                strErro = u'Destinatário / Endereço - País\n'
+                strErro += u'Destinatário / Endereço - País\n'
             else:
                 if not inv.address_invoice_id.country_id.name:
-                    strErro = u'Destinatário / Endereco - Nome do país\n'
+                    strErro += u'Destinatário / Endereço - Nome do país\n'
                 if not inv.address_invoice_id.country_id.bc_code:
-                    strErro = u'Destinatário / Endereco - Codigo do BC do país\n'
+                    strErro += u'Destinatário / Endereço - Código do BC do país\n'
 
             #endereco de entrega
             if inv.partner_shipping_id:
@@ -545,75 +609,75 @@ class account_invoice(osv.osv):
                 if inv.address_invoice_id != inv.partner_shipping_id: 
                     
                     if not inv.partner_shipping_id.street:
-                        strErro = u'Destinatário / Endereço de Entrega - Logradouro\n'
+                        strErro += u'Destinatário / Endereço de Entrega - Logradouro\n'
                     
                     if not inv.partner_shipping_id.number:
-                        strErro = u'Destinatário / Endereço de Entrega - Número\n'
+                        strErro += u'Destinatário / Endereço de Entrega - Número\n'
                         
                     if not inv.address_invoice_id.zip:
-                        strErro = u'Destinatário / Endereço de Entrega - CEP\n'
+                        strErro += u'Destinatário / Endereço de Entrega - CEP\n'
         
                     if not inv.partner_shipping_id.state_id:
-                        strErro = u'Destinatário / Endereço de Entrega - Estado\n'
+                        strErro += u'Destinatário / Endereço de Entrega - Estado\n'
                     else:
                         if not inv.partner_shipping_id.state_id.ibge_code:
-                            strErro = u'Destinatário / Endereço de Entrega - Código do IBGE do estado\n'
+                            strErro += u'Destinatário / Endereço de Entrega - Código do IBGE do estado\n'
                         if not inv.partner_shipping_id.state_id.name:
-                            strErro = u'Destinatário / Endereço de Entrega - Nome do estado\n'
+                            strErro += u'Destinatário / Endereço de Entrega - Nome do estado\n'
                               
                     if not inv.partner_shipping_id.l10n_br_city_id:
-                        strErro = u'Destinatário / Endereço - Municipio\n'
+                        strErro += u'Destinatário / Endereço - Município\n'
                     else:
                         if not inv.partner_shipping_id.l10n_br_city_id.name:
-                            strErro = u'Destinatário / Endereço de Entrega - Nome do municipio\n'
+                            strErro += u'Destinatário / Endereço de Entrega - Nome do município\n'
                         if not inv.partner_shipping_id.l10n_br_city_id.ibge_code:
-                            strErro = u'Destinatário / Endereço de Entrega - Código do IBGE do municipio\n'
+                            strErro += u'Destinatário / Endereço de Entrega - Código do IBGE do município\n'
                             
                     if not inv.partner_shipping_id.country_id:
-                        strErro = u'Destinatário / Endereço de Entrega - País\n'
+                        strErro += u'Destinatário / Endereço de Entrega - País\n'
                     else:
                         if not inv.partner_shipping_id.country_id.name:
-                            strErro = u'Destinatário / Endereço de Entrega - Nome do país\n'
+                            strErro += u'Destinatário / Endereço de Entrega - Nome do país\n'
                         if not inv.partner_shipping_id.country_id.bc_code:
-                            strErro = u'Destinatário / Endereço de Entrega - Código do BC do país\n'
+                            strErro += u'Destinatário / Endereço de Entrega - Código do BC do país\n'
                     
             #produtos
             for inv_line in inv.invoice_line:
                 if inv_line.product_id:
                     if not inv_line.product_id.default_code:
-                        strErro = u'Produtos e Serviços: %s, Qtde: %s - Referência/Codigo do produto\n' % (inv_line.product_id.name, inv_line.quantity)
+                        strErro += u'Produtos e Serviços: %s, Qtde: %s - Referência/Código do produto\n' % (inv_line.product_id.name, inv_line.quantity)
                     if not inv_line.product_id.name:
-                        strErro = u'Produtos e Serviços: %s, Qtde: %s - Nome do produto\n' % (inv_line.product_id.name, inv_line.quantity) 
+                        strErro += u'Produtos e Serviços: %s, Qtde: %s - Nome do produto\n' % (inv_line.product_id.name, inv_line.quantity) 
         
                     if not inv_line.cfop_id:
-                        strErro = u'Produtos e Serviços: %s, Qtde: %s - CFOP\n' % (inv_line.product_id.name, inv_line.quantity)
+                        strErro += u'Produtos e Serviços: %s, Qtde: %s - CFOP\n' % (inv_line.product_id.name, inv_line.quantity)
                     else:
                         if not inv_line.cfop_id.code:
-                            strErro = u'Produtos e Serviços: %s, Qtde: %s - Código do CFOP\n' % (inv_line.product_id.name, inv_line.quantity)
+                            strErro += u'Produtos e Serviços: %s, Qtde: %s - Código do CFOP\n' % (inv_line.product_id.name, inv_line.quantity)
         
                     if not inv_line.uos_id:
-                        strErro = u'Produtos e Serviços: %s, Qtde: %s - Unidade de medida\n' % (inv_line.product_id.name, inv_line.quantity)
+                        strErro += u'Produtos e Serviços: %s, Qtde: %s - Unidade de medida\n' % (inv_line.product_id.name, inv_line.quantity)
                     
                     if not inv_line.quantity:
-                        strErro = u'Produtos e Serviços: %s, Qtde: %s - Quantidade\n' % (inv_line.product_id.name, inv_line.quantity)
+                        strErro += u'Produtos e Serviços: %s, Qtde: %s - Quantidade\n' % (inv_line.product_id.name, inv_line.quantity)
                     
                     if not inv_line.price_unit:
-                        strErro = u'Produtos e Serviços: %s, Qtde: %s - Preco unitario\n' % (inv_line.product_id.name, inv_line.quantity)
+                        strErro += u'Produtos e Serviços: %s, Qtde: %s - Preco unitario\n' % (inv_line.product_id.name, inv_line.quantity)
                         
                     if not inv_line.icms_cst:
-                        strErro = u'Produtos e Serviços: %s, Qtde: %s - CST do ICMS\n' % (inv_line.product_id.name, inv_line.quantity)
+                        strErro += u'Produtos e Serviços: %s, Qtde: %s - CST do ICMS\n' % (inv_line.product_id.name, inv_line.quantity)
                         
                     if not inv_line.ipi_cst:
-                        strErro = u'Produtos e Serviços: %s, Qtde: %s - CST do IPI\n' % (inv_line.product_id.name, inv_line.quantity)
+                        strErro += u'Produtos e Serviços: %s, Qtde: %s - CST do IPI\n' % (inv_line.product_id.name, inv_line.quantity)
                     
                     if not inv_line.pis_cst:
-                        strErro = u'Produtos e Serviços: %s, Qtde: %s - CST do PIS\n' % (inv_line.product_id.name, inv_line.quantity)
+                        strErro += u'Produtos e Serviços: %s, Qtde: %s - CST do PIS\n' % (inv_line.product_id.name, inv_line.quantity)
                         
                     if not inv_line.cofins_cst:
-                        strErro = u'Produtos e Serviços: %s, Qtde: %s - CST do COFINS\n' % (inv_line.product_id.name, inv_line.quantity)
+                        strErro += u'Produtos e Serviços: %s, Qtde: %s - CST do COFINS\n' % (inv_line.product_id.name, inv_line.quantity)
                 
         if strErro:
-            raise osv.except_osv(_('Error !'),_("Error Validating NFE:\n %s") % (strErro))  #(strErro.encode('utf-8')))
+            raise osv.except_osv(_('Error !'), _("Error Validating NFE:\n '%s'") % (strErro, ))
         
         return True
         
@@ -716,7 +780,7 @@ class account_invoice(osv.osv):
                        'XMun':  normalize('NFKD',unicode(company_addr_default.l10n_br_city_id.name or '')).encode('ASCII','ignore'),
                        'UF': company_addr_default.state_id.code or '',
                        'CEP': re.sub('[%s]' %  re.escape(string.punctuation), '', str(company_addr_default.zip or '').replace(' ','')),
-                       'cPais': address_company_bc_code,
+                       'cPais': address_company_bc_code or '',
                        'xPais': normalize('NFKD',unicode(company_addr_default.country_id.name or '')).encode('ASCII','ignore'),
                        'fone': re.sub('[%s]' % re.escape(string.punctuation), '', str(company_addr_default.phone or '').replace(' ','')),
                        }
@@ -1460,9 +1524,10 @@ class account_invoice(osv.osv):
             
             dest_IE = SubElement(dest, 'IE')
             dest_IE.text = inv.partner_id.inscr_est
-            
+           
+            i = 0 
             for inv_line in inv.invoice_line:
-                i =+ 1
+                i += 1
                 det = SubElement(infNFe, 'det', {'nItem': str(i)})
                 
                 det_prod = SubElement(det, 'prod')
@@ -1811,11 +1876,6 @@ class account_invoice_line(osv.osv):
     
             
             if context.get('fiscal_type', False) == 'service':
-                
-                #products = eview.xpath("//field[@name='product_id']")
-                #for product_id in products:
-                #    print context['fiscal_type']
-                #    product_id.set('domain', "[('fiscal_type','=', '%s')]" % (context['fiscal_type']))
                 
                 cfops = eview.xpath("//field[@name='cfop_id']")
                 for cfop_id in cfops:

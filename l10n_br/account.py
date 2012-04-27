@@ -1,7 +1,8 @@
 # -*- encoding: utf-8 -*-
 #################################################################################
 #                                                                               #
-# Copyright (C) 2009  Renato Lima - Akretion                                    #
+# Copyright (C) 2009  Renato Lima - Akretion, Vinicius Dittgen - PROGE, Leonardo#
+#Santagada - PROGE                                                              #
 #                                                                               #
 #This program is free software: you can redistribute it and/or modify           #
 #it under the terms of the GNU Affero General Public License as published by    #
@@ -17,161 +18,133 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.          #
 #################################################################################
 
-import time
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
-from operator import itemgetter
-
-import netsvc
 import pooler
 from osv import fields, osv
-import decimal_precision as dp
-from tools.misc import currency
-from tools.translate import _
-from tools import config
+
+_columns = {
+    'domain': fields.char('Domain', size=32, help="This field is only used if you develop your own module allowing developers to create specific taxes in a custom domain."),
+    'tax_discount': fields.boolean('Tax Discounted in Price', help="Mark it for (ICMS, PIS e etc.)."),
+    'tax_include': fields.boolean('Include the Tax Amount in Price', help="Mark it to include the Tax Amount in Price."),
+    }
+
 
 class account_tax_code_template(osv.osv):
-
     _inherit = 'account.tax.code.template'
-    _columns = {
-                'domain':fields.char('Domain', size=32, help="This field is only used if you develop your own module allowing developers to create specific taxes in a custom domain."),
-                'tax_discount': fields.boolean('Discount this Tax in Prince', help="Mark it for (ICMS, PIS e etc.)."),
-        }
+    _columns = _columns
+
 account_tax_code_template()
 
-class account_tax_code(osv.osv):
 
+class account_tax_code(osv.osv):
     _inherit = 'account.tax.code'
-    _columns = {
-                'domain':fields.char('Domain', size=32, help="This field is only used if you develop your own module allowing developers to create specific taxes in a custom domain."),
-                'tax_discount': fields.boolean('Discount this Tax in Prince', help="Mark it for (ICMS, PIS e etc.)."),
-        }
+    _columns = _columns
+
 account_tax_code()
 
-class account_tax_template(osv.osv):
-    _inherit = 'account.tax.template'
-    
-    def get_precision_tax():
-        def change_digit_tax(cr):
-            res = pooler.get_pool(cr.dbname).get('decimal.precision').precision_get(cr, 1, 'Account')
-            return (16, res+2)
-        return change_digit_tax
-    
-    _columns = {
-                'tax_discount': fields.boolean('Discount this Tax in Prince', help="Mark it for (ICMS, PIS e etc.)."),
-                'base_reduction': fields.float('Redution', required=True, digits_compute=get_precision_tax(), help="For taxes of type percentage, enter % ratio between 0-1."),
-                'amount_mva': fields.float('MVA Percent', required=True, digits_compute=get_precision_tax(), help="For taxes of type percentage, enter % ratio between 0-1."),
-                'type': fields.selection( [('percent','Percentage'), ('fixed','Fixed Amount'), ('none','None'), ('code','Python Code'), ('balance','Balance'), ('quantity','Quantity')], 'Tax Type', required=True,
-                                          help="The computation method for the tax amount."),
+
+def change_digit_tax(cr):
+    res = pooler.get_pool(cr.dbname).get('decimal.precision').precision_get(cr, 1, 'Account')
+    return (16, res + 2)
+
+
+_columns_tax = {
+    'tax_discount': fields.boolean('Tax Discounted in Price', help="Mark it for Brazilian legal Taxes(ICMS, PIS e etc.)."),
+    'tax_add': fields.boolean('Add the Tax Amount in Price', help="Mark it to add the Tax Amount in Price."),
+    'tax_include': fields.boolean('Include the Tax Amount in Price', help="Mark it to include the Tax Amount in Price."),
+    'tax_retain': fields.boolean('Discount the Tax Amount in Price', help="Mark it to for clients who retain the Taxes."),
+    'base_reduction': fields.float('Redution', required=True, digits_compute=change_digit_tax, help="Um percentual decimal em % entre 0-1."),
+    'amount_mva': fields.float('MVA Percent', required=True, digits_compute=change_digit_tax, help="Um percentual decimal em % entre 0-1."),
+    'type': fields.selection([('percent', 'Percentage'), ('fixed', 'Fixed Amount'),
+                              ('none', 'None'), ('code', 'Python Code'),
+                              ('balance', 'Balance'), ('quantity', 'Quantity')], 'Tax Type', required=True,
+                             help="The computation method for the tax amount."),
     }
-    _defaults = {
-                'base_reduction': 0,
-                'amount_mva': 0,
+
+_defaults_tax = {
+    'base_reduction': 0,
+    'amount_mva': 0,
     }
-    
+
+
+class account_tax_common(object):
+    tax_code_name = 'account.tax.code.template'
+
     def onchange_tax_code_id(self, cr, uid, ids, tax_code_id, context=None):
-        
         result = {'value': {}}
-            
         if not tax_code_id:
             return result
-        
-        obj_tax_code = self.pool.get('account.tax.code.template').browse(cr, uid, tax_code_id)     
-    
-        if obj_tax_code:
-            result['value']['tax_discount'] = obj_tax_code.tax_discount
-            result['value']['domain'] = obj_tax_code.domain
+
+        tax_code = self.pool.get(self.tax_code_name).browse(cr, uid, tax_code_id)
+        if tax_code:
+            result['value']['tax_discount'] = tax_code.tax_discount
+            result['value']['tax_include'] = tax_code.tax_include
+            result['value']['domain'] = tax_code.domain
 
         return result
+
+
+class account_tax_template(account_tax_common, osv.osv):
+    _inherit = 'account.tax.template'
+    tax_code_name = 'account.tax.code.template'
+    _columns = _columns_tax
+    _defaults = _defaults_tax
 
 account_tax_template()
 
-class account_tax(osv.osv):
-    _inherit = 'account.tax'
-    
-    def get_precision_tax():
-        def change_digit_tax(cr):
-            res = pooler.get_pool(cr.dbname).get('decimal.precision').precision_get(cr, 1, 'Account')
-            return (16, res+2)
-        return change_digit_tax
-    
-    _columns = {
-                'tax_discount': fields.boolean('Discount this Tax in Prince', help="Mark it for (ICMS, PIS e etc.)."),
-                'base_reduction': fields.float('Redution', required=True, digits_compute=get_precision_tax(), help="Um percentual decimal em % entre 0-1."),
-                'amount_mva': fields.float('MVA Percent', required=True, digits_compute=get_precision_tax(), help="Um percentual decimal em % entre 0-1."),
-                'type': fields.selection( [('percent','Percentage'), ('fixed','Fixed Amount'), ('none','None'), ('code','Python Code'), ('balance','Balance'), ('quantity','Quantity')], 'Tax Type', required=True,
-                                          help="The computation method for the tax amount."),
-    }
-    _defaults = {
-                 'base_reduction': 0,
-                 'amount_mva': 0,
-    }
-    
-    def onchange_tax_code_id(self, cr, uid, ids, tax_code_id, context=None):
-        
-        result = {'value': {}}
-            
-        if not tax_code_id:
-            return result
-        
-        obj_tax_code = self.pool.get('account.tax.code').browse(cr, uid, tax_code_id)      
-    
-        if obj_tax_code:
-            result['value']['tax_discount'] = obj_tax_code.tax_discount
-            result['value']['domain'] = obj_tax_code.domain
 
-        return result
+class account_tax(account_tax_common, osv.osv):
+    _inherit = 'account.tax'
+    tax_code_name = 'account.tax.code'
+    _columns = _columns_tax
+    _defaults = _defaults_tax
 
 account_tax()
 
-class account_journal(osv.osv):
-    _inherit = "account.journal"
-
-    _columns = {
-                'internal_sequence': fields.many2one('ir.sequence', 'Internal Sequence'),
-    }
-
-account_journal()
 
 class wizard_multi_charts_accounts(osv.osv_memory):
-
     _inherit = 'wizard.multi.charts.accounts'
-    
+
     def execute(self, cr, uid, ids, context=None):
-        
         super(wizard_multi_charts_accounts, self).execute(cr, uid, ids, context)
-        
+
         obj_multi = self.browse(cr, uid, ids[0])
-        obj_acc_tax = self.pool.get('account.tax')
-        obj_acc_tax_tmp = self.pool.get('account.tax.template')
-        obj_acc_cst = self.pool.get('l10n_br_account.cst')
-        obj_acc_cst_tmp = self.pool.get('l10n_br_account.cst.template')
+        obj_tax = self.pool.get('account.tax')
+        obj_tax_tmp = self.pool.get('account.tax.template')
         obj_tax_code = self.pool.get('account.tax.code')
         obj_tax_code_tmp = self.pool.get('account.tax.code.template')
+        obj_cst = self.pool.get('l10n_br_account.cst')
+        obj_cst_tmp = self.pool.get('l10n_br_account.cst.template')
 
         # Creating Account
-        obj_acc_root = obj_multi.chart_template_id.account_root_id
         tax_code_root_id = obj_multi.chart_template_id.tax_code_root_id.id
         company_id = obj_multi.company_id.id
-        
-        children_tax_code_template = self.pool.get('account.tax.code.template').search(cr, uid, [('parent_id','child_of',[tax_code_root_id])], order='id')
-        children_tax_code_template.sort()
-        for tax_code_template in self.pool.get('account.tax.code.template').browse(cr, uid, children_tax_code_template, context=context):
-            tax_code_id = self.pool.get('account.tax.code').search(cr, uid, [('code','=',tax_code_template.code),('company_id','=',company_id)])
+
+        child_tax_code_temp_ids = obj_tax_code_tmp.search(cr, uid, [('parent_id', 'child_of', [tax_code_root_id])], order='id')
+        child_tax_code_temp_ids.sort()
+        for tax_code_template in obj_tax_code_tmp.browse(cr, uid, child_tax_code_temp_ids, context=context):
+            tax_code_id = obj_tax_code.search(cr, uid, [('code', '=', tax_code_template.code),
+                                                        ('company_id', '=', company_id)])
             if tax_code_id:
-                obj_tax_code.write(cr, uid, tax_code_id, {'domain': tax_code_template.domain,'tax_discount': tax_code_template.tax_discount})
-            
-                cst_tmp_ids = self.pool.get('l10n_br_account.cst.template').search(cr, uid, [('tax_code_template_id','=',tax_code_template.id)], order='id')
-                for cst_tmp in self.pool.get('l10n_br_account.cst.template').browse(cr, uid, cst_tmp_ids, context=context):
-                    obj_acc_cst.create(cr, uid, {
-                                                 'code': cst_tmp.code,
-                                                 'name': cst_tmp.name,
-                                                 'tax_code_id': tax_code_id[0],
-                                                 })
-            
-        tax_ids = self.pool.get('account.tax').search(cr, uid, [('company_id','=',company_id)])
-        for tax in self.pool.get('account.tax').browse(cr, uid, tax_ids, context=context):
-            if tax.tax_code_id:
-                obj_acc_tax.write(cr, uid, tax.id, {'domain': tax.tax_code_id.domain,'tax_discount': tax.tax_code_id.tax_discount})
-        
+                obj_tax_code.write(cr, uid, tax_code_id, {'domain': tax_code_template.domain,
+                                                          'notprintable': tax_code_template.notprintable,
+                                                          'tax_discount': tax_code_template.tax_discount,
+                                                          'tax_include': tax_code_template.tax_include})
+
+                cst_tmp_ids = obj_cst_tmp.search(cr, uid, [('tax_code_template_id', '=', tax_code_template.id)], order='id')
+                for cst_tmp in obj_cst_tmp.browse(cr, uid, cst_tmp_ids, context=context):
+                    obj_cst.create(cr, uid, {'code': cst_tmp.code,
+                                            'name': cst_tmp.name,
+                                            'tax_code_id': tax_code_id[0]})
+
+        tax_ids = obj_tax_tmp.search(cr, uid, [])
+        for tax_template in obj_tax_tmp.browse(cr, uid, tax_ids, context=context):
+            tax_id = obj_tax.search(cr, uid, [('name', '=', tax_template.name)])
+            if tax_template.id:
+                obj_tax.write(cr, uid, tax_id, {'domain': tax_template.tax_code_id.domain,
+                                                'tax_discount': tax_template.tax_discount,
+                                                'price_include': tax_template.price_include,
+                                                'tax_add': tax_template.tax_add,
+                                                'tax_retain': tax_template.tax_retain,
+                                                'tax_include': tax_template.tax_include})
+
 wizard_multi_charts_accounts()

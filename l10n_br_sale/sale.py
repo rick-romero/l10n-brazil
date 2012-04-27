@@ -267,7 +267,7 @@ class sale_order(osv.osv):
         val = 0.0
         for c in self.pool.get('account.tax').compute_all(cr, uid, line.tax_id, line.price_unit * (1-(line.discount or 0.0)/100.0), line.product_uom_qty, line.order_id.partner_invoice_id.id, line.product_id, line.order_id.partner_id, fiscal_operation=line.fiscal_operation_id)['taxes']:
             tax_brw = self.pool.get('account.tax').browse(cr, uid, c['id'])
-            if not tax_brw.tax_code_id.tax_discount:
+            if tax_brw.tax_add:
                 val += c.get('amount', 0.0)
         return val
     

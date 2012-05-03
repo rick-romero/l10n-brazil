@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 #################################################################################
 #                                                                               #
 # Copyright (C) 2009  Renato Lima - Akretion                                    #
@@ -24,7 +24,7 @@ from osv import fields, osv
 class account_journal(osv.osv):
     _inherit = 'account.journal'
     _columns = {
-        'revenue_expense' : fields.boolean('Gera Financeiro'),
+        'revenue_expense': fields.boolean('Gera Financeiro'),
         }
 
 account_journal()
@@ -71,8 +71,7 @@ class account_tax(osv.osv):
                 pin.append(tax)
             else:
                 ntax.append(tax)
-
-        pin = self.compute_inv(cr, uid, pin, price_unit, quantity, address_id=address_id, product=product, partner=partner)
+        pin = super(account_tax, self).compute_inv(cr, uid, pin, price_unit, quantity, address_id=address_id, product=product, partner=partner)
         for r in pin:
                 totalex -= r.get('amount', 0.0)
         totlex_qty = 0.0
@@ -81,7 +80,7 @@ class account_tax(osv.osv):
         except:
             pass
 
-        tin = super(account_tax, self).compute_inv(cr, uid, tin, price_unit, quantity, address_id=address_id, product=product, partner=partner)
+        tin = self.l10n_br_compute_inv(cr, uid, tin, price_unit, quantity, address_id=address_id, product=product, partner=partner)
 
         all_tad = tad + ntax + tre
         all_tad = super(account_tax, self)._compute(cr, uid, all_tad, totlex_qty, quantity, address_id=address_id, product=product, partner=partner)
@@ -161,7 +160,30 @@ class account_tax(osv.osv):
             'taxes': res_taxes,
             }
 
-    def _unit_compute_inv(self, cr, uid, taxes, price_unit, address_id=None, product=None, partner=None):
+    def l10n_br_compute_inv(self, cr, uid, taxes, price_unit, quantity, address_id=None, product=None, partner=None):
+        """
+        Compute tax values for given PRICE_UNIT, QUANTITY and a buyer/seller ADDRESS_ID.
+        Price Unit is a VAT included price
+
+        RETURN:
+            [ tax ]
+            tax = {'name': '', 'amount': 0.0, 'account_collected_id': 1, 'account_paid_id': 2}
+            one tax for each tax id in IDS and their children
+        """
+
+        res = self._l10n_br_unit_compute_inv(cr, uid, taxes, price_unit, address_id, product, partner=None)
+        total = 0.0
+        obj_precision = self.pool.get('decimal.precision')
+        for r in res:
+            prec = obj_precision.precision_get(cr, uid, 'Account')
+            if r.get('balance', False):
+                r['amount'] = round(r['balance'] * quantity, prec) - total
+            else:
+                r['amount'] = round(r['amount'] * quantity, prec)
+                total += r['amount']
+        return res
+
+    def _l10n_br_unit_compute_inv(self, cr, uid, taxes, price_unit, address_id=None, product=None, partner=None):
         taxes = self._applicable(cr, uid, taxes, price_unit, address_id, product, partner)
         obj_partener_address = self.pool.get('res.partner.address')
         res = []
@@ -180,6 +202,7 @@ class account_tax(osv.osv):
         for tax in taxes:
             if tax.type == 'percent':
                 amount = cur_price_unit * tax.amount
+                # when tax_include application method change the percent calc method.
                 #if tax.include_base_amount:
                     #amount = cur_price_unit * tax.amount
                     #amount = cur_price_unit - (cur_price_unit / (1 + tax.amount))
@@ -240,7 +263,7 @@ class account_tax(osv.osv):
         #    r['price_unit'] -= total
         #    r['todo'] = 0
         return res
-        
+
 account_tax()
 
 
@@ -267,3 +290,4 @@ class wizard_multi_charts_accounts(osv.osv_memory):
         return res
 
 wizard_multi_charts_accounts()
+

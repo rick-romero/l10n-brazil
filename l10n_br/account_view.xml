@@ -11,6 +11,7 @@
 				<field position="after" name="parent_id">
 					<field name="domain"/>
 					<field name="tax_discount" />
+                    <field name="tax_include"/>
 			    </field>
 			</field>
 		</record>
@@ -23,32 +24,75 @@
 				<field position="after" name="parent_id">
 					<field name="domain"/>
 					<field name="tax_discount" />
+                    <field name="tax_include"/>
 			    </field>
 			</field>
 		</record>
 
 		<!-- Incluir o campo desconto do imposto -->
-		<record model="ir.ui.view" id="view_l10n_br_account_tax_template_form">
-			<field name="name">l10n_br_account.tax.template.form</field>
-			<field name="model">account.tax.template</field>
-			<field name="inherit_id" ref="account.view_account_tax_template_form"/>
-			<field name="arch" type="xml">
-				<field position="after" name="price_include">
-					<field groups="base.group_extended" name="tax_discount"/>
-			    </field>
-			</field>
-		</record>
+        <record model="ir.ui.view" id="view_l10n_br_account_tax_template_form">
+          <field name="name">l10n_br_account.tax.template.form</field>
+          <field name="model">account.tax.template</field>
+          <field name="inherit_id" ref="account.view_account_tax_template_form"/>
+          <field name="arch" type="xml">
+            <field name="price_include" position="replace"/>
+            <field name="type_tax_use" position="after">
+              <field name="price_include"/>
+            </field>
+            <field position="after" name="price_include">
+              <field groups="base.group_extended" name="tax_discount"/>
+            </field>
+            <field position="after" name="tax_discount">
+              <group colspan="6" col="6">
+                <field groups="base.group_extended" name="tax_add"/>
+                <field groups="base.group_extended" name="tax_include"/>
+                <field groups="base.group_extended" name="tax_retain"/>
+              </group>
+            </field>
+            <field position="before" name="tax_add">
+              <newline/>
+              <separator colspan="6" string="Tax Aplication Method"/>
+              <newline/>
+            </field>
+            <field position="before" name="price_include">
+              <newline/>
+              <separator colspan="6" string="Tax Calc Method"/>
+              <newline/>
+            </field>
+          </field>
+        </record>
 
-		<record model="ir.ui.view" id="view_l10n_br_account_tax_form">
-			<field name="name">l10n_br_account.tax.form</field>
-			<field name="model">account.tax</field>
-			<field name="inherit_id" ref="account.view_tax_form"/>
-			<field name="arch" type="xml">
-				<field position="after" name="price_include">
-					<field groups="base.group_extended" name="tax_discount"/>
-			    </field>
-			</field>
-		</record>
+    <record model="ir.ui.view" id="view_l10n_br_account_tax_form">
+      <field name="name">l10n_br_account.tax.form</field>
+      <field name="model">account.tax</field>
+      <field name="inherit_id" ref="account.view_tax_form"/>
+      <field name="arch" type="xml">
+        <field name="price_include" position="replace"/>
+        <field name="active" position="after">
+          <field name="price_include"/>
+        </field>
+        <field position="after" name="price_include">
+          <field groups="base.group_extended" name="tax_discount"/>
+        </field>
+        <field position="after" name="tax_discount">
+          <group colspan="6" col="6">
+            <field groups="base.group_extended" name="tax_add"/>
+            <field groups="base.group_extended" name="tax_include"/>
+            <field groups="base.group_extended" name="tax_retain"/>
+          </group>
+        </field>
+        <field position="before" name="tax_add">
+          <newline/>
+          <separator colspan="6" string="Tax Aplication Method"/>
+          <newline/>
+        </field>
+        <field position="before" name="price_include">
+          <newline/>
+          <separator colspan="6" string="Tax Calc Method"/>
+          <newline/>
+        </field>
+      </field>
+    </record>
 				
 		<record model="ir.ui.view" id="view_l10n_br_account_tax_template_form1">
 			<field name="name">l10n_br_account.tax.template.form1</field>

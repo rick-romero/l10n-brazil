@@ -149,6 +149,9 @@ class account_tax(osv.osv):
 
         for tax in res_taxes:
             tax_brw = tax_obj.browse(cr, uid, tax['id'])
+            if 'total_base' not in tax:
+                tax['total_base'] = 0.0
+            
             if tax_brw.domain == 'icmsst':
                 tax['total_base'] += (totalex + ipi_value) * (1 + tax_brw.amount_mva)
                 tax['amount'] += (((totalex + ipi_value) * (1 + tax_brw.amount_mva)) * icms_percent) - icms_value

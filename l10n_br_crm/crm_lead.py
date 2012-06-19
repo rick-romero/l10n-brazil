@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 #################################################################################
 #                                                                               #
-# Copyright (C) 2009  Renato Lima - Akretion                                    #
+# Copyright (C) 2012  Renato Lima - Akretion                                    #
 #                                                                               #
 #This program is free software: you can redistribute it and/or modify           #
 #it under the terms of the GNU Affero General Public License as published by    #
@@ -17,29 +17,18 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.          #
 #################################################################################
 
-{
-    'name': 'Brazilian Localization',
-    'description': 'Brazilian Localization',
-    'category': 'Localisation',
-    'license': 'AGPL-3',
-    'author': 'Akretion, OpenERP Brasil',
-    'website': 'http://openerpbrasil.org',
-    'version': '0.6',
-    'depends': [
-                'account_fiscal_position_rule_stock',
-                'l10n_br_account',
-            ],
-    'init_xml': [
-                 'l10n_br_stock_data.xml',
-                 ],
-    'update_xml': [
-              'stock_view.xml',
-                  'res_company_view.xml',
-                  'wizard/stock_invoice_onshipping_view.xml',
-                  'security/ir.model.access.csv',
-                  ],
-    'installable': True,
-    'auto_install': True
-}
+from osv import fields, osv
+from crm.crm import crm_case
+
+class crm_lead(crm_case, osv.osv):
+    """ CRM Lead Case """
+    _inherit = "crm.lead"
+    _columns = {
+	            'l10n_br_city_id': fields.many2one('l10n_br_base.city', 'Municipio', 
+                                                   domain="[('state_id','=',state_id)]"),
+                'district': fields.char('Bairro', size=32),
+                'number': fields.char('Número', size=10),
+                }
+crm_lead()
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

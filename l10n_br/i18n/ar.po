@@ -1,16 +1,16 @@
-# Spanish (Paraguay) translation for openobject-addons
-# Copyright (c) 2012 Rosetta Contributors and Canonical Ltd 2012
+# Arabic translation for openobject-addons
+# Copyright (c) 2011 Rosetta Contributors and Canonical Ltd 2011
 # This file is distributed under the same license as the openobject-addons package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2012.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2011.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: openobject-addons\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2011-12-23 09:56+0000\n"
-"PO-Revision-Date: 2012-02-17 09:10+0000\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: Spanish (Paraguay) <es_PY@li.org>\n"
+"PO-Revision-Date: 2012-04-06 07:45+0000\n"
+"Last-Translator: kifcaliph <Unknown>\n"
+"Language-Team: Arabic <ar@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -37,7 +37,7 @@ msgstr ""
 #: model:ir.model,name:l10n_br.model_account_tax_code
 #: field:l10n_br_account.cst,tax_code_id:0
 msgid "Tax Code"
-msgstr ""
+msgstr "رمز الضرائب"
 
 #. module: l10n_br
 #: help:account.tax.code,domain:0
@@ -46,6 +46,8 @@ msgid ""
 "This field is only used if you develop your own module allowing developers "
 "to create specific taxes in a custom domain."
 msgstr ""
+"يستخدم هذا الحقل فقط إذا كنت تطور الملحق الخاص بك الوحدة الخاصة بك مما يسمح "
+"للمطورين لإنشاء ضرائب محددة في نطاقك."
 
 #. module: l10n_br
 #: model:account.account.type,name:l10n_br.resultado
@@ -55,7 +57,7 @@ msgstr ""
 #. module: l10n_br
 #: model:ir.model,name:l10n_br.model_account_tax_template
 msgid "account.tax.template"
-msgstr ""
+msgstr "account.tax.template"
 
 #. module: l10n_br
 #: model:account.account.type,name:l10n_br.passivo
@@ -66,7 +68,7 @@ msgstr ""
 #: field:l10n_br_account.cst,name:0
 #: field:l10n_br_account.cst.template,name:0
 msgid "Description"
-msgstr ""
+msgstr "وصف"
 
 #. module: l10n_br
 #: model:account.account.type,name:l10n_br.despesa
@@ -83,7 +85,7 @@ msgstr ""
 #: help:account.tax.template,amount_mva:0
 #: help:account.tax.template,base_reduction:0
 msgid "For taxes of type percentage, enter % ratio between 0-1."
-msgstr ""
+msgstr "للضرائب من نوع نسبة مئوية، ادخل نسبة % بين ٠‎ - ١."
 
 #. module: l10n_br
 #: field:account.tax,base_reduction:0
@@ -94,7 +96,7 @@ msgstr ""
 #. module: l10n_br
 #: constraint:account.tax.code.template:0
 msgid "Error ! You can not create recursive Tax Codes."
-msgstr ""
+msgstr "خطأ ! لايمكنك إنشاء اكواد ضريبية متداخلة."
 
 #. module: l10n_br
 #: sql_constraint:account.tax:0
@@ -104,7 +106,7 @@ msgstr ""
 #. module: l10n_br
 #: model:ir.model,name:l10n_br.model_account_tax
 msgid "account.tax"
-msgstr ""
+msgstr "account.tax"
 
 #. module: l10n_br
 #: model:account.account.type,name:l10n_br.receita
@@ -122,7 +124,7 @@ msgstr ""
 #. module: l10n_br
 #: model:ir.model,name:l10n_br.model_wizard_multi_charts_accounts
 msgid "wizard.multi.charts.accounts"
-msgstr ""
+msgstr "wizard.multi.charts.accounts"
 
 #. module: l10n_br
 #: model:ir.actions.todo,note:l10n_br.config_call_account_template_brazilian_localization
@@ -135,14 +137,6 @@ msgid ""
 "Management/Configuration/Financial Accounting/Financial Accounts/Generate "
 "Chart of Accounts from a Chart Template."
 msgstr ""
-"Genere el plan de cuentas desde una plantilla de plan. Se le solicitará el "
-"nombre de la compañía, la plantilla de plan a seguir, y el núm. de dígitos "
-"para generar el código de sus cuentas, cuenta bancaria, y divisa para crear "
-"sus diarios. Por tanto, se genera una copia directa de la plantilla del plan "
-"de cuentas.\n"
-"    Este es el mismo asistente que se ejecuta desde Gestión "
-"financiera/Configuración/Contabilidad financiera/Cuentas financieras/Generar "
-"plan de cuentas desde una plantilla de plan."
 
 #. module: l10n_br
 #: help:account.tax,tax_discount:0
@@ -161,18 +155,18 @@ msgstr ""
 #: field:account.tax.code,domain:0
 #: field:account.tax.code.template,domain:0
 msgid "Domain"
-msgstr ""
+msgstr "نطاق"
 
 #. module: l10n_br
 #: field:l10n_br_account.cst,code:0
 #: field:l10n_br_account.cst.template,code:0
 msgid "Code"
-msgstr ""
+msgstr "رمز"
 
 #. module: l10n_br
 #: constraint:account.tax.code:0
 msgid "Error ! You can not create recursive accounts."
-msgstr ""
+msgstr "خطأ ! لا يمكن إنشاء حسابات تكرارية."
 
 #. module: l10n_br
 #: help:account.tax,amount_mva:0
@@ -184,4 +178,4 @@ msgstr ""
 #: model:ir.model,name:l10n_br.model_account_tax_code_template
 #: field:l10n_br_account.cst.template,tax_code_template_id:0
 msgid "Tax Code Template"
-msgstr ""
+msgstr "قالب رمز الضريبة"

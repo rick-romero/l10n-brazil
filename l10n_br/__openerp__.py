@@ -47,7 +47,7 @@ It's important to note however that this module lack many implementations to use
     'license': 'AGPL-3',
     'author': 'Akretion, PROGE, OpenERP Brasil',
     'website': 'http://openerpbrasil.org',
-    'version': '0.6',
+    'version': '0.7',
     'depends': ['account','account_chart'],
     'init_xml': [        
         'data/account.account.type.csv',

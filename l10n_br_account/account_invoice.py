@@ -341,6 +341,16 @@ class account_invoice(osv.osv):
                  'fiscal_type': _get_fiscal_type,
                  }
 
+    def _refund_cleanup_lines(self, cr, uid, lines):
+        # more _id fields added to invoce_line by the localization have to be filtered
+        for line in lines:
+            for field in ('fiscal_operation_category_id', 'fiscal_operation_id',
+                          'fiscal_position', 'cfop_id'):
+                if line.get(field):
+                    line[field] = line[field][0]
+
+        return super(account_invoice, self)._refund_cleanup_lines(cr, uid, lines)
+
     # go from canceled state to draft state
     def action_cancel_draft(self, cr, uid, ids, *args):
         self.write(cr, uid, ids, {'state':'draft', 'internal_number':False, 'nfe_access_key':False, 

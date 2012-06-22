@@ -1,4 +1,6 @@
 from workflow.wkf_service import workflow_service
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 
 def test_product_sale_to_invoice_nfe(oerp):
@@ -11,12 +13,49 @@ def test_product_sale_to_invoice_nfe(oerp):
             INSS 1,80% Incluso
             ICMS 1,25% Incluso
             IPI 5,00% Adicionado
-    Confs required:
-         Brazilian chart of accounts generated;
-         Fiscal document serie for NFE fiscal document;
-         CNAE da empresa.
+
+        payment term: 1 + 1
+
+        Confs required:
+            Brazilian chart of accounts generated;
+            Fiscal document serie for NFE fiscal document;
+            CNAE da empresa.
 
     """
+
+    #create payment term
+    payment_term_obj = oerp.pool.get('account.payment.term')
+    payment_term_line_obj = oerp.pool.get('account.payment.term.line')
+    pay_term_lines = []
+
+    pay_term_id = payment_term_obj.create(oerp.cr, 1, {
+        'active': True,
+        'name': 'pytest_1'
+        })
+    assert payment_term_obj.browse(oerp.cr, 1, [pay_term_id])[0].id == pay_term_id
+
+    pay_term_l1_id = payment_term_line_obj.create(oerp.cr, 1, {
+        'name': 'entrada',
+        'value_amount': 0.500000,
+        'sequence': 1,
+        'days2': 0,
+        'days': 0,
+        'payment_id': pay_term_id,
+        'value': 'procent'
+        })
+    pay_term_lines.append((0, 0, pay_term_l1_id))
+    assert payment_term_line_obj.browse(oerp.cr, 1, [pay_term_l1_id])[0].id == pay_term_l1_id
+
+    pay_term_l2_id = payment_term_line_obj.create(oerp.cr, 1, {
+        'name': 'saldo',
+        'sequence': 2,
+        'days2': 0,
+        'days': 30,
+        'payment_id': pay_term_id,
+        'value': 'balance'
+        })
+    pay_term_lines.append((0, 0, pay_term_l2_id))
+    assert payment_term_line_obj.browse(oerp.cr, 1, [pay_term_l2_id])[0].id == pay_term_l2_id
 
     #create empty fiscal classification for the product
     prod_fc_obj = oerp.pool.get('account.product.fiscal.classification')
@@ -489,6 +528,7 @@ def test_product_sale_to_invoice_nfe(oerp):
         'partner_invoice_id': partner_client_address_id,
         'partner_shipping_id': partner_client_address_id,
         'pricelist_id': 1,
+        'payment_term': pay_term_id,
         'order_line': sale_order_lines,
         'fiscal_operation_category_id': fopc_id,
         'fiscal_operation_id': fop_id,
@@ -539,34 +579,37 @@ def test_product_sale_to_invoice_nfe(oerp):
 
     move_line_obj = oerp.pool.get('account.move.line')
     move_lines = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id)])
-    assert len(move_lines) == 8
+    assert len(move_lines) == 9
 
-    move1 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('debit', '=', 105)])[0]
-    assert move_line_obj.browse(oerp.cr, 1, move1).debit == 105
+    date_1 = datetime.now().strftime('%Y-%m-%d')
+    date_2 = (datetime.strptime(date_1, '%Y-%m-%d') + relativedelta(days=30))
 
-    move2 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 0.21)])[0]
-    assert move_line_obj.browse(oerp.cr, 1, move2).credit == 0.21
+    move1 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('date_maturity', '=', date_1), ('debit', '=', 52.5)])[0]
+    assert move_line_obj.browse(oerp.cr, 1, move1).debit == 52.5
+    
+    move2 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('date_maturity', '=', date_2), ('debit', '=', 52.5)])[0]
+    assert move_line_obj.browse(oerp.cr, 1, move2).debit == 52.5
 
-    move3 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 0.74)])[0]
-    assert move_line_obj.browse(oerp.cr, 1, move3).credit == 0.74
+    move3 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 0.21)])[0]
+    assert move_line_obj.browse(oerp.cr, 1, move3).credit == 0.21
 
-    move4 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 0.25)])[0]
-    assert move_line_obj.browse(oerp.cr, 1, move4).credit == 0.25
+    move4 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 0.74)])[0]
+    assert move_line_obj.browse(oerp.cr, 1, move4).credit == 0.74
 
-    move5 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 1.80)])[0]
-    assert move_line_obj.browse(oerp.cr, 1, move5).credit == 1.80
+    move5 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 0.25)])[0]
+    assert move_line_obj.browse(oerp.cr, 1, move5).credit == 0.25
 
-    move6 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 1.25)])[0]
-    assert move_line_obj.browse(oerp.cr, 1, move6).credit == 1.25
+    move6 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 1.80)])[0]
+    assert move_line_obj.browse(oerp.cr, 1, move6).credit == 1.80
 
-    move7 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 5.00)])[0]
-    assert move_line_obj.browse(oerp.cr, 1, move7).credit == 5
+    move7 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 1.25)])[0]
+    assert move_line_obj.browse(oerp.cr, 1, move7).credit == 1.25
 
-    move8 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 95.75)])[0]
-    assert move_line_obj.browse(oerp.cr, 1, move8).credit == 95.75
+    move8 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 5.00)])[0]
+    assert move_line_obj.browse(oerp.cr, 1, move8).credit == 5
+
+    move9 = move_line_obj.search(oerp.cr, 1, [('move_id', '=', invoice.move_id.id), ('credit', '=', 95.75)])[0]
+    assert move_line_obj.browse(oerp.cr, 1, move9).credit == 95.75
 
     rec_ids = invoice._get_receivable_lines(inv_id, False, None)
-    assert len(rec_ids[inv_id]) == 1
-
-    rec_line = oerp.pool.get('account.move.line').browse(oerp.cr, 1, rec_ids[invoice.id])[0]
-    assert rec_line.debit == 105
+    assert len(rec_ids[inv_id]) == 2

@@ -10,6 +10,10 @@ def test_services_sale_to_invoice(oerp):
             PIS 0,65% Recolhido
             CSLL 2,88% Recolhido
             IR 3,3% Recolhido
+        Confs required:
+             Brazilian chart of accounts generated;
+             Fiscal document serie for the fiscal documunte;
+             CNAE da empresa.
 
     """
     #create empty fiscal classification for the service
@@ -20,6 +24,20 @@ def test_services_sale_to_invoice(oerp):
         })
 
     assert prod_fc_obj.browse(oerp.cr, 1, [prod_fc_id])[0].id == prod_fc_id
+
+    # create account journal
+    acc_journal_obj = oerp.pool.get('account.journal')
+    acc_journal_id = acc_journal_obj.create(oerp.cr, 1, {
+        'code': 'bco',
+        'name': 'bco',
+        'view_id': 3,
+        'sequence_id': 1,
+        'company_id': 1,
+        'revenue_expense': True,
+        'type': 'cash'
+        })
+
+    assert acc_journal_obj.browse(oerp.cr, 1, [acc_journal_id])[0].id == acc_journal_id
 
     # create service fiscal operation category
     fiscal_doc_obj = oerp.pool.get('l10n_br_account.fiscal.document')
@@ -36,6 +54,8 @@ def test_services_sale_to_invoice(oerp):
         })
 
     assert fopc_obj.browse(oerp.cr, 1, [fopc_id])[0].id == fopc_id
+
+    oerp.cr.execute('insert into l10n_br_account_fiscal_operation_category_rel (fiscal_operation_category_id,journal_id) values (%s, %s)' % (fopc_id, acc_journal_id))
 
     # create service fiscal operation
     fop_obj = oerp.pool.get('l10n_br_account.fiscal.operation')
@@ -64,6 +84,9 @@ def test_services_sale_to_invoice(oerp):
         'name': 'service test',
         'uom_po_id': 1,
         'type': 'service',
+        'property_account_income': 1193,
+        'property_account_expense': 669,
+        'property_fiscal_classification': prod_fc_id,
         'procure_method': 'make_to_stock',
         'cost_method': 'standard',
         'categ_id': 1
@@ -404,7 +427,7 @@ def test_services_sale_to_invoice(oerp):
     assert invoice.amount_tax == -1.5
 
     #confirm invoice
-    wf_service.trg_validate(1, 'account.invoice', inv_id, 'invoice_sefaz_export', oerp.cr)
+    wf_service.trg_validate(1, 'account.invoice', inv_id, 'invoice_validate', oerp.cr)
 
     # reload invoice to get new fields created by the action on the workflow
     invoice = inv_obj.browse(oerp.cr, 1, [inv_id])[0]

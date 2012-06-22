@@ -441,8 +441,10 @@ class account_invoice(osv.osv):
         :param move_lines: list of dictionaries with the account.move.lines (as for create())
         :return: the (possibly updated) final move_lines to create for this invoice
         """
+        payment_term_obj = self.pool.get('account.payment.term')
         total_taxes_credit = 0
         move_lines_tmp = []
+        move_debit_itens = []
         remove_itens = []
         tax_retained_itens = []
         mv_tmp_tuple = []
@@ -455,9 +457,9 @@ class account_invoice(osv.osv):
             if not move_line_item['credit'] and not move_line_item['debit']:
                 remove_itens.append(ind)
  
-            # fix final debit line
+            # get debit lines
             elif move_line_item['account_id'] == invoice_browse.account_id.id and not move_line_item['credit']:
-                move_line_item['debit'] = invoice_browse.amount_total
+                move_debit_itens.append(ind)
  
             # get tax_retain values and fix the entry sign
             elif move_line_item['tax_amount'] < 0:
@@ -471,7 +473,8 @@ class account_invoice(osv.osv):
             # get final invoice credit line 
             elif move_line_item['credit'] == invoice_browse.amount_untaxed:
                 final_credit_ind = ind
- 
+
+        # fix total amount removing taxes diferent from tax_add type
         if final_credit_ind > -1:
             move_lines[final_credit_ind][2]['credit'] = invoice_browse.amount_total - total_taxes_credit
 
@@ -483,6 +486,16 @@ class account_invoice(osv.osv):
             mv_tmp_tuple = 0, 0, mv_tmp
             move_lines_tmp.append(mv_tmp_tuple)
 
+        # fix debit lines in invoices with payment term - remove taxes diferent from tax_add type
+        if invoice_browse.payment_term:
+            pay_lines = payment_term_obj.compute(cr, uid, invoice_browse.payment_term.id, invoice_browse.amount_total, invoice_browse.date_invoice or False, False)
+            for pay_line in pay_lines:
+                for mv_ind in move_debit_itens:
+                    if move_lines[mv_ind][2]['date_maturity'] == pay_line[0]:
+                        move_lines[mv_ind][2]['debit'] = pay_line[1]
+        elif len(move_debit_itens) == 1:
+            move_lines[move_debit_itens[0]][2]['debit'] = invoice_browse.amount_total
+
         # remove itens without credit and debit line - brazilian localization bug
         while remove_itens:
             move_lines.pop(remove_itens.pop())
@@ -490,7 +503,7 @@ class account_invoice(osv.osv):
         # add new credit entries for tax_retain 
         while move_lines_tmp:
             move_lines.append(move_lines_tmp.pop())
- 
+
         return move_lines
 
     def nfe_dv(self, key):

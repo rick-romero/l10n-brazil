@@ -11,10 +11,10 @@ def test_product_sale_to_invoice_nfe(oerp):
             INSS 1,80% Incluso
             ICMS 1,25% Incluso
             IPI 5,00% Adicionado
-    Confs required:
-         Brazilian chart of accounts generated;
-         Fiscal document serie for NFE fiscal document;
-         CNAE da empresa.
+        Confs required:
+             Brazilian chart of accounts generated;
+             Fiscal document serie for NFE fiscal document;
+             CNAE da empresa.
 
     """
 

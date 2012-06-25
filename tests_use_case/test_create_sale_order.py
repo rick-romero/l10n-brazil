@@ -1,6 +1,11 @@
 
 
 def test_create_sale_order(oerp):
+    """ create an Sale Order.
+        Modules required:
+            l10n_br, l10n_br_sale
+
+    """
     sale_order_obj = oerp.pool.get('sale.order')
     product_obj = oerp.pool.get('product.product')
 

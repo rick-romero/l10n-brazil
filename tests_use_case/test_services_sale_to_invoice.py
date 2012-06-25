@@ -12,8 +12,8 @@ def test_services_sale_to_invoice(oerp):
             IR 3,3% Recolhido
         Confs required:
              Brazilian chart of accounts generated;
-             Fiscal document serie for the fiscal documunte;
-             CNAE da empresa.
+        Modules required:
+            l10n_br, l10n_br_account, l10n_br_sale, l10n_br_product
 
     """
     #create empty fiscal classification for the service
@@ -39,10 +39,25 @@ def test_services_sale_to_invoice(oerp):
 
     assert acc_journal_obj.browse(oerp.cr, 1, [acc_journal_id])[0].id == acc_journal_id
 
-    # create service fiscal operation category
+    # create fiscal document serie
     fiscal_doc_obj = oerp.pool.get('l10n_br_account.fiscal.document')
-    fiscal_doc_id = fiscal_doc_obj.search(oerp.cr, 1, [('nfe', '=', False)])[0]
+    doc_serie_obj = oerp.pool.get('l10n_br_account.document.serie')
+    ir_seq_obj = oerp.pool.get('ir.sequence')
 
+    fiscal_doc_id = fiscal_doc_obj.search(oerp.cr, 1, [('nfe', '=', False)])[0]
+    ir_seq_id = ir_seq_obj.search(oerp.cr, 1, [('code', '=', 'sale.order')])[0]
+    
+    doc_serie_id = doc_serie_obj.create(oerp.cr, 1, {
+        'code': 'serie_nfe_pytest',
+        'name': 'serie_nfe_pytest',
+        'internal_sequence_id': ir_seq_id,
+        'active': True,
+        'fiscal_document_id': fiscal_doc_id,
+        'company_id': 1,
+        'fiscal_type': 'service'
+        })
+
+    # create service fiscal operation category
     fopc_obj = oerp.pool.get('l10n_br_account.fiscal.operation.category')
     fopc_id = fopc_obj.create(oerp.cr, 1, {
         'code': 'servicos',

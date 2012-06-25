@@ -13,8 +13,8 @@ def test_product_sale_to_invoice_nfe(oerp):
             IPI 5,00% Adicionado
         Confs required:
              Brazilian chart of accounts generated;
-             Fiscal document serie for NFE fiscal document;
-             CNAE da empresa.
+        Modules required:
+            l10n_br, l10n_br_account, l10n_br_sale, l10n_br_product
 
     """
 
@@ -319,13 +319,30 @@ def test_product_sale_to_invoice_nfe(oerp):
 
     assert acc_journal_obj.browse(oerp.cr, 1, [acc_journal_id])[0].id == acc_journal_id
 
-    # create product fiscal operation category
-    cfop_obj = oerp.pool.get('l10n_br_account.cfop')
-    cfop_id = cfop_obj.search(oerp.cr, 1, [])[0]
+    # create fiscal document serie
     fiscal_doc_obj = oerp.pool.get('l10n_br_account.fiscal.document')
-    fiscal_doc_id = fiscal_doc_obj.search(oerp.cr, 1, [('nfe', '=', True)])[0]
+    doc_serie_obj = oerp.pool.get('l10n_br_account.document.serie')
+    ir_seq_obj = oerp.pool.get('ir.sequence')
 
+    fiscal_doc_id = fiscal_doc_obj.search(oerp.cr, 1, [('nfe', '=', True)])[0]
+    ir_seq_id = ir_seq_obj.search(oerp.cr, 1, [('code', '=', 'sale.order')])[0]
+    
+    doc_serie_id = doc_serie_obj.create(oerp.cr, 1, {
+        'code': 'serie_nfe_pytest',
+        'name': 'serie_nfe_pytest',
+        'internal_sequence_id': ir_seq_id,
+        'active': True,
+        'fiscal_document_id': fiscal_doc_id,
+        'company_id': 1,
+        'fiscal_type': 'product'
+        })
+
+
+    # create product fiscal operation category
     fopc_obj = oerp.pool.get('l10n_br_account.fiscal.operation.category')
+    cfop_obj = oerp.pool.get('l10n_br_account.cfop')
+
+    cfop_id = cfop_obj.search(oerp.cr, 1, [])[0]
     fopc_id = fopc_obj.create(oerp.cr, 1, {
         'code': 'pytest_produtos',
         'name': 'pytest_produtos',
@@ -398,13 +415,27 @@ def test_product_sale_to_invoice_nfe(oerp):
         })
 
     # update company data
+    company_obj = oerp.pool.get('res.company')
     partner_obj = oerp.pool.get('res.partner')
     partner_address_obj = oerp.pool.get('res.partner.address')
     country_obj = oerp.pool.get('res.country')
     state_obj = oerp.pool.get('res.country.state')
+    cnae_obj = oerp.pool.get('l10n_br_account.cnae')
 
     country_id = country_obj.search(oerp.cr, 1, [('code', '=', 'BR')])[0]
     state_id = state_obj.search(oerp.cr, 1, [('code', '=', 'RS'),('country_id', '=', country_id)])[0]
+
+    cnae_id = cnae_obj.create(oerp.cr, 1, {
+        'code': 'pyteste',
+        'internal_type': 'normal',
+        'name': 'pyteste',
+        'version': '2.0'
+        })
+
+    company_obj.write(oerp.cr, 1, 1, {
+        'cnae_main_id': cnae_id
+        })
+
 
     partner_obj.write(oerp.cr, 1, 1, {
         'name': 'emp teste',

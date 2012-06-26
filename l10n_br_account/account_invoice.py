@@ -448,7 +448,7 @@ class account_invoice(osv.osv):
         remove_itens = []
         tax_retained_itens = []
         mv_tmp_tuple = []
-        final_credit_ind = -1
+        final_credit_inds = []
 
         for ind, move_line in enumerate(move_lines):
             move_line_item = move_line[2]
@@ -467,16 +467,19 @@ class account_invoice(osv.osv):
                 tax_retained_itens.append(ind)
  
             # sum tax credit lines
-            elif move_line_item['credit'] > 0 and move_line_item['credit'] != invoice_browse.amount_untaxed:
+            elif move_line_item['credit'] > 0 and not move_line_item['product_id']:
                 total_taxes_credit += move_line_item['credit']
 
             # get final invoice credit line 
-            elif move_line_item['credit'] == invoice_browse.amount_untaxed:
-                final_credit_ind = ind
+            elif move_line_item['credit'] > 0 and move_line_item['product_id']:
+                final_credit_inds.append(ind)
 
         # fix total amount removing taxes diferent from tax_add type
-        if final_credit_ind > -1:
-            move_lines[final_credit_ind][2]['credit'] = invoice_browse.amount_total - total_taxes_credit
+        if final_credit_inds:
+            total_taxes_included = total_taxes_credit - ( invoice_browse.amount_total - invoice_browse.amount_untaxed )
+            for cr_ind in final_credit_inds:
+                tax_included_prod = (total_taxes_included / invoice_browse.amount_untaxed) * move_lines[cr_ind][2]['credit']
+                move_lines[cr_ind][2]['credit'] = move_lines[cr_ind][2]['credit'] - tax_included_prod
 
         # create a credit entry for each debit entry for tax_retain
         for mv_ind in tax_retained_itens:

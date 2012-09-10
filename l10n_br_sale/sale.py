@@ -164,7 +164,6 @@ class sale_order(osv.osv):
         return result
 
     def _make_invoice(self, cr, uid, order, lines, context=None):
-        journal_obj = self.pool.get('account.journal')
         inv_obj = self.pool.get('account.invoice')
         obj_invoice_line = self.pool.get('account.invoice.line')
         lines_service = []
@@ -316,8 +315,6 @@ class sale_order_line(osv.osv):
             return result
 
         product_tmpl_id = self.pool.get('product.product').read(cr, uid, product, ['product_tmpl_id'])['product_tmpl_id'][0]
-        print 'TASD'
-        print product_tmpl_id
         default_product_category = self.pool.get('l10n_br_account.product.operation.category').search(cr, uid, [('product_tmpl_id', '=', product_tmpl_id), ('fiscal_operation_category_source_id', '=', fiscal_operation_category_id)])
 
         if not default_product_category:
@@ -378,8 +375,10 @@ class sale_order_line(osv.osv):
             for so_line in self.browse(cr, uid, ids):
                 for inv_line in so_line.invoice_lines:
                     if inv_line.invoice_id.state in ('draft'):
+                        #FIXME: de onde vem order?
                         company_id = self.pool.get('res.company').browse(cr, uid, order.company_id.id)
                         if not company_id.document_serie_product_ids:
+                            #FIXME: de onde vem order?
                             raise osv.except_osv(_('No fiscal document serie found !'), _("No fiscal document serie found for selected company %s and fiscal operation: '%s'") % (order.company_id.name, order.fiscal_operation_id.code))
                         if inv_line.invoice_id.id not in inv_ids:
                             inv_ids.append(inv_line.id)

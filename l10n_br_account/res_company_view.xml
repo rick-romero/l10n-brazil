@@ -40,6 +40,10 @@
 								<newline/>
 								<field colspan="4" name="nfse_source_folder" />
 								<field colspan="4" name="nfse_destination_folder" />
+								<field colspan="4" name="nfse_server_host" />
+								<field colspan="4" name="nfse_server_address" />
+								<field colspan="4" name="nfse_cert_file" />
+								<field colspan="4" name="nfse_cert_password" password="True" />
 							</page>
 						</notebook>
 				</page>

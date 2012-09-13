@@ -46,6 +46,12 @@ class res_company(osv.osv):
                 'nfse_version': fields.selection([('1.00', '1.00')], 'Versão NFse', required=True),
                 'nfse_source_folder': fields.char('Pasta de Origem', size=254),
                 'nfse_destination_folder': fields.char('Pasta de Destino', size=254),
+				'nfse_server_host': fields.char('Servidor', size=254),
+			    'nfse_server_address': fields.char('Endereço do serviço',
+                                                   size=254),
+			    'nfse_cert_file': fields.binary('Certificado'),
+			    'nfse_cert_password': fields.char('Senha do certificado',
+                                                  size=64),
     }
 
     _defaults = {

@@ -34,6 +34,8 @@
 								<newline/>
 								<field colspan="4" name="nfe_source_folder" />
 								<field colspan="4" name="nfe_destination_folder" />
+                                <field colspan="4" name="nfe_cert_file" />
+                                <field colspan="4" name="nfe_cert_password" password="True" />
 							</page>
 							<page string="NFse">
 								<field name="nfse_version" required="1" />

@@ -25,7 +25,7 @@
     'author' : 'Akretion, OpenERP Brasil',
     'website' : 'http://openerpbrasil.org',
     'version' : '0.6',
-    'depends' : ['l10n_br'],
+    'depends' : ['base', 'l10n_br'],
     'init_xml': [
                 'res.country.state.csv',
                 'l10n_br_base.city.csv',

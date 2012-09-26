@@ -28,7 +28,7 @@
     'depends': [
         'account_fiscal_position_rule_stock',
         'stock',
-        'l10n_br',
+        'l10n_br_account',
         ],
     'init_xml': [
                  'l10n_br_stock_data.xml',

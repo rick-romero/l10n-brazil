@@ -54,6 +54,7 @@ It's important to note however that this module lack many implementations to use
         'data/account.tax.code.template.csv',
         'data/account.account.template.csv',
         'data/l10n_br.natureza_juridica.csv',
+        'data/l10n_br.porte.csv',
         'data/l10n_br_account_chart_template.xml',
         'data/account_tax_template.xml',
         'data/l10n_br_data.xml',

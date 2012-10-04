@@ -86,16 +86,20 @@ class l10n_br_natureza_juridica(osv.osv):
     _name = 'l10n_br.natureza_juridica'
     _description = u'Natureza Jurídica'
     _columns = {
-                'code': fields.char('Code', size=8, required=True),
-                'name': fields.char('Description', size=64),
-                }
+        'code': fields.char(u'Código', size=5, required=True),
+        'name': fields.char(u'Descrição', size=100),
+        }
 
-    def name_search(self, cr, user, name, args=None, operator='ilike', context=None, limit=80):
+    def name_search(self, cr, user, name, args=None, operator='ilike',
+                    context=None, limit=80):
         if not args:
             args = []
         if context is None:
             context = {}
-        ids = self.search(cr, user, ['|', ('name', operator, name), ('code', operator, name)] + args, limit=limit, context=context)
+        ids = self.search(cr, user, [
+            '|', ('name', operator, name), ('code', operator, name)
+            ] + args, limit=limit, context=context)
+
         return self.name_get(cr, user, ids, context)
 
     def name_get(self, cr, uid, ids, context=None):
@@ -111,5 +115,16 @@ class l10n_br_natureza_juridica(osv.osv):
         return res
 
 l10n_br_natureza_juridica()
+
+
+class l10n_br_porte(osv.osv):
+    _name = 'l10n_br.porte'
+    _description = u'Porte'
+    _columns = {
+        'name': fields.char(u'Porte', size=60, required=True),
+        'description': fields.char(u'Descrição', size=500),
+        }
+
+l10n_br_porte()
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

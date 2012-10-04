@@ -86,6 +86,10 @@
               position="before">
               <separator string="Informações da Empresa" colspan="4" />
               <field name="natureza_juridica_id" />
+              <field name="porte_id" />
+              <field name="optante_simples_nacional" 
+                attrs="{'readonly':[('porte_id','=',3)]}" />
+              <field name="participa_pat" />
             </xpath>
           </field>
         </record>

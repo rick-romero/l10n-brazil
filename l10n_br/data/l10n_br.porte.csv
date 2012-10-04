@@ -1,0 +1,4 @@
+"id","name","description"
+"porte_1","Microempresa","Considera-se microempresa a sociedade empresária, a sociedade simples, a empresa individual de responsabilidade limitada e o empresário, que auferir, em cada ano-calendário, receita bruta igual ou inferior a R$ 360.000,00 (trezentos e sessenta mil reais). (Leis Complementares nºs 123/2006 e 139/2011)."
+"porte_2","Empresa de pequeno porte","Considera-se empresa de pequeno porte a sociedade empresária, a sociedade simples, a empresa individual de responsabilidade limitada e o empresário, que auferir, em cada ano-calendário, receita bruta superior a R$ 360.000,00 (trezentos e sessenta mil reais) e igual ou inferior a R$ 3.600.000,00 (três milhões e seiscentos mil reais). (Leis Complementares nºs 123/2006 e 139/2011)."
+"porte_3","Empresa/órgão não classificados nos itens anteriores","Este campo só deve ser selecionado se o estabelecimento não se enquadrar como microempresa ou como empresa de pequeno porte."

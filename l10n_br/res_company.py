@@ -30,4 +30,11 @@ class res_company(osv.osv):
         'natureza_juridica_id': fields.many2one(
             'l10n_br.natureza_juridica', u'Natureza Jurídica', required=True
             ),
+        'porte_id': fields.many2one('l10n_br.porte', u'Porte', required=True),
+        'optante_simples_nacional': fields.boolean(
+            u'Optante pelo Simples Nacional'
+            ),
+        'participa_pat': fields.boolean(
+            u'Participa do Programa de Alimentação do Trabalhador (PAT)'
+            ),
         }

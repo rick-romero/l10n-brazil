@@ -46,11 +46,22 @@ class l10n_br_hr_etnia(osv.osv):
 l10n_br_hr_etnia()
 
 
+class l10n_br_hr_grau_de_instrucao(osv.osv):
+    _name = 'l10n_br_hr.grau_de_instrucao'
+    _description = u'Grau de Instrução'
+    _columns = {
+        'code': fields.char(u'Código', size=2, required=True),
+        'name': fields.char(u'Descrição', size=150, required=True),
+        }
+
+l10n_br_hr_grau_de_instrucao()
+
+
 class hr_employee(osv.osv):
     _inherit = 'hr.employee'
     _columns = {
         'nationality_id': fields.many2one(
-            'l10n_br_hr.nationality', _(u'Nacionalidade')
+            'l10n_br_hr.nationality', u'Nacionalidade'
             ),
         'etnia_id': fields.many2one('l10n_br_hr.etnia', _(u'Etnia')),
         'deficiencia': fields.selection((
@@ -62,6 +73,9 @@ class hr_employee(osv.osv):
             ('5', u'Múltipla'),
             ('6', u'Reabilitado'),
             ), u'Deficiência'),
+        'grau_de_instrucao_id': fields.many2one(
+            'l10n_br_hr.grau_de_instrucao', u'Grau de Instrução'
+            ),
         }
 
 hr_employee()

@@ -12,6 +12,7 @@
         <xpath
           expr="/form/notebook/page[@string='Personal Information']/group/field[@name='country_id']"
           position="replace">
+          <field name="grau_de_instrucao_id" />
           <field name="etnia_id" />
           <field name="deficiencia" />
           <field name="nationality_id" />

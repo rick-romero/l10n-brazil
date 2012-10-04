@@ -35,12 +35,33 @@ class l10n_br_hr_nationality(osv.osv):
 l10n_br_hr_nationality()
 
 
+class l10n_br_hr_etnia(osv.osv):
+    _name = 'l10n_br_hr.etnia'
+    _description = u'Etnia'
+    _columns = {
+        'code': fields.char(u'Código', size=2, required=True),
+        'name': fields.char(u'Descrição', size=60, required=True),
+        }
+
+l10n_br_hr_etnia()
+
+
 class hr_employee(osv.osv):
     _inherit = 'hr.employee'
     _columns = {
         'nationality_id': fields.many2one(
             'l10n_br_hr.nationality', _(u'Nacionalidade')
             ),
+        'etnia_id': fields.many2one('l10n_br_hr.etnia', _(u'Etnia')),
+        'deficiencia': fields.selection((
+            ('0', u'Não Possui'),
+            ('1', u'Física'),
+            ('2', u'Auditiva'),
+            ('3', u'Visual'),
+            ('4', u'Intelectual (Mental)'),
+            ('5', u'Múltipla'),
+            ('6', u'Reabilitado'),
+            ), u'Deficiência'),
         }
 
 hr_employee()

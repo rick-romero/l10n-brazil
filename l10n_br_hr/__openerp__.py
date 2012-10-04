@@ -31,7 +31,10 @@
     Brazilian Localization for Human Resources
     """,
     'depends': ['hr'],
-    'init_xml': ['data/l10n_br_hr.nationality.csv'],
+    'init_xml': [
+        'data/l10n_br_hr.nationality.csv',
+        'data/l10n_br_hr.etnia.csv',
+        ],
     'update_xml': ['l10n_br_hr_view.xml'],
     'demo_xml': [],
     'test': [],

@@ -23,6 +23,7 @@
 
 from osv import osv, fields
 from tools.translate import _
+import re
 
 class l10n_br_hr_nationality(osv.osv):
     _name = 'l10n_br_hr.nationality'
@@ -83,6 +84,17 @@ class hr_employee(osv.osv):
         'carteira_de_trabalho_serie': fields.integer(
             u'Número de Série da Carteira de Trabalho', size=5
             ),
+        'cpf': fields.char(u'CPF', size=14),
         }
+
+    def onchange_mask_cpf(self, cr, uid, ids, cpf):
+        if not cpf:
+            return {}
+        val = re.sub('[^0-9]', '', cpf)
+
+        if len(val) >= 11:
+            cpf = "%s.%s.%s-%s" % (val[0:3], val[3:6], val[6:9], val[9:11])
+
+        return {'value': {'cpf': cpf}}
 
 hr_employee()

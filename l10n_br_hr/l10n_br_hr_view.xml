@@ -18,6 +18,7 @@
           <field name="nationality_id" />
           <field name="ano_de_chegada" attrs="{'readonly':[('nationality_id','=',1)]}"/>
           <field name="country_id" string="País" />
+          <field name="cpf" on_change="onchange_mask_cpf(cpf)"/> 
           <field name="carteira_de_trabalho_numero" />
           <field name="carteira_de_trabalho_serie" />
         </xpath>

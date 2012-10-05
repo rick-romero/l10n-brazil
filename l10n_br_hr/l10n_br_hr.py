@@ -61,6 +61,7 @@ l10n_br_hr_grau_de_instrucao()
 class hr_employee(osv.osv):
     _inherit = 'hr.employee'
     _columns = {
+        'pis_pasep': fields.char(u'PIS/PASEP', size=15),
         'nationality_id': fields.many2one(
             'l10n_br_hr.nationality', u'Nacionalidade'
             ),
@@ -87,6 +88,77 @@ class hr_employee(osv.osv):
         'cpf': fields.char(u'CPF', size=14),
         }
 
+    def _validate_pis_pasep(self, cr, uid, ids):
+        employee = self.browse(cr, uid, ids[0])
+
+        if not employee.pis_pasep:
+            return True
+
+        digits = []
+        for c in employee.pis_pasep:
+            if c == '.' or c == ' ' or c == '\t':
+                continue
+
+            if c == '-':
+                if len(digits) != 10:
+                    return False
+                continue
+
+            if c.isdigit():
+                digits.append(int(c))
+                continue
+
+            return False
+        if len(digits) != 11:
+            return False
+
+        height = [int(x) for x in "3298765432"]
+
+        total = 0
+
+        for i in range(10):
+            total += digits[i] * height[i]
+
+        rest = total % 11
+        if rest != 0:
+            rest = 11 - rest
+        return (rest == digits[10])
+
+    def _validate_cpf(self, cr, uid, ids):
+        employee = self.browse(cr, uid, ids[0])
+        if not employee.cpf:
+            return True
+
+        cpf = employee.cpf
+
+        if not cpf.isdigit():
+            cpf = re.sub('[^0-9]', '', cpf)
+
+        if len(cpf) != 11:
+            return False
+
+        cpf = map(int, cpf)
+        novo = cpf[:9]
+
+        while len(novo) < 11:
+            r = sum([(len(novo) + 1 - i) * v for i, v in enumerate(novo)]) % 11
+
+            if r > 1:
+                f = 11 - r
+            else:
+                f = 0
+            novo.append(f)
+
+        if novo == cpf:
+            return True
+
+        return False
+
+    _constraints = [
+        (_validate_pis_pasep, u'Número PIS/PASEP é inválido.', ['pis_pasep']),
+        (_validate_cpf, u'CPF inválido.', ['cpf']),
+        ]
+
     def onchange_mask_cpf(self, cr, uid, ids, cpf):
         if not cpf:
             return {}
@@ -96,5 +168,19 @@ class hr_employee(osv.osv):
             cpf = "%s.%s.%s-%s" % (val[0:3], val[3:6], val[6:9], val[9:11])
 
         return {'value': {'cpf': cpf}}
+
+    def onchange_mask_pis_pasep(self, cr, uid, ids, pis_pasep):
+        if not pis_pasep:
+            return {}
+        val = re.sub('[^0-9]', '', pis_pasep)
+
+        if len(val) >= 11:
+            pis_pasep = "%s.%s.%s-%s" % (val[0:3], val[3:8], val[8:10], val[10])
+
+        # FIXME: check if it is valid a PIS with 12 digits
+        #elif len(val) > 11:
+        #    pis_pasep = "%s.%s.%s-%s" % (val[0:4], val[4:9], val[9:11], val[11])
+
+        return {'value': {'pis_pasep': pis_pasep}}
 
 hr_employee()

@@ -77,6 +77,12 @@ class hr_employee(osv.osv):
             'l10n_br_hr.grau_de_instrucao', u'Grau de Instrução'
             ),
         'ano_de_chegada': fields.integer(u'Ano de Chegada no Brasil'),
+        'carteira_de_trabalho_numero': fields.integer(
+            u'Número da Carteira de Trabalho', size=8
+            ),
+        'carteira_de_trabalho_serie': fields.integer(
+            u'Número de Série da Carteira de Trabalho', size=5
+            ),
         }
 
 hr_employee()

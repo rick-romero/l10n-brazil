@@ -16,6 +16,7 @@
           <field name="etnia_id" />
           <field name="deficiencia" />
           <field name="nationality_id" />
+          <field name="ano_de_chegada" attrs="{'readonly':[('nationality_id','=',1)]}"/>
           <field name="country_id" string="País" />
         </xpath>
 

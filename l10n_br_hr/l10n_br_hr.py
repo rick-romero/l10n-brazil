@@ -76,6 +76,7 @@ class hr_employee(osv.osv):
         'grau_de_instrucao_id': fields.many2one(
             'l10n_br_hr.grau_de_instrucao', u'Grau de Instrução'
             ),
+        'ano_de_chegada': fields.integer(u'Ano de Chegada no Brasil'),
         }
 
 hr_employee()

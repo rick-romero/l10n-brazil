@@ -225,6 +225,23 @@
 				</field>
 			</field>
 		</record>
-		
+
+        <record model="ir.ui.view" id="l10n_br_base_view_company_form">
+          <field name="name">l10n_br_base.company.form</field>
+          <field name="model">res.company</field>
+          <field name="inherit_id" ref="base.view_company_form" />
+          <field name="type">form</field>
+          <field name="arch" type="xml">
+            <xpath expr="/form/notebook/page[@string='General Information']/field[@name='state_id']"
+              position="after">
+              <field name="l10n_br_city_id" on_change="onchange_l10n_br_city_id(l10n_br_city_id)" />
+            </xpath>
+            <xpath expr="/form/notebook/page[@string='General Information']/field[@name='city']"
+              position="replace">
+              <field name="city" invisible="1" />
+            </xpath>
+          </field>
+        </record>
+
 	</data>
 </openerp>

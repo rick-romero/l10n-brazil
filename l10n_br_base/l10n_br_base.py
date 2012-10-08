@@ -22,7 +22,7 @@ from osv import osv, fields
 class l10n_br_base_city(osv.osv):
 
     _name = 'l10n_br_base.city'
-    _description = 'Municipios e Códigos do IBGE'
+    _description = u'Cidades e Códigos do IBGE'
 
     _columns = {
                 'name': fields.char('Nome', size=64, required=True),

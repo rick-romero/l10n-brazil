@@ -245,9 +245,9 @@ class hr_contract(osv.osv):
         'informacao_da_admissao': fields.selection((
             ('a', 'Admissão/Provimento'),
             ('t', 'Transferência/Movimentação'),
-            ), u'Ação'),
+            ), u'Ação', required=True),
         'tipo_de_admissao_id': fields.many2one(
-            'l10n_br_hr.tipo_de_admissao', u'Tipo de Admissão'
+            'l10n_br_hr.tipo_de_admissao', u'Tipo de Admissão', required=True
             ),
         'tipo_de_salario_contratual': fields.selection((
             ('1', u'Mensal'),

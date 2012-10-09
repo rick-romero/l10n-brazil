@@ -9,19 +9,29 @@
       <field name="inherit_id" ref="hr.view_employee_form" />
       <field name="arch" type="xml">
 
+        <xpath expr="/form/notebook/page[@string='Personal Information']/group"
+          position="before">
+          <group col="2" colspan="2">
+            <separator string="Informações Gerais" colspan="2" />
+            <field name="grau_de_instrucao_id" />
+            <field name="etnia_id" />
+            <field name="deficiencia" />
+          </group>
+          <group col="2" colspan="2">
+            <separator string="Documentos" colspan="2" />
+            <field name="cpf" on_change="onchange_mask_cpf(cpf)" />
+            <field name="pis_pasep" on_change="onchange_mask_pis_pasep(pis_pasep)" />
+            <field name="carteira_de_trabalho_numero" />
+            <field name="carteira_de_trabalho_serie" />
+          </group>
+        </xpath>
+
         <xpath
           expr="/form/notebook/page[@string='Personal Information']/group/field[@name='country_id']"
           position="replace">
-          <field name="grau_de_instrucao_id" />
-          <field name="etnia_id" />
-          <field name="deficiencia" />
-          <field name="nationality_id" />
-          <field name="ano_de_chegada" attrs="{'readonly':[('nationality_id','=',1)]}" />
-          <field name="country_id" string="País" />
-          <field name="cpf" on_change="onchange_mask_cpf(cpf)" />
-          <field name="pis_pasep" on_change="onchange_mask_pis_pasep(pis_pasep)" />
-          <field name="carteira_de_trabalho_numero" />
-          <field name="carteira_de_trabalho_serie" />
+            <field name="nationality_id" />
+            <field name="country_id" string="País" />
+            <field name="ano_de_chegada" attrs="{'readonly':[('nationality_id','=',1)]}" />
         </xpath>
 
       </field>
@@ -41,7 +51,7 @@
             <field name="ocupacao_id" />
             <field name="vinculo_id" />
             <group col="4" colspan="4">
-              <separator colspan="4" string="Local de Trabalho"/>
+              <separator colspan="4" string="Local de Trabalho" />
               <field name="local_de_trabalho_estado" />
               <field name="local_de_trabalho_cidade" />
             </group>

@@ -35,6 +35,7 @@
         'data/hr.holidays.status.csv',
         'data/l10n_br_hr.etnia.csv',
         'data/l10n_br_hr.grau_de_instrucao.csv',
+        'data/l10n_br_hr.motivo_de_desligamento.csv',
         'data/l10n_br_hr.nationality.csv',
         'data/l10n_br_hr.ocupacao.csv',
         'data/l10n_br_hr.tipo_de_admissao.csv',

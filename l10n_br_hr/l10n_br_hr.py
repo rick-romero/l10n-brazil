@@ -115,6 +115,17 @@ class l10n_br_hr_vinculo(osv.osv):
 l10n_br_hr_vinculo()
 
 
+class l10n_br_hr_motivo_de_desligamento(osv.osv):
+    _name = 'l10n_br_hr.motivo_de_desligamento'
+    _description = u'Motivo de Desligamento'
+    _columns = {
+        'code': fields.char(u'Código', size=2, required=True),
+        'name': fields.char(u'Descrição', size=150, required=True),
+        }
+
+l10n_br_hr_motivo_de_desligamento()
+
+
 class hr_employee(osv.osv):
     _inherit = 'hr.employee'
     _columns = {
@@ -271,6 +282,14 @@ class hr_contract(osv.osv):
             'l10n_br_base.city', u'Cidade',
             domain="[('state_id','=',local_de_trabalho_estado)]",
             ),
+        'informacao_de_desligamento': fields.selection((
+            ('d', 'Desligamento/Vacância'),
+            ('t', 'Transferência/Movimentação'),
+            ), u'Ação de Desligamento'),
+        'data_de_desligamento': fields.date(u'Data de Desligamento'),
+        'motivo_de_desligamento_id': fields.many2one(
+            'l10n_br_hr.motivo_de_desligamento', u'Motivo de Desligamento'
+            ),
         }
 
     def _get_default_company_address(self, cr, uid, context):
@@ -310,8 +329,7 @@ hr_contract()
 class hr_holidays_status(osv.osv):
     _inherit = 'hr.holidays.status'
     _columns = {
-        'name': fields.char(u'Motivo de Afastamento', size=128, required=True,
-                            translate=True),
+        'name': fields.char(u'Motivo de Afastamento', size=128, required=True),
         'code': fields.char(u'Código', size=2),
         }
 

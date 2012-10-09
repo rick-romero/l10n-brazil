@@ -32,6 +32,7 @@
     """,
     'depends': ['hr', 'l10n_br_base'],
     'init_xml': [
+        'data/hr.holidays.status.csv',
         'data/l10n_br_hr.etnia.csv',
         'data/l10n_br_hr.grau_de_instrucao.csv',
         'data/l10n_br_hr.nationality.csv',

@@ -305,3 +305,25 @@ class hr_contract(osv.osv):
         }
 
 hr_contract()
+
+
+class hr_holidays_status(osv.osv):
+    _inherit = 'hr.holidays.status'
+    _columns = {
+        'name': fields.char(u'Motivo de Afastamento', size=128, required=True,
+                            translate=True),
+        'code': fields.char(u'Código', size=2),
+        }
+
+    def name_search(self, cr, user, name, args=None, operator='ilike',
+                    context=None, limit=80):
+        if not args:
+            args = []
+        if context is None:
+            context = {}
+        ids = self.search(cr, user, [('code', '!=', '')] + args, limit=limit,
+                          context=context)
+
+        return self.name_get(cr, user, ids, context)
+
+hr_holidays_status()

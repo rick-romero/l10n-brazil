@@ -1,0 +1,8 @@
+"id","code","name","color_name"
+"holidays_status_1","10","Acidente do trabalho típico (que ocorre no exercício de atividades profissionais a serviço da empresa)","red"
+"holidays_status_2","20","Acidente do trabalho de trajeto (ocorrido no trajeto residência - trabalho - residência)","red"
+"holidays_status_3","30","Doença relacionada ao trabalho","red"
+"holidays_status_4","40","Doença não relacionada ao trabalho","red"
+"holidays_status_5","50","Licença-maternidade","black"
+"holidays_status_6","60","Serviço militar obrigatório","black"
+"holidays_status_7","70","Licença sem vencimento/sem remuneração","brown"

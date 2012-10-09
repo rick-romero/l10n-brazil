@@ -30,11 +30,14 @@
     "description": """
     Brazilian Localization for Human Resources
     """,
-    'depends': ['hr'],
+    'depends': ['hr', 'l10n_br_base'],
     'init_xml': [
         'data/l10n_br_hr.etnia.csv',
         'data/l10n_br_hr.grau_de_instrucao.csv',
         'data/l10n_br_hr.nationality.csv',
+        'data/l10n_br_hr.ocupacao.csv',
+        'data/l10n_br_hr.tipo_de_admissao.csv',
+        'data/l10n_br_hr.vinculo.csv',
         ],
     'update_xml': ['l10n_br_hr_view.xml'],
     'demo_xml': [],

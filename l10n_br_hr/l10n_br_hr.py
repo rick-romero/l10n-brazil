@@ -58,6 +58,63 @@ class l10n_br_hr_grau_de_instrucao(osv.osv):
 l10n_br_hr_grau_de_instrucao()
 
 
+class l10n_br_hr_tipo_de_admissao(osv.osv):
+    _name = 'l10n_br_hr.tipo_de_admissao'
+    _description = u'Tipo de Admissão'
+    _columns = {
+        'code': fields.char(u'Código', size=2, required=True),
+        'name': fields.char(u'Descrição', size=150, required=True),
+        }
+
+l10n_br_hr_tipo_de_admissao()
+
+
+class l10n_br_hr_ocupacao(osv.osv):
+    _name = 'l10n_br_hr.ocupacao'
+    _description = u'Ocupação'
+    _columns = {
+        'code': fields.char(u'Código', size=5, required=True),
+        'name': fields.char(u'Descrição', size=100),
+        }
+
+    def name_search(self, cr, user, name, args=None, operator='ilike',
+                    context=None, limit=80):
+        if not args:
+            args = []
+        if context is None:
+            context = {}
+        ids = self.search(cr, user, [
+            '|', ('name', operator, name), ('code', operator, name)
+            ] + args, limit=limit, context=context)
+
+        return self.name_get(cr, user, ids, context)
+
+    def name_get(self, cr, uid, ids, context=None):
+        if not ids:
+            return []
+        reads = self.read(cr, uid, ids, ['name', 'code'], context=context)
+        res = []
+        for record in reads:
+            name = record['name']
+            if record['code']:
+                name = record['code'] + ' - ' + name
+            res.append((record['id'], name))
+        return res
+
+l10n_br_hr_ocupacao()
+
+
+class l10n_br_hr_vinculo(osv.osv):
+    _name = 'l10n_br_hr.vinculo'
+    _description = u'Vínculo Empregatício'
+    _columns = {
+        'code': fields.char(u'Código', size=2, required=True),
+        'name': fields.char(u'Descrição', size=150, required=True),
+        }
+
+l10n_br_hr_vinculo()
+
+
 class hr_employee(osv.osv):
     _inherit = 'hr.employee'
     _columns = {
@@ -177,10 +234,74 @@ class hr_employee(osv.osv):
         if len(val) >= 11:
             pis_pasep = "%s.%s.%s-%s" % (val[0:3], val[3:8], val[8:10], val[10])
 
-        # FIXME: check if it is valid a PIS with 12 digits
-        #elif len(val) > 11:
-        #    pis_pasep = "%s.%s.%s-%s" % (val[0:4], val[4:9], val[9:11], val[11])
-
         return {'value': {'pis_pasep': pis_pasep}}
 
 hr_employee()
+
+
+class hr_contract(osv.osv):
+    _inherit = 'hr.contract'
+    _columns = {
+        'informacao_da_admissao': fields.selection((
+            ('a', 'Admissão/Provimento'),
+            ('t', 'Transferência/Movimentação'),
+            ), u'Ação'),
+        'tipo_de_admissao_id': fields.many2one(
+            'l10n_br_hr.tipo_de_admissao', u'Tipo de Admissão'
+            ),
+        'tipo_de_salario_contratual': fields.selection((
+            ('1', u'Mensal'),
+            ('2', u'Quinzenal'),
+            ('3', u'Semanal'),
+            ('4', u'Diário'),
+            ('5', u'Horário'),
+            ('6', u'Tarefa'),
+            ('7', u'Outros'),
+            ), u'Tipo de Salário Contratual'),
+        'ocupacao_id': fields.many2one(
+            'l10n_br_hr.ocupacao', u'Ocupação'
+            ),
+        'vinculo_id': fields.many2one(
+            'l10n_br_hr.vinculo', u'Vínculo Empregatício'
+            ),
+        'local_de_trabalho_estado': fields.many2one(
+            'res.country.state', u'Estado'
+            ),
+        'local_de_trabalho_cidade': fields.many2one(
+            'l10n_br_base.city', u'Cidade',
+            domain="[('state_id','=',local_de_trabalho_estado)]",
+            ),
+        }
+
+    def _get_default_company_address(self, cr, uid, context):
+        company_obj = self.pool.get('res.company')
+        company_id = company_obj._company_default_get(cr, uid, context=context)
+        company = company_obj.browse(cr, uid, company_id, context=context)
+        part_obj = self.pool.get('res.partner')
+        address_obj = self.pool.get('res.partner.address')
+        address_data = part_obj.address_get(cr, uid, [company.partner_id.id],
+                                            adr_pref=['default'])
+        if address_data['default']:
+            address = address_obj.browse(cr, uid, address_data['default'],
+                                         context=context)
+            return address
+        return None
+
+    def _get_default_company_state_id(self, cr, uid, context):
+        address = self._get_default_company_address(cr, uid, context)
+        if address:
+            return address.state_id.id
+        return None
+
+    def _get_default_company_city_id(self, cr, uid, context):
+        address = self._get_default_company_address(cr, uid, context)
+        if address:
+            return address.l10n_br_city_id.id
+        return None
+
+    _defaults = {
+        'local_de_trabalho_estado': _get_default_company_state_id,
+        'local_de_trabalho_cidade': _get_default_company_city_id,
+        }
+
+hr_contract()

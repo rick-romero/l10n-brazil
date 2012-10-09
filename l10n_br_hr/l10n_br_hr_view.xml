@@ -2,7 +2,7 @@
 <openerp>
   <data>
 
-    <record id="view_l10n_br_hr_employee_nationality_form" model="ir.ui.view">
+    <record id="view_l10n_br_hr_employee_form" model="ir.ui.view">
       <field name="name">l10n_br_hr.employee.form</field>
       <field name="model">hr.employee</field>
       <field name="type">form</field>
@@ -16,14 +16,37 @@
           <field name="etnia_id" />
           <field name="deficiencia" />
           <field name="nationality_id" />
-          <field name="ano_de_chegada" attrs="{'readonly':[('nationality_id','=',1)]}"/>
+          <field name="ano_de_chegada" attrs="{'readonly':[('nationality_id','=',1)]}" />
           <field name="country_id" string="País" />
-          <field name="cpf" on_change="onchange_mask_cpf(cpf)"/>
-          <field name="pis_pasep" on_change="onchange_mask_pis_pasep(pis_pasep)"/> 
+          <field name="cpf" on_change="onchange_mask_cpf(cpf)" />
+          <field name="pis_pasep" on_change="onchange_mask_pis_pasep(pis_pasep)" />
           <field name="carteira_de_trabalho_numero" />
           <field name="carteira_de_trabalho_serie" />
         </xpath>
 
+      </field>
+    </record>
+
+    <record id="view_l10n_br_hr_contract_form" model="ir.ui.view">
+      <field name="name">l10n_br_hr.contract.form</field>
+      <field name="model">hr.contract</field>
+      <field name="type">form</field>
+      <field name="inherit_id" ref="hr_contract.hr_contract_view_form" />
+      <field name="arch" type="xml">
+        <notebook colspan="4">
+          <page string="Informações da Admissão">
+            <field name="informacao_da_admissao" />
+            <field name="tipo_de_admissao_id" />
+            <field name="tipo_de_salario_contratual" />
+            <field name="ocupacao_id" />
+            <field name="vinculo_id" />
+            <group col="4" colspan="4">
+              <separator colspan="4" string="Local de Trabalho"/>
+              <field name="local_de_trabalho_estado" />
+              <field name="local_de_trabalho_cidade" />
+            </group>
+          </page>
+        </notebook>
       </field>
     </record>
 

@@ -30,7 +30,7 @@
     "description": """
     Brazilian Localization for Human Resources
     """,
-    'depends': ['hr', 'l10n_br_base'],
+    'depends': ['l10n_br_base', 'hr_contract', 'hr_holidays'],
     'init_xml': [
         'data/hr.holidays.status.csv',
         'data/l10n_br_hr.etnia.csv',

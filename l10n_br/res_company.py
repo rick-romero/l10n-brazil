@@ -37,4 +37,7 @@ class res_company(osv.osv):
         'participa_pat': fields.boolean(
             u'Participa do Programa de Alimentação do Trabalhador (PAT)'
             ),
+        'responsavel_legal_id': fields.many2one(
+            'res.partner', u'Responsável Legal', required=True,
+            ),
         }

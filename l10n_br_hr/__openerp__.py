@@ -40,6 +40,7 @@
         'data/l10n_br_hr.ocupacao.csv',
         'data/l10n_br_hr.tipo_de_admissao.csv',
         'data/l10n_br_hr.vinculo.csv',
+        'security/ir.model.access.csv',
         ],
     'update_xml': [
         'l10n_br_hr_view.xml',

@@ -23,6 +23,8 @@
 
 from osv import osv, fields
 from tools.translate import _
+import re
+
 
 class res_company(osv.osv):
     _inherit = 'res.company'
@@ -40,4 +42,60 @@ class res_company(osv.osv):
         'responsavel_legal_id': fields.many2one(
             'res.partner', u'Responsável Legal', required=True,
             ),
+        'legal_name' : fields.char(
+            u'Razão Social', size=128, required=True,
+            help=u'Nome utilizado em documentos fiscais'
+            ),
+        'cnpj': fields.char(u'CNPJ', size=18, required=True),
+        'inscr_est': fields.char(u'Inscr. Estadual', size=16),
+        'inscr_mun': fields.char(u'Inscr. Municipal', size=18),
+        'suframa': fields.char(u'Suframa', size=18),
         }
+
+    def _validate_cnpj(self, cr, uid, ids):
+        company = self.browse(cr, uid, ids[0])
+        if not company.cnpj:
+            return True
+
+        cnpj = company.cnpj
+
+        if not cnpj.isdigit():
+            cnpj = re.sub('[^0-9]', '', cnpj)
+
+        if len(cnpj) != 14:
+            return False
+
+        cnpj = map(int, cnpj)
+        novo = cnpj[:12]
+
+        prod = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+        while len(novo) < 14:
+            r = sum([x * y for (x, y) in zip(novo, prod)]) % 11
+            if r > 1:
+                f = 11 - r
+            else:
+                f = 0
+            novo.append(f)
+            prod.insert(0, 6)
+
+        if novo == cnpj:
+            return True
+
+        return False
+
+    _constraints = [
+        (_validate_cnpj, u'CNPJ inválido.', ['cnpj']),
+        ]
+
+    def onchange_mask_cnpj(self, cr, uid, ids, cnpj):
+        if not cnpj:
+            return {}
+        val = re.sub('[^0-9]', '', cnpj)
+
+        if len(val) >= 14:
+            cnpj = "%s.%s.%s/%s-%s" % (val[0:2], val[2:5], val[5:8], val[8:12], val[12:14])
+
+        return {'value': {'cnpj': cnpj}}
+
+
+res_company()

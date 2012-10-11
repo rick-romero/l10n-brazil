@@ -76,27 +76,5 @@
 		
 		<menuitem name="Tax Situation Code" id="menu_action_l10n_br_cst" parent="account.next_id_27" sequence="99" action="action_l10n_br_cst_form"/>
 
-        <record id="view_l10n_br_company_natureza_juridica_form" model="ir.ui.view">
-          <field name="name">l10n_br.company.form</field>
-          <field name="model">res.company</field>
-          <field name="type">form</field>
-          <field name="inherit_id" ref="base.view_company_form" />
-          <field name="arch" type="xml">
-            <xpath expr="/form[@string='Company']/group/group/field[@name='parent_id']"
-              position="after">
-              <field name="responsavel_legal_id" />
-            </xpath>
-            <xpath expr="/form/notebook/page/separator[@string='Address Information']"
-              position="before">
-              <separator string="Informações da Empresa" colspan="4" />
-              <field name="natureza_juridica_id" />
-              <field name="porte_id" />
-              <field name="optante_simples_nacional" 
-                attrs="{'readonly':[('porte_id','=',3)]}" />
-              <field name="participa_pat" />
-            </xpath>
-          </field>
-        </record>
-
 	</data>
 </openerp>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+  <data>
+
+    <menuitem id="menu_l10n_br_hr_rais" name="RAIS" parent="hr.menu_hr_root"
+      sequence="10" />
+
+    <record model="ir.ui.view" id="view_l10n_br_hr_rais_generate_form">
+      <field name="name">l10n_br_hr.rais</field>
+      <field name="model">l10n_br_hr.rais</field>
+      <field name="type">form</field>
+      <field name="arch" type="xml">
+        <form string="Gerar Arquivo RAIS">
+          <field name="state" invisible="1" />
+          <group col="3" colspan="3">
+            <group colspan="3" states="init">
+              <label colspan="3"
+                string="Esta ação gerará o arquivo RAIS da empresa selecionada." />
+              <field colspan="3" name="company_id" />
+            </group>
+
+            <group colspan="3" states="done">
+              <field name="message" widget="text_tag" nolabel="1"
+                readonly="1" />
+            </group>
+
+            <group col="3" colspan="3">
+              <separator string="" colspan="3" />
+              <label colspan="1" width="200" />
+              <button string="Cancelar" special="cancel" states="init"
+                icon="gtk-cancel" />
+              <button name="generate_file" string="Prosseguir" type="object"
+                states="init" icon="gtk-go-forward" />
+              <button string="Fechar" special="cancel" states="done"
+                icon="gtk-ok" />
+            </group>
+          </group>
+        </form>
+      </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_l10n_br_hr_rais_generate_form">
+      <field name="name">Gerar Arquivo</field>
+      <field name="type">ir.actions.act_window</field>
+      <field name="res_model">l10n_br_hr.rais</field>
+      <field name="view_mode">form</field>
+      <field name="view_type">form</field>
+      <field name="view_id" ref="view_l10n_br_hr_rais_generate_form" />
+      <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_l10n_br_hr_rais_generate" name="Gerar Arquivo"
+      parent="menu_l10n_br_hr_rais" sequence="2"
+      action="action_l10n_br_hr_rais_generate_form" />
+
+  </data>
+</openerp>

@@ -63,6 +63,7 @@ It's important to note however that this module lack many implementations to use
     'update_xml': [
         'account_view.xml',
         'l10n_br_view.xml',
+        'res_company_view.xml',
     ],
     'installable': True,
     'certificate' : '001280994939126801405',

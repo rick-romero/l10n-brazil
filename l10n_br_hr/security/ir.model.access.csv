@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 l10n_br_hr_grau_de_instrucao,l10n_br_hr.grau_de_instrucao,model_l10n_br_hr_grau_de_instrucao,base.group_hr_manager,1,1,1,1
 l10n_br_hr_etnia,l10n_br_hr.etnia,model_l10n_br_hr_etnia,base.group_hr_manager,1,1,1,1
+l10n_br_hr_nationality,l10n_br_hr.nationality,model_l10n_br_hr_nationality,base.group_hr_manager,1,1,1,1

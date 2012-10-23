@@ -29,8 +29,14 @@
     "website": "http://proge.com.br",
     "description": """
     Brazilian Localization for Human Resources
+    Currently it doesn't support companies with CEI subscriptions.
     """,
-    'depends': ['l10n_br_base', 'hr_contract', 'hr_holidays'],
+    'depends': [
+        'l10n_br_account',
+        'hr_contract',
+        'hr_holidays',
+        'hr_payroll',
+        ],
     'init_xml': [
         'data/hr.holidays.status.csv',
         'data/l10n_br_hr.etnia.csv',
@@ -40,6 +46,7 @@
         'data/l10n_br_hr.ocupacao.csv',
         'data/l10n_br_hr.tipo_de_admissao.csv',
         'data/l10n_br_hr.vinculo.csv',
+        'data/hr_payroll_data.xml',
         'security/ir.model.access.csv',
         ],
     'update_xml': [

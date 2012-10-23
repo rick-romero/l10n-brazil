@@ -23,6 +23,7 @@
             <field name="pis_pasep" on_change="onchange_mask_pis_pasep(pis_pasep)" />
             <field name="carteira_de_trabalho_numero" />
             <field name="carteira_de_trabalho_serie" />
+            <field name="possui_alvara_judicial" />
           </group>
         </xpath>
 
@@ -43,6 +44,12 @@
       <field name="type">form</field>
       <field name="inherit_id" ref="hr_contract.hr_contract_view_form" />
       <field name="arch" type="xml">
+        <xpath expr="/form/group/field[@name='type_id']" position="after">
+          <field name="filiado_a_sindicato" />
+          <field name="sindicato"
+            attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}" />
+        </xpath>
+
         <notebook colspan="4">
           <page string="Admissão">
             <field name="informacao_da_admissao" />

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data noupdate="1">
+
+		<!-- Categories -->
+		<record id="CASSOC1" model="hr.salary.rule.category">
+			<field name="name">Contribuição Associativa (1ª ocorrência)</field>
+			<field name="code">CASSOC1</field>
+		</record>
+		<record id="CASSOC2" model="hr.salary.rule.category">
+			<field name="name">Contribuição Associativa (2ª ocorrência)</field>
+			<field name="code">CASSOC2</field>
+		</record>
+		<record id="CSIND" model="hr.salary.rule.category">
+			<field name="name">Contribuição Sindical</field>
+			<field name="code">CSIND</field>
+		</record>
+		<record id="CASSIST" model="hr.salary.rule.category">
+			<field name="name">Contribuição Assistencial</field>
+			<field name="code">CASSIST</field>
+		</record>
+		<record id="CCONF" model="hr.salary.rule.category">
+			<field name="name">Contribuição Confederativa</field>
+			<field name="code">CCONF</field>
+		</record>
+		<record id="13SALAD" model="hr.salary.rule.category">
+			<field name="name">13º Salário Adiantamento</field>
+			<field name="code">13SALAD</field>
+		</record>
+		<record id="13SALFI" model="hr.salary.rule.category">
+			<field name="name">13º Salário Final</field>
+			<field name="code">13SALFI</field>
+		</record>
+		<record id="DISSIDIO" model="hr.salary.rule.category">
+			<field name="name">Dissídio Coletivo</field>
+			<field name="code">DISSIDIO</field>
+		</record>
+		<record id="HEXTRAS" model="hr.salary.rule.category">
+			<field name="name">Horas Extras</field>
+			<field name="code">HEXTRAS</field>
+		</record>
+
+		<!-- Rules -->
+		<record id="l10n_br_hr_rule_basico" model="hr.salary.rule">
+			<field name="name">Básico</field>
+			<field name="sequence" eval="1"/>
+			<field name="code">BASICO</field>
+			<field name="category_id" ref="hr_payroll.BASIC"/>
+			<field name="condition_select">none</field>
+			<field name="amount_select">code</field>
+			<field name="amount_python_compute">result = contract.wage</field>
+		</record>
+		<record id="l10n_br_hr_rule_hextras" model="hr.salary.rule">
+			<field name="name">Horas Extras</field>
+			<field name="sequence" eval="1"/>
+			<field name="code">HEXTRAS</field>
+			<field name="category_id" ref="hr_payroll.HEXTRAS"/>
+			<field name="condition_select">none</field>
+			<field name="amount_select">code</field>
+			<field name="amount_python_compute">result = categories.BASICO + categories.HEXTRAS</field>
+		</record>
+
+		<!-- Salary Structure -->
+		<record id="l10n_br_hr_structure_base" model="hr.payroll.structure">
+			<field name="id" ref="hr_payroll.structure_base" />
+			<field name="code">BASE</field>
+			<field name="name">Padrão</field>
+			<field eval="[(6, 0, [ref('l10n_br_hr_rule_basico')])]" name="rule_ids"/>
+			<field name="company_id" ref="base.main_company"/>
+		</record>
+
+	</data>
+</openerp>

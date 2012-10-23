@@ -56,7 +56,7 @@ class res_partner(osv.osv):
                                                 string='Address Federal State Code', 
                                                 type="char", size=2, multi='all',
                                                 store={'res.partner.address': (_get_partner_address, ['country_id', 'state_id'], 20),}),
-                
+                'birthday': fields.date(u'Data de Nascimento'),
                 }
 
     _defaults = {

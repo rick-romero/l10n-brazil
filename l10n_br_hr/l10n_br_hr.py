@@ -120,7 +120,7 @@ class l10n_br_hr_motivo_de_desligamento(osv.osv):
     _description = u'Motivo de Desligamento'
     _columns = {
         'code': fields.char(u'Código', size=2, required=True),
-        'name': fields.char(u'Descrição', size=150, required=True),
+        'name': fields.char(u'Descrição', size=170, required=True),
         }
 
 l10n_br_hr_motivo_de_desligamento()
@@ -154,6 +154,15 @@ class hr_employee(osv.osv):
             u'Número de Série da Carteira de Trabalho', size=5
             ),
         'cpf': fields.char(u'CPF', size=14),
+        'possui_alvara_judicial': fields.selection([
+                ('1', 'Sim'),
+                ('2', 'Não'),
+            ],
+            u'Possui Alvará Judicial',
+            help=u'O menor de 16 que não é aprendiz deve possuir alvará ' + \
+                u'judicial, autorizando o seu trabalho, para poder ser ' + \
+                u'declarado na RAIS.'
+            ),
         }
 
     def _validate_pis_pasep(self, cr, uid, ids):
@@ -290,6 +299,10 @@ class hr_contract(osv.osv):
         'motivo_de_desligamento_id': fields.many2one(
             'l10n_br_hr.motivo_de_desligamento', u'Motivo de Desligamento'
             ),
+        'filiado_a_sindicato': fields.boolean(
+            u'Empregado Filiado a Sindicato'
+            ),
+        'sindicato': fields.many2one('res.partner', u'Sindicato'),
         }
 
     def _get_default_company_address(self, cr, uid, context):

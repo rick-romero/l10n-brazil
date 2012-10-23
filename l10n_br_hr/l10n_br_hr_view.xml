@@ -45,8 +45,20 @@
       <field name="inherit_id" ref="hr_contract.hr_contract_view_form" />
       <field name="arch" type="xml">
         <xpath expr="/form/group/field[@name='type_id']" position="after">
+          <newline/>
           <field name="filiado_a_sindicato" />
-          <field name="sindicato"
+          <newline/>
+          <field name="sindicato_cassoc1"
+            attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}" />
+          <field name="sindicato_cassoc2"
+            attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}" />
+          <newline/>
+          <field name="sindicato_cassist"
+            attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}" />
+          <field name="sindicato_csind"
+            attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}" />
+          <newline/>
+          <field name="sindicato_cconf"
             attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}" />
         </xpath>
 

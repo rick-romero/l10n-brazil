@@ -302,7 +302,23 @@ class hr_contract(osv.osv):
         'filiado_a_sindicato': fields.boolean(
             u'Empregado Filiado a Sindicato'
             ),
-        'sindicato': fields.many2one('res.partner', u'Sindicato'),
+        'sindicato_cassoc1': fields.many2one(
+            'res.partner',
+            u'Sindicato da Contribuição Associativa (1ª Ocorrência)',
+            ),
+        'sindicato_cassoc2': fields.many2one(
+            'res.partner',
+            u'Sindicato da Contribuição Associativa (2ª Ocorrência)',
+            ),
+        'sindicato_cassist': fields.many2one(
+            'res.partner', u'Sindicato da Contribuição Assistencial'
+            ),
+        'sindicato_csind': fields.many2one(
+            'res.partner', u'Sindicato da Contribuição Sindical'
+            ),
+        'sindicato_cconf': fields.many2one(
+            'res.partner', u'Sindicato da Contribuição Confederativa'
+            ),
         }
 
     def _get_default_company_address(self, cr, uid, context):

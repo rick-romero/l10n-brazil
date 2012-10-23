@@ -70,6 +70,7 @@ class rais(osv.osv_memory):
                                    ], 'state', readonly=True),
         'last_sync_date': fields.datetime('Last Sync Date'),
         'message': fields.text('Message'),
+        'file': fields.binary(u'Arquivo', readonly=True),
         'company_id': fields.many2one('res.company', u'Empresa',
                                       required=True),
         'participa_pat': fields.boolean(u'Participa do PAT'),
@@ -181,33 +182,33 @@ class rais(osv.osv_memory):
             u'Empresa Filiada a Sindicato',
             required=True
             ),
-        'cnpj_contribuicao_associativa': fields.char(
-            u'CNPJ - Contribuição Associativa (Patronal)',
-            size=18
+        'sindicato_contribuicao_associativa': fields.many2one(
+            'res.partner',
+            u'Sindicato - Contribuição Associativa (Patronal)',
             ),
         'valor_contribuicao_associativa': fields.float(
             u'Valor - Contribuição Associativa (Patronal)',
             size=9
             ),
-        'cnpj_contribuicao_sindical': fields.char(
-            u'CNPJ - Contribuição (Tributo) Sindical (Patronal)',
-            size=18
+        'sindicato_contribuicao_sindical': fields.many2one(
+            'res.partner',
+            u'Sindicato - Contribuição (Tributo) Sindical (Patronal)',
             ),
         'valor_contribuicao_sindical': fields.float(
             u'Valor - Contribuição (Tributo) Sindical (Patronal)',
             size=9
             ),
-        'cnpj_contribuicao_assistencial': fields.char(
-            u'CNPJ - Contribuição Assistencial (Patronal)',
-            size=18
+        'sindicato_contribuicao_assistencial': fields.many2one(
+            'res.partner',
+            u'Sindicato - Contribuição Assistencial (Patronal)',
             ),
         'valor_contribuicao_assistencial': fields.float(
             u'Valor - Contribuição Assistencial (Patronal)',
             size=9
             ),
-        'cnpj_contribuicao_confederativa': fields.char(
-            u'CNPJ - Contribuição Confederativa (Patronal)',
-            size=18
+        'sindicato_contribuicao_confederativa': fields.many2one(
+            'res.partner',
+            u'Sindicato - Contribuição Confederativa (Patronal)',
             ),
         'valor_contribuicao_confederativa': fields.float(
             u'Valor - Contribuição Confederativa (Patronal)',
@@ -265,30 +266,6 @@ class rais(osv.osv_memory):
             return True
         return self._validate_cnpj(rais_data.cnpj_centralizador_contribuicao)
 
-    def _constraint_cnpj_contribuicao_associativa(self, cr, uid, ids):
-        rais_data = self.browse(cr, uid, ids[0])
-        if not rais_data.cnpj_contribuicao_associativa:
-            return True
-        return self._validate_cnpj(rais_data.cnpj_contribuicao_associativa)
-
-    def _constraint_cnpj_contribuicao_sindical(self, cr, uid, ids):
-        rais_data = self.browse(cr, uid, ids[0])
-        if not rais_data.cnpj_contribuicao_sindical:
-            return True
-        return self._validate_cnpj(rais_data.cnpj_contribuicao_sindical)
-
-    def _constraint_cnpj_contribuicao_assistencial(self, cr, uid, ids):
-        rais_data = self.browse(cr, uid, ids[0])
-        if not rais_data.cnpj_contribuicao_assistencial:
-            return True
-        return self._validate_cnpj(rais_data.cnpj_contribuicao_assistencial)
-
-    def _constraint_cnpj_contribuicao_confederativa(self, cr, uid, ids):
-        rais_data = self.browse(cr, uid, ids[0])
-        if not rais_data.cnpj_contribuicao_confederativa:
-            return True
-        return self._validate_cnpj(rais_data.cnpj_contribuicao_confederativa)
-
     def _validate_cpf(self, cr, uid, ids):
         rais_data = self.browse(cr, uid, ids[0])
         if not rais_data.responsavel_cpf or \
@@ -327,18 +304,6 @@ class rais(osv.osv_memory):
         (_constraint_cnpj_centralizador_contribuicao,
          u'CNPJ do estabelecimento centralizador da contribuição sindical é inválido.',
          ['cnpj_centralizador_contribuicao']),
-        (_constraint_cnpj_contribuicao_associativa,
-         u'CNPJ da contribuição associativa é inválido.',
-         ['cnpj_contribuicao_associativa']),
-        (_constraint_cnpj_contribuicao_sindical,
-         u'CNPJ da contribuição sindical é inválido.',
-         ['cnpj_contribuicao_sindical']),
-        (_constraint_cnpj_contribuicao_assistencial,
-         u'CNPJ da contribuição assistencial é inválido.',
-         ['cnpj_contribuicao_assistencial']),
-        (_constraint_cnpj_contribuicao_confederativa,
-         u'CNPJ da contribuição confederativa é inválido.',
-         ['cnpj_contribuicao_confederativa']),
         (_validate_cpf, u'CPF inválido.', ['responsavel_cpf']),
         ]
 
@@ -370,18 +335,6 @@ class rais(osv.osv_memory):
 
     def onchange_cnpj_centralizador_contribuicao(self, cr, uid, ids, cnpj):
         return self._mask_cnpj(cnpj, 'cnpj_centralizador_contribuicao')
-
-    def onchange_cnpj_contribuicao_associativa(self, cr, uid, ids, cnpj):
-        return self._mask_cnpj(cnpj, 'cnpj_contribuicao_associativa')
-
-    def onchange_cnpj_contribuicao_sindical(self, cr, uid, ids, cnpj):
-        return self._mask_cnpj(cnpj, 'cnpj_contribuicao_sindical')
-
-    def onchange_cnpj_contribuicao_assistencial(self, cr, uid, ids, cnpj):
-        return self._mask_cnpj(cnpj, 'cnpj_contribuicao_assistencial')
-
-    def onchange_cnpj_contribuicao_confederativa(self, cr, uid, ids, cnpj):
-        return self._mask_cnpj(cnpj, 'cnpj_contribuicao_confederativa')
 
     def onchange_company_id(self, cr, uid, ids, company_id):
         result = {'value': {}}
@@ -482,9 +435,9 @@ class rais(osv.osv_memory):
                 type0.write_str('', 39)
 
             # 213 a 214  02  Número   Telefone/Fax para contato (Código DDD)
-            type0.write_str(rais_data.responsavel_phone_ddd, 2)
+            type0.write_num(rais_data.responsavel_phone_ddd, 2)
             # 215 a 222  08  Número   Telefone/Fax para contato (Número)
-            type0.write_str(rais_data.responsavel_phone, 8)
+            type0.write_num(rais_data.responsavel_phone, 8)
 
             # 223 a 223  01  Número   Indicador de retificação da declaração
             #                         1 - retifica os estabelecimentos entregues anteriormente
@@ -492,7 +445,7 @@ class rais(osv.osv_memory):
             type0.write_num(rais_data.indicador_retificacao, 1)
             # 224 a 231  08  Número   Data da retificação dos estabelecimentos (ddmmaaaa)
             today = datetime.datetime.today().strftime('%d%m%Y')
-            type0.write_str(today, 8)
+            type0.write_num(today, 8)
 
             # 232 a 239  08  Número   Data de geração do arquivo (ddmmaaaa)
             type0.write_str(today, 8)
@@ -654,37 +607,38 @@ class rais(osv.osv_memory):
             type1.write_num(participa_pat, 1)
 
             # 302 a 307  06  Número   PAT-Trabalhadores que recebem até 5 Sal.Mínimos
-            type1.write_str(rais_data.pat_trabalhadores_baixa_renda, 6)
+            type1.write_num(rais_data.pat_trabalhadores_baixa_renda, 6)
             # 308 a 313  06  Número   PAT-Trabalhadores que recebem acima de 5 Sal.Mínimos
-            type1.write_str(rais_data.pat_trabalhadores_alta_renda, 6)
+            type1.write_num(rais_data.pat_trabalhadores_alta_renda, 6)
 
             # 314 a 316  03  Número   Porcentagem de serviço próprio (%)
-            type1.write_str(rais_data.porcentagem_servico_proprio, 3)
+            type1.write_num(rais_data.porcentagem_servico_proprio, 3)
             # 317 a 319  03  Número   Porcentagem de administração de cozinhas (%)
-            type1.write_str(rais_data.porcentagem_admin_cozinhas, 3)
+            type1.write_num(rais_data.porcentagem_admin_cozinhas, 3)
             # 320 a 322  03  Número   Porcentagem de refeição-convênio (%)
-            type1.write_str(rais_data.porcentagem_refeicao_convenio, 3)
+            type1.write_num(rais_data.porcentagem_refeicao_convenio, 3)
             # 323 a 325  03  Número   Porcentagem de refeições transportadas (%)
-            type1.write_str(rais_data.porcentagem_refeicoes_transportadas, 3)
+            type1.write_num(rais_data.porcentagem_refeicoes_transportadas, 3)
             # 326 a 328  03  Número   Porcentagem de cesta alimento (%)
-            type1.write_str(rais_data.porcentagem_cesta_alimento, 3)
+            type1.write_num(rais_data.porcentagem_cesta_alimento, 3)
             # 329 a 331  03  Número   Porcentagem de alimentação-convênio (%)
-            type1.write_str(rais_data.porcentagem_alimentacao_convenio, 3)
+            type1.write_num(rais_data.porcentagem_alimentacao_convenio, 3)
 
             # 332 a 332  01  Número   Indicador de Encerramento das atividades
-            type1.write_str(rais_data.indicador_encerramento, 1)
+            type1.write_num(rais_data.indicador_encerramento, 1)
             # 333 a 340  08  Número   Data de Encerramento das atividades (ddmmaaaa)
             if rais_data.data_de_encerramento:
                 data_de_encerramento = datetime.datetime.strptime(
                     rais_data.data_de_encerramento, '%Y-%m-%d'
                     )
-                type1.write_str(data_de_encerramento.strftime('%d%m%Y'), 8)
+                type1.write_num(data_de_encerramento.strftime('%d%m%Y'), 8)
             else:
                 type1.write_num(0, 8)
 
             # 341 a 354  14  Número   CNPJ - contribuição associativa (patronal)
             type1.write_num(re.sub(
-                '[^0-9]', '', str(rais_data.cnpj_contribuicao_associativa)
+                '[^0-9]', '',
+                str(rais_data.sindicato_contribuicao_associativa.cnpj_cpf)
                 ), 14)
             # 355 a 363  09  Número   Valor - contribuição associativa (patronal) (com centavos)
             type1.write_num(re.sub(
@@ -693,7 +647,8 @@ class rais(osv.osv_memory):
 
             # 364 a 377  14  Número   CNPJ - contribuição (tributo) sindical (patronal)
             type1.write_num(re.sub(
-                '[^0-9]', '', str(rais_data.cnpj_contribuicao_sindical)
+                '[^0-9]', '',
+                str(rais_data.sindicato_contribuicao_sindical.cnpj_cpf)
                 ), 14)
             # 378 a 386  09  Número   Valor - contribuição (tributo) sindical (patronal) (com centavos)
             type1.write_num(re.sub(
@@ -702,7 +657,8 @@ class rais(osv.osv_memory):
 
             # 387 a 400  14  Número   CNPJ - contribuição assistencial (patronal)
             type1.write_num(re.sub(
-                '[^0-9]', '', str(rais_data.cnpj_contribuicao_assistencial)
+                '[^0-9]', '',
+                str(rais_data.sindicato_contribuicao_assistencial.cnpj_cpf)
                 ), 14)
             # 401 a 409  09  Número   Valor - contribuição assistencial (patronal) (com centavos)
             type1.write_num(re.sub(
@@ -711,7 +667,8 @@ class rais(osv.osv_memory):
 
             # 410 a 423  14  Número   CNPJ - contribuição confederativa (patronal)
             type1.write_num(re.sub(
-                '[^0-9]', '', str(rais_data.cnpj_contribuicao_confederativa)
+                '[^0-9]', '',
+                str(rais_data.sindicato_contribuicao_confederativa.cnpj_cpf)
                 ), 14)
             # 424 a 432  09  Número   Valor - contribuição confederativa (patronal) (com centavos)
             type1.write_num(re.sub(
@@ -750,19 +707,7 @@ class rais(osv.osv_memory):
 
             for employee in employees:
 
-                cols = employee._model._columns
-                print '\n'.join([str(c) + '\t' + str(cols[c]) for c in cols])
-
-                cols = employee._model._inherit_fields
-                print '\n'.join([str(c) + '\t' + str(cols[c][2]) for c in cols])
-
                 for contract in employee.contract_ids:
-
-                    cols = contract._model._columns
-                    print '\n'.join([str(c) + '\t' + str(cols[c]) for c in cols])
-
-                    cols = contract._model._inherit_fields
-                    print '\n'.join([str(c) + '\t' + str(cols[c][2]) for c in cols])
 
                     # check if contract was active in the base year
                     date_end = None
@@ -869,7 +814,6 @@ class rais(osv.osv_memory):
                     else:
                         type2.write_num(0, 4)
 
-                    # TODO: percorrer payslips, extrair o mes de cada um (date_from e/ou date_to)
                     payslip_ids = payslip_obj.search(cr, uid, [
                             ('state', '=', 'done'),
                             ('contract_id', '=', contract.id),
@@ -884,10 +828,31 @@ class rais(osv.osv_memory):
                     grouped_payslips = {}
 
                     for m in range(1, 13):
-                        grouped_payslips[m] = 0
+                        grouped_payslips[m] = {'value': 0}
+                        grouped_payslips['HEXTRAS_%d' % m] = {
+                            'quantity': 0,
+                            }
+
+                    categories = [
+                        '13SALAD', '13SALFI', 'DISSIDIO', 'ALW', 'BHORAS',
+                        'CASSOC1', 'CASSOC2', 'CASSIST', 'CSIND', 'CCONF',
+                        'MRESCISAO', 'FIND', 'APREVIO',
+                        ]
+
+                    for category in categories:
+                        grouped_payslips[category] = {'value': 0}
+
+                        if category in ['BHORAS', 'DISSIDIO', 'ALW']:
+                            grouped_payslips[category]['months'] = set()
 
                     for payslip in payslips:
-                        
+
+                        date_from = datetime.datetime.strptime(
+                            payslip.date_from, '%Y-%m-%d'
+                            )
+                        month = int(date_from.strftime('%m'))
+
+                        # Get the gross payslip line
                         p_line_ids = payslip_line_obj.search(cr, uid, [
                             ('slip_id', '=', payslip.id),
                             ('code', '=', 'GROSS'),
@@ -897,67 +862,129 @@ class rais(osv.osv_memory):
                             p_line = payslip_line_obj.browse(
                                 cr, uid, p_line_ids[0], context=context
                                 )
-    
-                            date_from = datetime.datetime.strptime(
-                                payslip.date_from, '%Y-%m-%d'
+                            grouped_payslips[month]['value'] += p_line.total
+
+                        # Extra work time payslip lines
+                        p_line_ids = payslip_line_obj.search(cr, uid, [
+                            ('slip_id', '=', payslip.id),
+                            ('code', 'in', ['HEXTRAS']),
+                            ], context=context)
+
+                        if p_line_ids:
+                            p_lines = payslip_line_obj.browse(
+                                cr, uid, p_line_ids, context=context
                                 )
-                            month = int(date_from.strftime('%m'))
-                            
-                            grouped_payslips[month] = p_line.rate
+                            for l in p_lines:
+                                try:
+                                    grouped_payslips['HEXTRAS_%d' % month]['quantity'] += l.quantity
+                                except KeyError:
+                                    grouped_payslips['HEXTRAS_%d' % month]['quantity'] = l.quantity
+
+                        # Other payslip line data
+                        p_line_ids = payslip_line_obj.search(cr, uid, [
+                            ('slip_id', '=', payslip.id),
+                            ('code', 'in', categories),
+                            ], context=context)
+
+                        if p_line_ids:
+                            p_lines = payslip_line_obj.browse(
+                                cr, uid, p_line_ids, context=context
+                                )
+                            for l in p_lines:
+                                
+                                create_date = datetime.datetime.strptime(
+                                    l.create_date, '%Y-%m-%d %H:%M:%S'
+                                    )
+
+                                try:
+                                    grouped_payslips[l.code][
+                                        'value'] += l.total
+                                    grouped_payslips[l.code][
+                                        'create_date'] = create_date
+                                except:
+                                    grouped_payslips[l.code] = {
+                                        'value': l.total,
+                                        'create_date': create_date,
+                                        }
+
+                                if l.code in ['BHORAS', 'DISSIDIO', 'ALW']:
+                                    grouped_payslips[l.code]['months'].add(
+                                        month
+                                        )
 
                     # 163 a 171  09  Número   Remuneração de Janeiro (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[1]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[1]['value']
                         ), 9)
                     # 172 a 180  09  Número   Remuneração de Fevereiro (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[2]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[2]['value']
                         ), 9)
                     # 181 a 189  09  Número   Remuneração de Março (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[3]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[3]['value']
                         ), 9)
                     # 190 a 198  09  Número   Remuneração de Abril (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[4]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[4]['value']
                         ), 9)
                     # 199 a 207  09  Número   Remuneração de Maio (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[5]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[5]['value']
                         ), 9)
                     # 208 a 216  09  Número   Remuneração de Junho (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[6]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[6]['value']
                         ), 9)
                     # 217 a 225  09  Número   Remuneração de Julho (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[7]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[7]['value']
                         ), 9)
                     # 226 a 234  09  Número   Remuneração de Agosto (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[8]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[8]['value']
                         ), 9)
                     # 235 a 243  09  Número   Remuneração de Setembro (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[9]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[9]['value']
                         ), 9)
                     # 244 a 252  09  Número   Remuneração de Outubro (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[10]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[10]['value']
                         ), 9)
                     # 253 a 261  09  Número   Remuneração de Novembro (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[11]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[11]['value']
                         ), 9)
                     # 262 a 270  09  Número   Remuneração de Dezembro (com centavos)
                     type2.write_num(re.sub(
-                        '[^0-9]', '', '%.02f' % grouped_payslips[12]
+                        '[^0-9]', '', '%.02f' % grouped_payslips[12]['value']
                         ), 9)
 
-                    # TODO: 271 a 279  09  Número   Remuneração de 13º Salário Adiantamento (com centavos)
-                    # TODO: 280 a 281  02  Número   Mês de pagamento do 13º Salário Adiantamento
-                    # TODO: 282 a 290  09  Número   Remuneração do 13º Salário Final (com centavos)
-                    # TODO: 291 a 292  02  Número   Mês de pagamento do 13º Salário Final
+                    # 271 a 279  09  Número   Remuneração de 13º Salário Adiantamento (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '', '%.02f' % grouped_payslips['13SALAD']['value']
+                        ), 9)
+                    # 280 a 281  02  Número   Mês de pagamento do 13º Salário Adiantamento
+                    try:
+                        create_date = grouped_payslips['13SALAD']['create_date'].strftime('%m')
+                    except:
+                        create_date = 0
+
+                    type2.write_num(create_date, 2)
+
+                    # 282 a 290  09  Número   Remuneração do 13º Salário Final (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['13SALFI']['value']
+                        ), 9)
+                    # 291 a 292  02  Número   Mês de pagamento do 13º Salário Final
+                    try:
+                        create_date = grouped_payslips['13SALFI']['create_date'].strftime('%m')
+                    except:
+                        create_date = 0
+
+                    type2.write_num(create_date, 2)
 
                     # 293 a 293  01  Número   Raça/Cor
                     type2.write_num(employee.etnia_id.code, 1)
@@ -971,7 +998,11 @@ class rais(osv.osv_memory):
                     # 296 a 296  01  Número   Indicador de Alvará
                     type2.write_num(employee.possui_alvara_judicial, 1)
 
-                    # TODO: 297 a 305  09  Número   Aviso Prévio Indenizado (valor com centavos)
+                    # 297 a 305  09  Número   Aviso Prévio Indenizado (valor com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['APREVIO']['value']
+                        ), 9)
 
                     # 306 a 306  01  Número   Sexo  (1 - masc,  2 - fem)
                     if employee.gender == 'female':
@@ -1043,46 +1074,152 @@ class rais(osv.osv_memory):
                     else:
                         type2.write_num(0, 33)
 
-                    # TODO: 340 a 347  08  Número   Valor - férias indenizadas (com centavos)
-                    # FIND
-                    # TODO: 348 a 355  08  Número   Valor - banco de horas (com centavos)
-                    # TODO: 356 a 357  02  Número   Quantidade de meses - banco de horas
-                    # BDH
-                    # TODO: 358 a 365  08  Número   Valor - dissídio coletivo (com centavos)
-                    # TODO: 366 a 367  02  Número   Quantidade de meses - dissídio coletivo
-                    # DISS
-                    # TODO: 368 a 375  08  Número   Valor - gratificações (com centavos)
-                    # TODO: 376 a 377  02  Número   Quantidade de meses - gratificações
-                    # GRAT
-                    # TODO: 378 a 385  08  Número   Valor - multa por rescisão sem justa causa (com centavos)
-                    # MULT
+                    # 340 a 347  08  Número   Valor - férias indenizadas (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['FIND']['value']
+                        ), 8)
 
-                    # TODO: 386 a 399  14  Número   CNPJ - contribuição associativa (1ª ocorrência)
-                    # TODO: 400 a 407  08  Número   Valor - contribuição associativa (1ª ocorrência) (com centavos) 
-                    # TODO: 408 a 421  14  Número   CNPJ - contribuição associativa (2ª ocorrência)
-                    # TODO: 422 a 429  08  Número   Valor - contribuição associativa (2ª ocorrência) (com centavos)
-                    # TODO: 430 a 443  14  Número   CNPJ - contribuição (tributo) sindical
-                    # TODO: 444 a 451  08  Número   Valor - contribuição (tributo) sindical (com centavos)
-                    # TODO: 452 a 465  14  Número   CNPJ - contribuição assistencial 
-                    # TODO: 466 a 473  08  Número   Valor - contribuição assistencial (com centavos)
-                    # TODO: 474 a 487  14  Número   CNPJ - contribuição confederativa 
-                    # TODO: 488 a 495  08  Número   Valor - contribuição confederativa (com centavos)
+                    # 348 a 355  08  Número   Valor - banco de horas (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['BHORAS']['value']
+                        ), 8)
+                    # 356 a 357  02  Número   Quantidade de meses - banco de horas
+                    type2.write_num(
+                        len(grouped_payslips['BHORAS']['months']),
+                        2
+                        )
+
+                    # 358 a 365  08  Número   Valor - dissídio coletivo (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['DISSIDIO']['value']
+                        ), 8)
+                    # 366 a 367  02  Número   Quantidade de meses - dissídio coletivo
+                    type2.write_num(
+                        len(grouped_payslips['DISSIDIO']['months']),
+                        2
+                        )
+
+                    # 368 a 375  08  Número   Valor - gratificações (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['ALW']['value']
+                        ), 8)
+                    # 376 a 377  02  Número   Quantidade de meses - gratificações
+                    type2.write_num(
+                        len(grouped_payslips['ALW']['months']),
+                        2
+                        )
+
+                    # 378 a 385  08  Número   Valor - multa por rescisão sem justa causa (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['MRESCISAO']['value']
+                        ), 8)
+
+                    # 386 a 399  14  Número   CNPJ - contribuição associativa (1ª ocorrência)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '', contract.sindicato_cassoc1.cnpj_cpf
+                        ), 14)
+                    # 400 a 407  08  Número   Valor - contribuição associativa (1ª ocorrência) (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['CASSOC1']['value']
+                        ), 8)
+
+                    # 408 a 421  14  Número   CNPJ - contribuição associativa (2ª ocorrência)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '', contract.sindicato_cassoc2.cnpj_cpf
+                        ), 14)
+                    # 422 a 429  08  Número   Valor - contribuição associativa (2ª ocorrência) (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['CASSOC2']['value']
+                        ), 8)
+
+                    # 430 a 443  14  Número   CNPJ - contribuição (tributo) sindical
+                    type2.write_num(re.sub(
+                        '[^0-9]', '', contract.sindicato_csind.cnpj_cpf
+                        ), 14)
+                    # 444 a 451  08  Número   Valor - contribuição (tributo) sindical (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['CSIND']['value']
+                        ), 8)
+
+                    # 452 a 465  14  Número   CNPJ - contribuição assistencial
+                    type2.write_num(re.sub(
+                        '[^0-9]', '', contract.sindicato_cassist.cnpj_cpf
+                        ), 14)
+                    # 466 a 473  08  Número   Valor - contribuição assistencial (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['CASSIST']['value']
+                        ), 8)
+
+                    # 474 a 487  14  Número   CNPJ - contribuição confederativa
+                    type2.write_num(re.sub(
+                        '[^0-9]', '', contract.sindicato_cconf.cnpj_cpf
+                        ), 14)
+                    # 488 a 495  08  Número   Valor - contribuição confederativa (com centavos)
+                    type2.write_num(re.sub(
+                        '[^0-9]', '',
+                        '%.02f' % grouped_payslips['CCONF']['value']
+                        ), 8)
 
                     # 496 a 502  07  Número   Município - local de trabalho
                     type2.write_num(contract.local_de_trabalho_cidade.ibge_code, 7)
 
-                    # TODO: 503 a 505  03  Número Horas Extras Trabalhadas - Janeiro
-                    # TODO: 506 a 508  03  Número Horas Extras Trabalhadas - Fevereiro
-                    # TODO: 509 a 511  03  Número Horas Extras Trabalhadas - Março
-                    # TODO: 512 a 514  03  Número Horas Extras Trabalhadas - Abril
-                    # TODO: 515 a 517  03  Número Horas Extras Trabalhadas - Maio
-                    # TODO: 518 a 520  03  Número Horas Extras Trabalhadas - Junho
-                    # TODO: 521 a 523  03  Número Horas Extras Trabalhadas - Julho
-                    # TODO: 524 a 526  03  Número Horas Extras Trabalhadas - Agosto
-                    # TODO: 527 a 529  03  Número Horas Extras Trabalhadas - Setembro
-                    # TODO: 530 a 532  03  Número Horas Extras Trabalhadas - Outubro
-                    # TODO: 533 a 535  03  Número Horas Extras Trabalhadas - Novembro
-                    # TODO: 536 a 538  03  Número Horas Extras Trabalhadas - Dezembro
+                    # 503 a 505  03  Número Horas Extras Trabalhadas - Janeiro
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_1']['quantity'], 3
+                        )
+                    # 506 a 508  03  Número Horas Extras Trabalhadas - Fevereiro
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_2']['quantity'], 3
+                        )
+                    # 509 a 511  03  Número Horas Extras Trabalhadas - Março
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_3']['quantity'], 3
+                        )
+                    # 512 a 514  03  Número Horas Extras Trabalhadas - Abril
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_4']['quantity'], 3
+                        )
+                    # 515 a 517  03  Número Horas Extras Trabalhadas - Maio
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_5']['quantity'], 3
+                        )
+                    # 518 a 520  03  Número Horas Extras Trabalhadas - Junho
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_6']['quantity'], 3
+                        )
+                    # 521 a 523  03  Número Horas Extras Trabalhadas - Julho
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_7']['quantity'], 3
+                        )
+                    # 524 a 526  03  Número Horas Extras Trabalhadas - Agosto
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_8']['quantity'], 3
+                        )
+                    # 527 a 529  03  Número Horas Extras Trabalhadas - Setembro
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_9']['quantity'], 3
+                        )
+                    # 530 a 532  03  Número Horas Extras Trabalhadas - Outubro
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_10']['quantity'], 3
+                        )
+                    # 533 a 535  03  Número Horas Extras Trabalhadas - Novembro
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_11']['quantity'], 3
+                        )
+                    # 536 a 538  03  Número Horas Extras Trabalhadas - Dezembro
+                    type2.write_num(
+                        grouped_payslips['HEXTRAS_12']['quantity'], 3
+                        )
 
                     # 539 a 539  01  Número   Indicador - empregado filiado a sindicato
                     #    1 - Sim
@@ -1118,16 +1255,24 @@ class rais(osv.osv_memory):
             lines.append(type9)
 
             file_content = '\n'.join([l.content.upper() for l in lines])
-            print file_content
-
             message = u'Arquivo gerado com sucesso'
             state = 'done'
 
-        '''
+            encoded_data = file_content.encode("utf-8").encode("base64")
+            self.write(cr, uid, ids, {
+                'file': encoded_data,
+                'state': state,
+                'message': message,
+                },
+                context=context)
+
+            return True
+
         self.write(cr, uid, ids, {
             'state': state,
             'message': message,
             })
-        '''
+
+        return False
 
 rais()

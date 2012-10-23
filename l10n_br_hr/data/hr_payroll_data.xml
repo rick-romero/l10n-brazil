@@ -39,6 +39,22 @@
 			<field name="name">Horas Extras</field>
 			<field name="code">HEXTRAS</field>
 		</record>
+		<record id="BHORAS" model="hr.salary.rule.category">
+			<field name="name">Banco de Horas</field>
+			<field name="code">BHORAS</field>
+		</record>
+		<record id="MRESCISAO" model="hr.salary.rule.category">
+			<field name="name">Multa por Rescisão sem Justa Causa</field>
+			<field name="code">MRESCISAO</field>
+		</record>
+		<record id="FIND" model="hr.salary.rule.category">
+			<field name="name">Férias Indenizadas</field>
+			<field name="code">FIND</field>
+		</record>
+		<record id="APREVIO" model="hr.salary.rule.category">
+			<field name="name">Aviso Prévio Indenizado</field>
+			<field name="code">APREVIO</field>
+		</record>
 
 		<!-- Rules -->
 		<record id="l10n_br_hr_rule_basico" model="hr.salary.rule">

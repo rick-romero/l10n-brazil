@@ -22,4 +22,5 @@
 ##############################################################################
 
 import l10n_br_hr
+import res_partner_address
 import wizard

@@ -21,5 +21,17 @@
 #                                                                            #
 ##############################################################################
 
-import rais
-import sefip
+from osv import osv, fields
+from tools.translate import _
+
+
+class res_partner_address(osv.osv):
+    _inherit = 'res.partner.address'
+
+    def write(self, cr, uid, ids, vals, context=None):
+        changes_obj = self.pool.get('l10n_br_hr.changes')
+        changes_obj.register_changes(cr, uid, ids, 'res_partner_address', vals)
+        return super(res_partner_address, self).write(cr, uid, ids, vals, context)
+
+
+res_partner_address()

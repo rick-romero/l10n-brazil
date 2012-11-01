@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+  <data>
+
+    <menuitem id="menu_l10n_br_hr_sefip" name="SEFIP" parent="hr.menu_hr_root"
+      sequence="10" />
+
+    <record model="ir.ui.view" id="view_l10n_br_hr_sefip_generate_form">
+      <field name="name">l10n_br_hr.sefip</field>
+      <field name="model">l10n_br_hr.sefip</field>
+      <field name="type">form</field>
+      <field name="arch" type="xml">
+        <form string="Gerar Arquivo SEFIP">
+          <field name="state" invisible="1" />
+          <group col="4" colspan="4">
+            <group colspan="4" states="init">
+              <label colspan="2"
+                string="Esta ação gerará o arquivo SEFIP da empresa selecionada." />
+
+              <field name="ano_da_declaracao" readonly="1" colspan="1" />
+
+              <notebook colspan="4">
+
+                <page string="Empresa">
+                  <field colspan="2" name="company" />
+                  <field name="fpas" />
+                  <field name="recolhimento" />
+                  <field name="competencia"
+                  	on_change="onchange_competencia(competencia)" />
+                  <field colspan="2" name="valores_pagos_a_cooperativas" />
+                </page>
+
+                <page string="Responsável pela Entrega">
+                  <field name="responsavel_razao_social" />
+                  <field name="responsavel_tipo_de_inscricao" />
+                  <field name="responsavel_cnpj"
+                    on_change="onchange_responsavel_cnpj(responsavel_cnpj)"
+                    attrs="{'invisible':[('responsavel_tipo_de_inscricao','!=','1')]}" />
+                  <field name="responsavel_cpf" on_change="onchange_responsavel_cpf(responsavel_cpf)"
+                    attrs="{'invisible':[('responsavel_tipo_de_inscricao','!=','3')]}" />
+                  <field name="responsavel_contato" />
+                  <field name="responsavel_email" />
+                  <field name="responsavel_telefone" />
+                  <field name="responsavel_endereco" />
+                  <field name="responsavel_bairro" />
+                  <field name="responsavel_cep"
+                  	on_change="onchange_responsavel_cep(responsavel_cep)" />
+                  <field name="responsavel_pais" />
+                  <field name="responsavel_cidade" />
+                </page>
+
+              </notebook>
+            </group>
+
+            <group colspan="4" states="done">
+              <field name="message" widget="text_tag" nolabel="1"
+                readonly="1" colspan="4" />
+              <field name="file" colspan="4" />
+            </group>
+
+            <group col="4" colspan="4">
+              <separator string="" colspan="4" />
+              <label colspan="2" string="" />
+              <button string="Cancelar" special="cancel" states="init"
+                icon="gtk-cancel" colspan="1" />
+              <button name="generate_file" string="Prosseguir" type="object"
+                states="init" icon="gtk-go-forward" colspan="1" />
+              <button string="Fechar" special="cancel" states="done"
+                icon="gtk-ok" colspan="1" />
+            </group>
+          </group>
+        </form>
+      </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_l10n_br_hr_sefip_generate_form">
+      <field name="name">Gerar Arquivo</field>
+      <field name="type">ir.actions.act_window</field>
+      <field name="res_model">l10n_br_hr.sefip</field>
+      <field name="view_mode">form</field>
+      <field name="view_type">form</field>
+      <field name="view_id" ref="view_l10n_br_hr_sefip_generate_form" />
+      <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_l10n_br_hr_sefip_generate" name="Gerar Arquivo"
+      parent="menu_l10n_br_hr_sefip" sequence="2"
+      action="action_l10n_br_hr_sefip_generate_form" />
+
+  </data>
+</openerp>

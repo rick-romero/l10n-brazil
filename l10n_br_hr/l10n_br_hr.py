@@ -24,6 +24,7 @@
 from osv import osv, fields
 from tools.translate import _
 import re
+import datetime
 
 class l10n_br_hr_nationality(osv.osv):
     _name = 'l10n_br_hr.nationality'
@@ -126,6 +127,39 @@ class l10n_br_hr_motivo_de_desligamento(osv.osv):
 l10n_br_hr_motivo_de_desligamento()
 
 
+class l10n_br_hr_changes(osv.osv):
+    _name = 'l10n_br_hr.changes'
+    _description = u'Registra alterações para envio via SEFIP'
+    _columns = {
+        'table': fields.char(u'Tabela em que ocorreu a alteração', size=128),
+        'field': fields.char(u'Campo em que ocorreu a alteração', size=128),
+        'new_value': fields.text(u'Novo valor do campo'),
+        'register_id': fields.integer(u'Id do registro alterado'),
+        }
+    def register_changes(self, cr, uid, ids, table, vals):
+        for register_id in ids:
+            for field in vals:
+                self.create(cr, uid, {
+                    'table': table,
+                    'field': field,
+                    'new_value': vals[field],
+                    'register_id': register_id,
+                    })
+
+l10n_br_hr_changes()
+
+
+class l10n_br_hr_ocorrencia(osv.osv):
+    _name = 'l10n_br_hr.ocorrencia'
+    _description = u'Ocorrência'
+    _columns = {
+        'code': fields.char(u'Código', size=2, required=True),
+        'name': fields.char(u'Descrição', size=150, required=True),
+        }
+
+l10n_br_hr_ocorrencia()
+
+
 class hr_employee(osv.osv):
     _inherit = 'hr.employee'
     _columns = {
@@ -162,6 +196,12 @@ class hr_employee(osv.osv):
             help=u'O menor de 16 que não é aprendiz deve possuir alvará ' + \
                 u'judicial, autorizando o seu trabalho, para poder ser ' + \
                 u'declarado na RAIS.'
+            ),
+        'matricula': fields.integer(u'Matrícula', size=11),
+        }
+    _defaults = {
+        'matricula': lambda self, cr, uid, context: int(
+            self.pool.get('ir.sequence').get(cr, uid, 'hr.employee.matricula')
             ),
         }
 
@@ -256,6 +296,64 @@ class hr_employee(osv.osv):
 
         return {'value': {'pis_pasep': pis_pasep}}
 
+    def write(self, cr, uid, ids, vals, context=None):
+        changes_obj = self.pool.get('l10n_br_hr.changes')
+        changes_obj.register_changes(cr, uid, ids, 'hr_employee', vals)
+        return super(hr_employee, self).write(cr, uid, ids, vals, context)
+
+    def get_active_contract(self, cr, uid, eid, date=None, context=None):
+        employee = self.browse(cr, uid, eid, context=context)
+        contract = None
+
+        if not date:
+            date = datetime.datetime.today()
+
+        current_year = int(date.strftime('%Y'))
+        current_month = int(date.strftime('%m'))
+        current_day = int(date.strftime('%d'))
+
+        for c in employee.contract_ids:
+            # check if contract was active in the base year
+            end_date = None
+
+            if c.data_de_desligamento:
+                end_date = datetime.datetime.strptime(
+                    c.data_de_desligamento, '%Y-%m-%d'
+                    )
+            elif c.date_end:
+                end_date = datetime.datetime.strptime(c.date_end, '%Y-%m-%d')
+
+            if not end_date:
+                date_start = datetime.datetime.strptime(
+                    c.date_start, '%Y-%m-%d'
+                    )
+                start_year = int(date_start.strftime('%Y'))
+                start_month = int(date_start.strftime('%m'))
+                start_day = int(date_start.strftime('%d'))
+
+                if (start_year == current_year and 
+                    start_month == current_month and
+                    start_day <= current_day 
+                    ) or (
+                    start_year == current_year and start_month < current_month
+                    ) or start_year < current_year:
+                    contract = c
+                    break
+            else:
+                end_year = int(end_date.strftime('%Y'))
+                end_month = int(end_date.strftime('%m'))
+                end_day = int(end_date.strftime('%d'))
+
+                if (end_year == current_year and end_month == current_month and
+                    end_day >= current_day 
+                    ) or (
+                    end_year == current_year and end_month > current_month
+                    ) or end_year > current_year:
+                    contract = c
+                    break
+
+        return contract
+
 hr_employee()
 
 
@@ -304,21 +402,22 @@ class hr_contract(osv.osv):
             ),
         'sindicato_cassoc1': fields.many2one(
             'res.partner',
-            u'Sindicato da Contribuição Associativa (1ª Ocorrência)',
+            u'Contribuição Associativa (1ª Ocorrência)',
             ),
         'sindicato_cassoc2': fields.many2one(
             'res.partner',
-            u'Sindicato da Contribuição Associativa (2ª Ocorrência)',
+            u'Contribuição Associativa (2ª Ocorrência)',
             ),
         'sindicato_cassist': fields.many2one(
-            'res.partner', u'Sindicato da Contribuição Assistencial'
+            'res.partner', u'Contribuição Assistencial'
             ),
         'sindicato_csind': fields.many2one(
-            'res.partner', u'Sindicato da Contribuição Sindical'
+            'res.partner', u'Contribuição Sindical'
             ),
         'sindicato_cconf': fields.many2one(
-            'res.partner', u'Sindicato da Contribuição Confederativa'
+            'res.partner', u'Contribuição Confederativa'
             ),
+        'ocorrencia': fields.many2one('l10n_br_hr.ocorrencia', u'Ocorrência'),
         }
 
     def _get_default_company_address(self, cr, uid, context):
@@ -352,7 +451,22 @@ class hr_contract(osv.osv):
         'local_de_trabalho_cidade': _get_default_company_city_id,
         }
 
+    def write(self, cr, uid, ids, vals, context=None):
+        changes_obj = self.pool.get('l10n_br_hr.changes')
+        changes_obj.register_changes(cr, uid, ids, 'hr_contract', vals)
+        return super(hr_contract, self).write(cr, uid, ids, vals, context)
+
 hr_contract()
+
+
+class hr_contract_type(osv.osv):
+    _inherit = 'hr.contract.type'
+    _columns = {
+        'name': fields.char('Contract Type', size=256, required=True),
+        'code': fields.char(u'Código', size=2, required=True),
+        }
+
+hr_contract_type()
 
 
 class hr_holidays_status(osv.osv):

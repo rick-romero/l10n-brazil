@@ -10,9 +10,10 @@
       <field name="arch" type="xml">
 
         <xpath expr="/form/notebook/page[@string='Personal Information']/group"
-          position="before">
+        position="before">
           <group col="2" colspan="2">
             <separator string="Informações Gerais" colspan="2" />
+            <field name="matricula" />
             <field name="grau_de_instrucao_id" />
             <field name="etnia_id" />
             <field name="deficiencia" />
@@ -26,10 +27,9 @@
             <field name="possui_alvara_judicial" />
           </group>
         </xpath>
-
         <xpath
-          expr="/form/notebook/page[@string='Personal Information']/group/field[@name='country_id']"
-          position="replace">
+        expr="/form/notebook/page[@string='Personal Information']/group/field[@name='country_id']"
+        position="replace">
           <field name="nationality_id" />
           <field name="country_id" string="País" />
           <field name="ano_de_chegada" attrs="{'readonly':[('nationality_id','=',1)]}" />
@@ -37,7 +37,6 @@
 
       </field>
     </record>
-
     <record id="view_l10n_br_hr_contract_form" model="ir.ui.view">
       <field name="name">l10n_br_hr.contract.form</field>
       <field name="model">hr.contract</field>
@@ -46,22 +45,9 @@
       <field name="arch" type="xml">
         <xpath expr="/form/group/field[@name='type_id']" position="after">
           <newline/>
+          <field name="ocorrencia" />
           <field name="filiado_a_sindicato" />
-          <newline/>
-          <field name="sindicato_cassoc1"
-            attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}" />
-          <field name="sindicato_cassoc2"
-            attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}" />
-          <newline/>
-          <field name="sindicato_cassist"
-            attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}" />
-          <field name="sindicato_csind"
-            attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}" />
-          <newline/>
-          <field name="sindicato_cconf"
-            attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}" />
         </xpath>
-
         <notebook colspan="4">
           <page string="Admissão">
             <field name="informacao_da_admissao" />
@@ -79,6 +65,14 @@
             <field name="informacao_de_desligamento" />
             <field name="data_de_desligamento" />
             <field name="motivo_de_desligamento_id" />
+          </page>
+          <page string="Sindicatos"
+          attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}">
+            <field name="sindicato_cassoc1" />
+            <field name="sindicato_cassoc2" />
+            <field name="sindicato_cassist" />
+            <field name="sindicato_csind" />
+            <field name="sindicato_cconf" />
           </page>
         </notebook>
       </field>

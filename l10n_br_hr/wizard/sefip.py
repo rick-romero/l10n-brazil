@@ -346,6 +346,9 @@ class sefip(osv.osv_memory):
         return data
 
     def _clear_alfanum(self, data):
+        if not data:
+            return ''
+
         data = self._clear_mixed(data)
         # Must contain olny A-Z chars and 0-9 numbers
         return str(re.sub('[^0-9a-zA-Z ]', '', str(data)))
@@ -461,14 +464,68 @@ class sefip(osv.osv_memory):
 
             index += 1
 
-        seq = 1
-
         if not company.cnpj:
             message = u'A empresa deve possuir CNPJ cadastrado'
             state = 'init'
             raise osv.except_osv(_('Error'), message)
 
         else:
+            # check if changes were made during the month scope
+            changed_stuff = {}
+            changed_employees = []
+            address_changed_employees = []
+            contract_changed_employees = []
+            partner_changed_employees = []
+            tables = ['hr_employee', 'hr_contract', 'res_partner',
+                      'res_partner_address', 'res_company']
+
+            for table in tables:
+                changed_stuff[table] = {}
+
+            changes_ids = changes_obj.search(cr, uid, [
+                ('table', 'in', tables),
+                ], context=context)
+            changes = changes_obj.browse(cr, uid, changes_ids, context=context)
+
+            for change in changes:
+
+                data = changes_obj.perm_read(cr, uid, [change.id], context=context)[0]
+                create_date = datetime.datetime.strptime(
+                    data['create_date'], '%Y-%m-%d %H:%M:%S.%f'
+                    )
+                create_month = int(create_date.strftime('%m'))
+                create_year = int(create_date.strftime('%Y'))
+                if create_month == scope_month and create_year == scope_year:
+                    try:
+                        changed_stuff[change.table][change.register_id\
+                                                       ].append(change)
+                    except:
+                        changed_stuff[change.table][change.register_id] = []
+                        changed_stuff[change.table][change.register_id\
+                                                       ].append(change)
+
+            for employee in employees:
+                if employee.id in changed_stuff['hr_employee']:
+                    changed_employees.append(employee)
+                if employee.address_home_id.id in changed_stuff\
+                    ['res_partner_address']:
+                    address_changed_employees.append(employee)
+
+                for contract in employee.contract_ids:
+                    if contract.id in changed_stuff['hr_contract']:
+                        contract_changed_employees.append(contract)
+
+                if not employee.address_home_id.partner_id:
+                    raise osv.except_osv(
+                        u'Falha na geração do arquivo.',
+                        u'Faltam dados no endereço do colaborador {}.'.format(
+                            employee.name
+                            ),
+                        )
+                if employee.address_home_id.partner_id.id in changed_stuff\
+                    ['res_partner']:
+                    partner_changed_employees.append(employee)
+
             '''
             Registro 00 - Header - Informações do responsável
             '''
@@ -564,11 +621,16 @@ class sefip(osv.osv_memory):
             company_address = partner_address_obj.browse(
                 cr, uid, default_address['default'], context=context
                 )
-            address = '{street} {number} {street2}'.format(
-                street=company_address.street,
-                number=company_address.number,
-                street2=company_address.street2,
-                )
+
+            address = ''
+
+            if company_address.street:
+                address += company_address.street + ' '
+            if company_address.number:
+                address += company_address.number + ' '
+            if company_address.street2:
+                address += company_address.street2
+
             r10.write_str(self._clear_alfanum(address), 50)
             # 144 163  Bairro
             r10.write_str(company_address.district, 20)
@@ -588,10 +650,24 @@ class sefip(osv.osv_memory):
                     )
             # 194 205  Telefone
             r10.write_str(company_address.phone, 12)
-            # TODO: 206 206  Indicador de Alteração de Endereço
+            # 206 206  Indicador de Alteração de Endereço
+            if company_address.id in changed_stuff['res_partner_address']:
+                r10.write_str('s', 1)
+            else:
+                r10.write_str('n', 1)
+
             # 207 213  CNAE
             r10.write_num(company.cnae_main_id.code, 7)
-            # TODO: 214 214  Indicador de Alteração CNAE
+
+            # 214 214  Indicador de Alteração CNAE
+            cnae_changed = 'n'
+            if company.id in changed_stuff['res_company']:
+                for change in changed_stuff['res_company'][company.id]:
+                    if change.field == 'cnae_main_id':
+                        cnae_changed = 's'
+                        break
+            r10.write_str(cnae_changed, 1)
+
             # TODO: 215 216  Alíquota RAT
             # TODO: 217 217  Código de Centralização
             # TODO: 218 218  SIMPLES
@@ -709,66 +785,11 @@ class sefip(osv.osv_memory):
             '''
             Registro 13 - Alteração cadastral do trabalhador
             '''
-            # check if changes were made during the month scope
-            employee_changes = {}
-            changed_employees = []
-            address_changed_employees = []
-            contract_changed_employees = []
-            partner_changed_employees = []
-            tables = ['hr_employee', 'hr_contract', 'res_partner',
-                      'res_partner_address']
-
-            for table in tables:
-                employee_changes[table] = {}
-
-            changes_ids = changes_obj.search(cr, uid, [
-                ('table', 'in', tables),
-                ], context=context)
-            changes = changes_obj.browse(cr, uid, changes_ids, context=context)
-
-            for change in changes:
-
-                data = changes_obj.perm_read(cr, uid, [change.id], context=context)[0]
-                create_date = datetime.datetime.strptime(
-                    data['create_date'], '%Y-%m-%d %H:%M:%S.%f'
-                    )
-                create_month = int(create_date.strftime('%m'))
-                create_year = int(create_date.strftime('%Y'))
-                if create_month == scope_month and create_year == scope_year:
-                    try:
-                        employee_changes[change.table][change.register_id\
-                                                       ].append(change)
-                    except:
-                        employee_changes[change.table][change.register_id] = []
-                        employee_changes[change.table][change.register_id\
-                                                       ].append(change)
-
-            for employee in employees:
-                if employee.id in employee_changes['hr_employee']:
-                    changed_employees.append(employee)
-                if employee.address_home_id.id in employee_changes\
-                    ['res_partner_address']:
-                    address_changed_employees.append(employee)
-                
-                for contract in employee.contract_ids:
-                    if contract.id in employee_changes['hr_contract']:
-                        contract_changed_employees.append(contract)
-
-                if not employee.address_home_id.partner_id:
-                    raise osv.except_osv(
-                        u'Falha na geração do arquivo.',
-                        u'Faltam dados no endereço do colaborador {}.'.format(
-                            employee.name
-                            ),
-                        )
-                if employee.address_home_id.partner_id.id in employee_changes\
-                    ['res_partner']:
-                    partner_changed_employees.append(employee)
 
             # hr_employee
             if changed_employees:
                 for employee in changed_employees:
-                    for change in employee_changes['hr_employee'][employee.id]:
+                    for change in changed_stuff['hr_employee'][employee.id]:
 
                         contract = employee_obj.get_active_contract(
                             cr, uid, employee.id, date=scope_date,
@@ -848,7 +869,7 @@ class sefip(osv.osv_memory):
             # hr_contract
             if contract_changed_employees:
                 for contract in contract_changed_employees:
-                    for change in employee_changes['hr_contract'][contract.id]:
+                    for change in changed_stuff['hr_contract'][contract.id]:
 
                         r13 = line()
                         # 1   2    Tipo de Registro
@@ -931,7 +952,7 @@ class sefip(osv.osv_memory):
             # res_partner
             if partner_changed_employees:
                 for employee in partner_changed_employees:
-                    for change in employee_changes['res_partner'][employee.id]:
+                    for change in changed_stuff['res_partner'][employee.id]:
                         
                         if change.field != 'birthday':
                             continue
@@ -1041,9 +1062,16 @@ class sefip(osv.osv_memory):
                     # 152 156  Série CTPS
                     r14.write_num(employee.carteira_de_trabalho_serie, 5)
                     # 157 206  Logradouro, rua, nº, apto
-                    r14.write_str(self._clear_alfanum(
-                            employee.address_home_id.street
-                        ), 50)
+                    address = ''
+
+                    if employee.address_home_id.street:
+                        address += employee.address_home_id.street + ' '
+                    if employee.address_home_id.number:
+                        address += employee.address_home_id.number + ' '
+                    if employee.address_home_id.street2:
+                        address += employee.address_home_id.street2
+
+                    r14.write_str(self._clear_alfanum(address), 50)
                     # 207 226  Bairro
                     r14.write_str(self._clear_alfanum(
                             employee.address_home_id.district
@@ -1102,11 +1130,15 @@ class sefip(osv.osv_memory):
                 # 54  93   Nome do Tomador/Obra de Const. Civil
                 r20.write_str(self._clear_alfanum(invoice.partner_id.name), 40)
                 # 94  143  Logradouro, rua, nº, apto
-                street = '{street} {number} {street2}'.format(
-                    street=address.street,
-                    number=address.number,
-                    street2=address.street2,
-                    )
+                street = ''
+
+                if company_address.street:
+                    street += company_address.street + ' '
+                if company_address.number:
+                    street += company_address.number + ' '
+                if company_address.street2:
+                    street += company_address.street2
+
                 r20.write_str(self._clear_alfanum(street), 50)
                 # 144 163  Bairro
                 r20.write_str(self._clear_alfanum(address.district), 20)
@@ -1323,11 +1355,15 @@ class sefip(osv.osv_memory):
             company_address = partner_address_obj.browse(
                 cr, uid, default_address['default'], context=context
                 )
-            address = '{street} {number} {street2}'.format(
-                street=company_address.street,
-                number=company_address.number,
-                street2=company_address.street2,
-                )
+            address = ''
+
+            if company_address.street:
+                address += company_address.street + ' '
+            if company_address.number:
+                address += company_address.number + ' '
+            if company_address.street2:
+                address += company_address.street2
+
             r50.write_str(self._clear_alfanum(address), 50)
             # 199 218  Bairro
             r50.write_str(company_address.district, 20)

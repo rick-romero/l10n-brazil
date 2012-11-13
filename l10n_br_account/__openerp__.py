@@ -36,6 +36,7 @@
                  ],
     'update_xml' : [
         'account_view.xml',
+        'account_tax_view.xml',
         'account.account.template.csv',
         'account.tax.code.template.csv',
         'l10n_br_account_data.xml',

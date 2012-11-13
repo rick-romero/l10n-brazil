@@ -32,6 +32,9 @@ account_journal()
 
 class account_tax(osv.osv):
     _inherit = 'account.tax'
+    _columns = {
+        'account_result_id':fields.many2one('account.account', 'Conta de resultado do imposto'),
+   }
     
     def compute_all(self, cr, uid, taxes, price_unit, quantity, address_id=None, product=None, partner=None, force_excluded=False, fiscal_operation=False):
         """

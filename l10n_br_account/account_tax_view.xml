@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record id="view_tax_form_l10n_br" model="ir.ui.view">
+            <field name="name">account.tax.form.inherit.l10n_br</field>
+            <field name="model">account.tax</field>
+            <field name="type">form</field>
+            <field name="inherit_id" ref="account.view_tax_form"/>
+            <field name="arch" type="xml">
+                <field name="account_collected_id" position="before">
+                    <field name="account_result_id" domain="[('type','&lt;&gt;','view'),('type','&lt;&gt;','consolidation')]"/>
+                    <label colspan="2" nolabel="1" string="Deixe vazio para nao contabilizar nas contas de resultado."/>
+                </field>
+            </field>
+        </record>
+
+    </data>
+</openerp>

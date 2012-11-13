@@ -483,6 +483,7 @@ class account_invoice(osv.osv):
         :return: the (possibly updated) final move_lines to create for this invoice
         """
         payment_term_obj = self.pool.get('account.payment.term')
+        account_tax_obj = self.pool.get('account.tax')
         total_taxes_credit = 0
         move_lines_tmp = []
         move_debit_itens = []
@@ -507,13 +508,31 @@ class account_invoice(osv.osv):
                 move_line_item['tax_amount'] = - move_line_item['tax_amount']
                 tax_retained_itens.append(ind)
  
-            # sum tax credit lines
+            # sum tax credit lines and create moves for result_account_id
             elif move_line_item['credit'] > 0 and not move_line_item['product_id']:
-                total_taxes_credit += move_line_item['credit']
+                # search for the tax by the name, check the result_account_id and create entry in a result account of account_chart.
+                # this is necessary for some companies
+                tax_id = account_tax_obj.search(cr, uid, [('name', '=', move_line_item['name']), ('tax_code_id', '=', move_line_item['tax_code_id'])])
+                if tax_id:
+                    tax = account_tax_obj.browse(cr, uid, tax_id)[0]
+                    if tax.account_result_id.id:
+                        mv_tmp = move_line_item.copy()
+                        mv_tmp['debit'] = mv_tmp['credit']
+                        mv_tmp['credit'] = False
+                        mv_tmp['account_id'] = tax.account_result_id.id
+                        mv_tmp_tuple = 0, 0, mv_tmp
+                        move_lines_tmp.append(mv_tmp_tuple)
+                    else:
+                        # sum tax credit lines - 'normal way'
+                        total_taxes_credit += move_line_item['credit']
+                else:
+                    # sum tax credit lines - 'normal way'
+                    total_taxes_credit += move_line_item['credit']
 
             # get final invoice credit line 
             elif move_line_item['credit'] > 0 and move_line_item['product_id']:
                 final_credit_inds.append(ind)
+            
 
         # fix total amount removing taxes diferent from tax_add type
         if final_credit_inds:

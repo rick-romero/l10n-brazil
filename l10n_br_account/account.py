@@ -88,8 +88,8 @@ class account_tax(osv.osv):
         all_tad = tad + ntax + tre
         all_tad = super(account_tax, self)._compute(cr, uid, all_tad, totlex_qty, quantity, address_id=address_id, product=product, partner=partner)
 
-        for r in all_tad:
-            totalin += r.get('amount', 0.0)
+        for r_tax in all_tad:
+            totalin += r_tax.get('amount', 0.0)
 
         tax_obj = self.pool.get('account.tax')
         res_taxes = pin + tin + all_tad
@@ -158,7 +158,7 @@ class account_tax(osv.osv):
             if tax_brw.domain == 'icmsst':
                 tax['total_base'] += (totalex + ipi_value) * (1 + tax_brw.amount_mva)
                 tax['amount'] = (((totalex + ipi_value) * (1 + tax_brw.amount_mva)) * tax_brw.amount) - icms_value
-
+       
         return {
             'total': totalex,
             'total_included': totalin,

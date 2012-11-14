@@ -39,10 +39,10 @@ class purchase_order(osv.osv):
             cur = order.pricelist_id.currency_id
             for line in order.order_line:
                 val1 += line.price_subtotal
-                for c in self.pool.get('account.tax').compute_all(cr, uid, line.taxes_id, line.price_unit, line.product_qty, order.partner_address_id.id, line.product_id.id, order.partner_id)['taxes']:
-                    tax_brw = self.pool.get('account.tax').browse(cr, uid, c['id'])
-                    if not tax_brw.tax_code_id.tax_discount:
-                        val += c.get('amount', 0.0)
+                for c_tax in self.pool.get('account.tax').compute_all(cr, uid, line.taxes_id, line.price_unit, line.product_qty, order.partner_address_id.id, line.product_id.id, order.partner_id)['taxes']:
+                    tax_brw = self.pool.get('account.tax').browse(cr, uid, c_tax['id'])
+                    if tax_brw.tax_add:
+                        val += c_tax.get('amount', 0.0)
             res[order.id]['amount_tax'] = cur_obj.round(cr, uid, cur, val)
             res[order.id]['amount_untaxed'] = cur_obj.round(cr, uid, cur, val1)
             res[order.id]['amount_total'] = res[order.id]['amount_untaxed'] + res[order.id]['amount_tax']

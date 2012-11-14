@@ -65,7 +65,7 @@ class account_invoice(osv.osv):
                 res[invoice.id]['pis_value'] += line.pis_value
                 res[invoice.id]['cofins_base'] += line.cofins_base
                 res[invoice.id]['cofins_value'] += line.cofins_value
-           
+          
             for invoice_tax in invoice.tax_line:
                 if not invoice_tax.tax_code_id.tax_include:
                     res[invoice.id]['amount_tax'] += invoice_tax.amount

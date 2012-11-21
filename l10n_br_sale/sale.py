@@ -225,8 +225,6 @@ class sale_order(osv.osv):
                     if order_line.product_id.fiscal_type == 'service' or inv_line.product_id.is_on_service_invoice:
                         fiscal_operation_category_id = order_line.fiscal_operation_category_id or order.fiscal_operation_category_id or False
                         fiscal_operation_id = order_line.fiscal_operation_id or order.fiscal_operation_id or False
-                        #Em quanto não tem as posições fiscais na linha coloca falso na nota de serviço
-                        fiscal_position = False
                         service_type_id = (order_line.fiscal_operation_id and order_line.fiscal_operation_id.service_type_id.id) or (order.fiscal_operation_id and order.fiscal_operation_id.service_type_id.id) or False
                         fiscal_type = order_line.product_id.fiscal_type
 

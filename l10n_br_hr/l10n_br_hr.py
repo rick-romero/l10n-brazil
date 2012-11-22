@@ -136,6 +136,7 @@ class l10n_br_hr_changes(osv.osv):
         'new_value': fields.text(u'Novo valor do campo'),
         'register_id': fields.integer(u'Id do registro alterado'),
         }
+    # FIXME: registrar somente os campos necessarios
     def register_changes(self, cr, uid, ids, table, vals):
         for register_id in ids:
             for field in vals:
@@ -302,6 +303,7 @@ class hr_employee(osv.osv):
         return super(hr_employee, self).write(cr, uid, ids, vals, context)
 
     def get_active_contract(self, cr, uid, eid, date=None, context=None):
+        """Get the active contract in the current month"""
         employee = self.browse(cr, uid, eid, context=context)
         contract = None
 
@@ -310,10 +312,8 @@ class hr_employee(osv.osv):
 
         current_year = int(date.strftime('%Y'))
         current_month = int(date.strftime('%m'))
-        current_day = int(date.strftime('%d'))
 
         for c in employee.contract_ids:
-            # check if contract was active in the base year
             end_date = None
 
             if c.data_de_desligamento:
@@ -329,25 +329,16 @@ class hr_employee(osv.osv):
                     )
                 start_year = int(date_start.strftime('%Y'))
                 start_month = int(date_start.strftime('%m'))
-                start_day = int(date_start.strftime('%d'))
 
-                if (start_year == current_year and 
-                    start_month == current_month and
-                    start_day <= current_day 
-                    ) or (
-                    start_year == current_year and start_month < current_month
+                if (start_year == current_year and start_month <= current_month
                     ) or start_year < current_year:
                     contract = c
                     break
             else:
                 end_year = int(end_date.strftime('%Y'))
                 end_month = int(end_date.strftime('%m'))
-                end_day = int(end_date.strftime('%d'))
 
-                if (end_year == current_year and end_month == current_month and
-                    end_day >= current_day 
-                    ) or (
-                    end_year == current_year and end_month > current_month
+                if (end_year == current_year and end_month >= current_month
                     ) or end_year > current_year:
                     contract = c
                     break

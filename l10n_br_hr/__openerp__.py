@@ -30,6 +30,12 @@
     "description": """
     Brazilian Localization for Human Resources
     Currently it doesn't support companies with CEI subscriptions.
+
+    Generates the following files through wizards:
+    - RAIS
+    - SEFIP*
+    
+    * Currently does not support 650 and 660 "recolhimento" codes
     """,
     'depends': [
         'l10n_br_account',
@@ -37,9 +43,11 @@
         'hr_holidays',
         'hr_payroll',
         ],
-    'init_xml': [
+    'init_xml': [],
+    'update_xml': [
         'data/hr.contract.type.csv',
         'data/hr.holidays.status.csv',
+        'data/hr_payroll_data.xml',
         'data/l10n_br_hr.etnia.csv',
         'data/l10n_br_hr.grau_de_instrucao.csv',
         'data/l10n_br_hr.motivo_de_desligamento.csv',
@@ -49,10 +57,8 @@
         'data/l10n_br_hr.recolhimento.csv',
         'data/l10n_br_hr.tipo_de_admissao.csv',
         'data/l10n_br_hr.vinculo.csv',
-        'data/hr_payroll_data.xml',
         'security/ir.model.access.csv',
-        ],
-    'update_xml': [
+
         'hr_employee_sequence.xml',
         'l10n_br_hr_view.xml',
         'wizard/rais_view.xml',

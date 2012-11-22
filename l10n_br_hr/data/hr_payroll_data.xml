@@ -70,7 +70,7 @@
 			<field name="name">Horas Extras</field>
 			<field name="sequence" eval="1"/>
 			<field name="code">HEXTRAS</field>
-			<field name="category_id" ref="hr_payroll.HEXTRAS"/>
+			<field name="category_id" ref="l10n_br_hr.HEXTRAS"/>
 			<field name="condition_select">none</field>
 			<field name="amount_select">code</field>
 			<field name="amount_python_compute">result = categories.BASICO + categories.HEXTRAS</field>

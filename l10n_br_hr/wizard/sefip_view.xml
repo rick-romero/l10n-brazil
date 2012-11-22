@@ -17,17 +17,46 @@
               <label colspan="2"
                 string="Esta ação gerará o arquivo SEFIP da empresa selecionada." />
 
-              <field name="ano_da_declaracao" readonly="1" colspan="1" />
-
               <notebook colspan="4">
 
                 <page string="Empresa">
                   <field colspan="2" name="company" />
+                  <field name="modalidade" />
                   <field name="fpas" />
                   <field name="recolhimento" />
+                  <field name="indicador_de_recolhimento_fgts" />
+                  <field name="data_de_recolhimento_fgts" />
+                  <field name="indicador_de_recolhimento_previdencia" />
+                  <field name="data_de_recolhimento_previdencia"
+                    attrs="{'invisible':[('indicador_de_recolhimento_previdencia','!=','2')]}" />
                   <field name="competencia"
                   	on_change="onchange_competencia(competencia)" />
                   <field colspan="2" name="valores_pagos_a_cooperativas" />
+                  <field name="aliquota_rat"
+                    on_change="onchange_aliquota_rat(aliquota_rat)" />
+                  
+                  <field name="codigo_de_outras_entidades" />
+                  <field name="codigo_de_pagamento_gps" />
+                  <field name="percentual_de_isencao_de_filantropia"
+                    on_change="onchange_percentual_de_isencao_de_filantropia(percentual_de_isencao_de_filantropia)" />
+                  <field name="deducao_13_salario_licenca_maternidade" />
+                  <field name="receita_evento_desportivo" />
+                  <field name="indicativo_origem_da_receita" />
+                  <field name="compensacao_valor_corrigido" />
+                  <field name="compensacao_periodo_inicio"
+                    on_change="onchange_compensacao_periodo_inicio(compensacao_periodo_inicio)" />
+                  <field name="compensacao_periodo_fim"
+                    on_change="onchange_compensacao_periodo_fim(compensacao_periodo_fim)" />
+
+                  <separator string="Fornecedor da Folha de Pagamento"
+                    colspan="4" />
+                  <field name="fornecedor_folha_tipo_de_inscricao" />
+                  <field name="fornecedor_folha_cnpj"
+                    on_change="onchange_fornecedor_folha_cnpj(fornecedor_folha_cnpj)"
+                    attrs="{'invisible':[('fornecedor_folha_tipo_de_inscricao','!=','1')]}" />
+                  <field name="fornecedor_folha_cpf"
+                    on_change="onchange_fornecedor_folha_cpf(fornecedor_folha_cpf)"
+                    attrs="{'invisible':[('fornecedor_folha_tipo_de_inscricao','!=','3')]}"/>
                 </page>
 
                 <page string="Responsável pela Entrega">
@@ -47,6 +76,19 @@
                   	on_change="onchange_responsavel_cep(responsavel_cep)" />
                   <field name="responsavel_pais" />
                   <field name="responsavel_cidade" />
+                </page>
+
+                <page string="Recolhimento de Competências Anteriores">
+                  <field name="competencias_anteriores_inss_folha"
+                    on_change="onchange_mask_float_15('competencias_anteriores_inss_folha', competencias_anteriores_inss_folha)" />
+                  <field name="competencias_anteriores_outras_entidades_folha"
+                    on_change="onchange_mask_float_15('competencias_anteriores_outras_entidades_folha', competencias_anteriores_outras_entidades_folha)" />
+                  <field name="competencias_anteriores_inss_producao"
+                    on_change="onchange_mask_float_15('competencias_anteriores_inss_producao', competencias_anteriores_inss_producao)" />
+                  <field name="competencias_anteriores_outras_entidades_producao"
+                    on_change="onchange_mask_float_15('competencias_anteriores_outras_entidades_producao', competencias_anteriores_outras_entidades_producao)" />
+                  <field name="competencias_anteriores_inss_evento"
+                    on_change="onchange_mask_float_15('competencias_anteriores_inss_evento', competencias_anteriores_inss_evento)" />
                 </page>
 
               </notebook>

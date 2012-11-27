@@ -50,4 +50,16 @@ class account_fiscal_position(osv.osv):
         
 account_fiscal_position()
 
-# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
+
+class account_fiscal_position_tax(osv.osv):
+    _inherit = 'account.fiscal.position.tax'
+
+    _columns = {
+                'imposto_credito': fields.boolean(u'Gera Crédito'),
+                }
+    
+    _defaults = {
+        'imposto_credito': False,
+    }
+        
+account_fiscal_position_tax()

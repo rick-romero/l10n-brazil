@@ -470,6 +470,59 @@ class account_invoice(osv.osv):
                     i -= 1
         return result
 
+    def compute_invoice_totals(self, cr, uid, inv, company_currency, ref, invoice_move_lines):
+        total = 0
+        total_currency = 0
+        sum_debit = 0
+        cur_obj = self.pool.get('res.currency')
+        for i in invoice_move_lines:
+            if inv.currency_id.id != company_currency:
+                i['currency_id'] = inv.currency_id.id
+                i['amount_currency'] = i['price']
+                i['price'] = cur_obj.compute(cr, uid, inv.currency_id.id,
+                        company_currency, i['price'],
+                        context={'date': inv.date_invoice or time.strftime('%Y-%m-%d')})
+            else:
+                i['amount_currency'] = False
+                i['currency_id'] = False
+            i['ref'] = ref
+            
+            if inv.type not in ('out_invoice','in_refund') and inv.fiscal_position:
+                    tax_ids = inv.fiscal_position.tax_ids
+                    for tax in tax_ids:
+                        if tax.tax_dest_id.name == i['name'] and not tax.imposto_credito:
+                            sum_debit += i['price']
+
+        for i in invoice_move_lines:
+            if inv.type in ('out_invoice','in_refund'):
+                total += i['price']
+                total_currency += i['amount_currency'] or i['price']
+                i['price'] = - i['price']
+            else:
+                tax_credito = True
+                if inv.fiscal_position:
+                    tax_ids = inv.fiscal_position.tax_ids
+                    for tax in tax_ids:
+                        if tax.tax_dest_id.name == i['name']:
+                            tax_credito = tax.imposto_credito
+                if not tax_credito:
+                    # credita em conta a recolher
+                    i['price'] = - i['price']
+                    total -= i['price']
+                    total_currency += i['amount_currency'] or i['price']
+                else:
+                    # se linha de debito do produto, soma impostos q nao creditao na entrada
+                    try:
+                        if i['product_id'] and i['price'] > 0:
+                            i['price'] += sum_debit
+                    except:
+                        pass
+                    # debita em conta a recuperar 
+                    total -= i['price']
+                    total_currency -= i['amount_currency'] or i['price']
+
+        return total, total_currency, invoice_move_lines
+
     def finalize_invoice_move_lines(self, cr, uid, invoice_browse, move_lines):
         """finalize_invoice_move_lines(cr, uid, invoice, move_lines) -> move_lines
         Hook method to be overridden in additional modules to verify and possibly alter the
@@ -485,12 +538,14 @@ class account_invoice(osv.osv):
         payment_term_obj = self.pool.get('account.payment.term')
         account_tax_obj = self.pool.get('account.tax')
         total_taxes_credit = 0
+        total_taxes_debit = 0
         move_lines_tmp = []
         move_debit_itens = []
         remove_itens = []
         tax_retained_itens = []
         mv_tmp_tuple = []
         final_credit_inds = []
+        final_debit_inds = []
 
         for ind, move_line in enumerate(move_lines):
             move_line_item = move_line[2]
@@ -512,34 +567,64 @@ class account_invoice(osv.osv):
             elif move_line_item['credit'] > 0 and not move_line_item['product_id']:
                 # search for the tax by the name, check the result_account_id and create entry in a result account of account_chart.
                 # this is necessary for some companies
-                tax_id = account_tax_obj.search(cr, uid, [('name', '=', move_line_item['name']), ('tax_code_id', '=', move_line_item['tax_code_id'])])
-                if tax_id:
-                    tax = account_tax_obj.browse(cr, uid, tax_id)[0]
-                    if tax.account_result_id.id:
-                        mv_tmp = move_line_item.copy()
-                        mv_tmp['debit'] = mv_tmp['credit']
-                        mv_tmp['credit'] = False
-                        mv_tmp['account_id'] = tax.account_result_id.id
-                        mv_tmp_tuple = 0, 0, mv_tmp
-                        move_lines_tmp.append(mv_tmp_tuple)
+                if invoice_browse.type in ('out_invoice','in_refund'):
+                    tax_id = account_tax_obj.search(cr, uid, [('name', '=', move_line_item['name']), ('tax_code_id', '=', move_line_item['tax_code_id'])])
+                    if tax_id:
+                        tax = account_tax_obj.browse(cr, uid, tax_id)[0]
+                        if tax.account_result_id.id:
+                            mv_tmp = move_line_item.copy()
+                            mv_tmp['debit'] = mv_tmp['credit']
+                            mv_tmp['credit'] = False
+                            mv_tmp['account_id'] = tax.account_result_id.id
+                            mv_tmp_tuple = 0, 0, mv_tmp
+                            move_lines_tmp.append(mv_tmp_tuple)
+                        else:
+                            # sum tax credit lines - 'normal way'
+                            total_taxes_credit += move_line_item['credit']
                     else:
                         # sum tax credit lines - 'normal way'
                         total_taxes_credit += move_line_item['credit']
-                else:
-                    # sum tax credit lines - 'normal way'
-                    total_taxes_credit += move_line_item['credit']
+                # sendo in_invoice nao soma o credito da conta do fornecedor nas taxas
+                elif move_line_item['account_id'] != invoice_browse.account_id.id:
+                        total_taxes_credit += move_line_item['credit']
+                # sendo in_invoice armazena o indice do linha de credito da conta do fornecedor
+                elif move_line_item['account_id'] == invoice_browse.account_id.id:
+                        final_credit_inds.append(ind)
+
+            # sum tax debit lines
+            elif move_line_item['debit'] > 0 and not move_line_item['product_id']:
+                    # sum tax debit lines
+                    total_taxes_debit += move_line_item['debit']
 
             # get final invoice credit line 
-            elif move_line_item['credit'] > 0 and move_line_item['product_id']:
+            elif move_line_item['credit'] > 0 and \
+                 move_line_item['product_id'] and \
+                 invoice_browse.type in ('out_invoice','in_refund'):
                 final_credit_inds.append(ind)
             
-
+            # get final invoice debit line 
+            elif move_line_item['debit'] > 0 and \
+                 move_line_item['product_id'] and \
+                 invoice_browse.type in ('in_invoice', 'out_refund'):
+                final_debit_inds.append(ind)
+            
         # fix total amount removing taxes diferent from tax_add type
         if final_credit_inds:
-            total_taxes_included = total_taxes_credit - ( invoice_browse.amount_total - invoice_browse.amount_untaxed )
-            for cr_ind in final_credit_inds:
-                tax_included_prod = (total_taxes_included / invoice_browse.amount_untaxed) * move_lines[cr_ind][2]['credit']
-                move_lines[cr_ind][2]['credit'] = move_lines[cr_ind][2]['credit'] - tax_included_prod
+            if invoice_browse.type in ('out_invoice','in_refund'):
+                total_taxes_included = total_taxes_credit - ( invoice_browse.amount_total - invoice_browse.amount_untaxed )
+                for cr_ind in final_credit_inds:
+                    tax_included_prod = (total_taxes_included / invoice_browse.amount_untaxed) * move_lines[cr_ind][2]['credit']
+                    move_lines[cr_ind][2]['credit'] = move_lines[cr_ind][2]['credit'] - tax_included_prod
+            # sendo in_invoice ajusta a linha de credito do fornecedor com o total da fatura
+            else:
+                for cr_ind in final_credit_inds:
+                    move_lines[cr_ind][2]['credit'] = invoice_browse.amount_total
+
+        # fix total amount to in_invoices
+        if final_debit_inds:
+            total_credits = invoice_browse.amount_total + total_taxes_credit 
+            for cr_ind in final_debit_inds:
+                move_lines[cr_ind][2]['debit'] = total_credits - total_taxes_debit
 
         # create a credit entry for each debit entry for tax_retain
         for mv_ind in tax_retained_itens:

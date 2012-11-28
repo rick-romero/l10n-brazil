@@ -11,7 +11,6 @@
                 <data>
                     <field name="company_id" position="before">
                         <field name="fiscal_operation_id"/>
-                        <field name="imposto_credito"/>
                     </field>
                     <xpath
                         expr="//field[@name='tax_ids']/tree/field[@name='tax_dest_id']"
@@ -21,6 +20,7 @@
                     <xpath
                         expr="//field[@name='tax_ids']/form/field[@name='tax_dest_id']"
                         position="after">
+                        <field name="imposto_credito"/>
                     </xpath>
                 </data>
             </field>

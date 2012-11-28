@@ -53,7 +53,7 @@ account_fiscal_position()
 
 class account_fiscal_position_tax(osv.osv):
     _inherit = 'account.fiscal.position.tax'
-
+ 
     _columns = {
                 'imposto_credito': fields.boolean(u'Gera Crédito'),
                 }

@@ -47,6 +47,26 @@ class account_fiscal_position(osv.osv):
     _columns = {
                 'fiscal_operation_id': fields.many2one('l10n_br_account.fiscal.operation', 'Operação Fiscal'),
                 }
+
+    def map_tax(self, cr, uid, fposition_id, taxes, context=None):
+        tax_obj = self.pool.get('account.tax')
+        if not taxes:
+            return []
+        if not fposition_id:
+            return map(lambda x: x.id, taxes)
+        result = []
+        for t in taxes:
+            ok = False
+            for fp_tax in fposition_id.tax_ids:
+                # change behavior to search by the tax code
+                tax = tax_obj.browse(cr, uid, fp_tax.tax_src_id.id)
+                if tax.tax_code_id.id and tax.tax_code_id.id == t.tax_code_id.id:
+                    if fp_tax.tax_dest_id:
+                        result.append(fp_tax.tax_dest_id.id)
+                        ok=True
+            if not ok:
+                result.append(t.id)
+        return result
         
 account_fiscal_position()
 

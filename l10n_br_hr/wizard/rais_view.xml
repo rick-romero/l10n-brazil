@@ -102,7 +102,9 @@
             <group colspan="4" states="done">
               <field name="message" widget="text_tag" nolabel="1"
                 readonly="1" colspan="4" />
-              <field name="file" colspan="4" />
+              <field name="file_name" invisible="1" />
+              <field name="file" colspan="4" filename="file_name"
+                attrs="{'invisible':[('file','=','')]}" />
             </group>
 
             <group col="4" colspan="4">

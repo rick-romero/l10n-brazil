@@ -25,6 +25,8 @@
             <field name="carteira_de_trabalho_numero" />
             <field name="carteira_de_trabalho_serie" />
             <field name="possui_alvara_judicial" />
+            <field name="codigo_caixa"
+              on_change="onchange_codigo_caixa(codigo_caixa)" />
           </group>
         </xpath>
         <xpath
@@ -47,24 +49,42 @@
           <newline/>
           <field name="ocorrencia" />
           <field name="filiado_a_sindicato" />
+          <field name="tomador" />
+        </xpath>
+        <xpath expr="/form/notebook/page[@name='information']/group[@name='left_column']/field[@name='date_end']"
+          position="after">
+          <field name="optante_fgts"
+            attrs="{'invisible':[('date_start','>','1988-10-04')]}" />
+          <field name="data_de_opcao"
+            attrs="{'invisible':[('optante_fgts','!=',True)]}" />
         </xpath>
         <notebook colspan="4">
-          <page string="Admissão">
-            <field name="informacao_da_admissao" />
-            <field name="tipo_de_admissao_id" />
-            <field name="tipo_de_salario_contratual" />
-            <field name="ocupacao_id" />
-            <field name="vinculo_id" />
-            <group col="4" colspan="4">
-              <separator colspan="4" string="Local de Trabalho" />
+          <page string="Movimentação">
+
+            <group col="2" colspan="2" name="left_column">
+              <separator colspan="2" string="Admissão" />
+              <field name="informacao_da_admissao" />
+              <field name="tipo_de_admissao_id" />
+              <field name="tipo_de_salario_contratual" />
+              <field name="ocupacao_id" />
+              <field name="vinculo_id" />
+
+              <separator colspan="2" string="Local de Trabalho" />
               <field name="local_de_trabalho_estado" />
               <field name="local_de_trabalho_cidade" />
             </group>
-          </page>
-          <page string="Desligamento">
-            <field name="informacao_de_desligamento" />
-            <field name="data_de_desligamento" />
-            <field name="motivo_de_desligamento_id" />
+
+            <group col="2" colspan="2" name="right_column">
+              <separator colspan="2" string="Movimentação" />
+              <field name="movimentacao" />
+              <field name="data_de_movimentacao" />
+
+              <separator colspan="2" string="Desligamento" />
+              <field name="informacao_de_desligamento" />
+              <field name="data_de_desligamento" />
+              <field name="motivo_de_desligamento_id" />
+            </group>
+
           </page>
           <page string="Sindicatos"
           attrs="{'invisible':[('filiado_a_sindicato','!=',True)]}">

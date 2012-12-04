@@ -71,6 +71,7 @@ class rais(osv.osv_memory):
         'last_sync_date': fields.datetime('Last Sync Date'),
         'message': fields.text('Message'),
         'file': fields.binary(u'Arquivo', readonly=True),
+        'file_name': fields.char(u'Nome do Arquivo', 128, readonly=True),
         'company_id': fields.many2one('res.company', u'Empresa',
                                       required=True),
         'participa_pat': fields.boolean(u'Participa do PAT'),
@@ -592,7 +593,7 @@ class rais(osv.osv_memory):
             # 300 a 300  01  Número   Indicador de Optante pelo Simples
             #     1 - é optante pelo Simples
             #     2 - não é optante pelo Simples
-            if company.optante_simples_nacional:
+            if company.simples in ['2', '3', '6']:
                 optante = 1
             else:
                 optante = 2
@@ -1258,9 +1259,12 @@ class rais(osv.osv_memory):
             message = u'Arquivo gerado com sucesso'
             state = 'done'
 
+            file_name = 'rais_{}.txt'.format(rais_data.ano_da_declaracao)
+
             encoded_data = file_content.encode("utf-8").encode("base64")
             self.write(cr, uid, ids, {
                 'file': encoded_data,
+                'file_name': file_name,
                 'state': state,
                 'message': message,
                 },

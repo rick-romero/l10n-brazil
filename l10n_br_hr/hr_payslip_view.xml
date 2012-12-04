@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+  <data>
+
+    <record id="view_l10n_br_hr_payslip_form" model="ir.ui.view">
+      <field name="name">l10n_br_hr.payslip.form</field>
+      <field name="model">hr.payslip</field>
+      <field name="type">form</field>
+      <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form" />
+      <field name="arch" type="xml">
+
+        <xpath expr="/form/notebook/page[@string='Salary Computation']/field[@name='line_ids']"
+          position="after">
+          <field name="base_calculo_previdencia" />
+        </xpath>
+
+        <xpath expr="/form/group/button[@name='compute_sheet']" 
+          position="replace">
+          <button string="Compute Sheet" icon="terp-stock_format-scientific"
+            name="pre_compute_sheet" type="object" states="draft"/>
+        </xpath>
+
+      </field>
+    </record>
+
+  </data>
+</openerp>

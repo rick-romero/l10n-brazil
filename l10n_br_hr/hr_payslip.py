@@ -21,53 +21,46 @@
 #                                                                            #
 ##############################################################################
 
-{
-    "name": "Brazilian Localization for Human Resources",
-    "version": "0.1",
-    "author": "PROGE",
-    "category": "Localisation",
-    "website": "http://proge.com.br",
-    "description": """
-    Brazilian Localization for Human Resources
-    Currently it doesn't support companies with CEI subscriptions.
+from osv import osv, fields
+from tools.translate import _
+import datetime
 
-    Generates the following files through wizards:
-    - RAIS
-    - SEFIP*
-    
-    * Currently does not support 650 and 660 "recolhimento" codes
-    """,
-    'depends': [
-        'l10n_br_account',
-        'hr_contract',
-        'hr_holidays',
-        'hr_payroll',
-        ],
-    'init_xml': [],
-    'update_xml': [
-        'data/hr.contract.type.csv',
-        'data/hr.holidays.status.csv',
-        'data/hr_payroll_data.xml',
-        'data/l10n_br_hr.etnia.csv',
-        'data/l10n_br_hr.grau_de_instrucao.csv',
-        'data/l10n_br_hr.motivo_de_desligamento.csv',
-        'data/l10n_br_hr.movimentacao.csv',
-        'data/l10n_br_hr.nationality.csv',
-        'data/l10n_br_hr.ocupacao.csv',
-        'data/l10n_br_hr.ocorrencia.csv',
-        'data/l10n_br_hr.recolhimento.csv',
-        'data/l10n_br_hr.tipo_de_admissao.csv',
-        'data/l10n_br_hr.vinculo.csv',
-        'security/ir.model.access.csv',
 
-        'hr_employee_sequence.xml',
-        'hr_payslip_view.xml',
-        'l10n_br_hr_view.xml',
-        'wizard/rais_view.xml',
-        'wizard/sefip_view.xml',
-        ],
-    'demo_xml': [],
-    'test': [],
-    'installable': True,
-    'active': False,
-}
+class hr_payslip(osv.osv):
+    _inherit = 'hr.payslip'
+    _columns = {
+        'base_calculo_previdencia': fields.float(
+            u'Base de Cálculo da Previdência Social',
+            size=16,
+            digits=(13, 2),
+            ),
+        }
+
+    def pre_compute_sheet(self, cr, uid, ids, context=None):
+        payslip_line_obj = self.pool.get('hr.payslip.line')
+
+        for payslip in self.browse(cr, uid, ids, context):
+
+            gross = 0
+
+            p_line_ids = payslip_line_obj.search(cr, uid, [
+                    ('slip_id', '=', payslip.id),
+                    ('code', '=', 'GROSS'),
+                ], context=context)
+
+            if p_line_ids:
+                p_lines = payslip_line_obj.browse(
+                    cr, uid, p_line_ids, context=context
+                    )
+
+                for l in p_lines:
+                    gross += l.total
+
+            self.write(cr, uid, payslip.id, {
+                'base_calculo_previdencia': gross
+                }, context)
+
+        return self.compute_sheet(cr, uid, ids, context)
+
+
+hr_payslip()

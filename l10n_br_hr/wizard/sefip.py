@@ -76,7 +76,9 @@ class line:
                 data = str(re.sub('[^0-9]', '', str(data)))
 
         pattern = '% {}s'.format(size)
-        self.content += pattern % data
+        num = (pattern % data)[:size]
+        self.content += num
+        return num
 
     def write_val(self, data, size):
         if not data:
@@ -88,23 +90,22 @@ class line:
                 data = int(re.sub('[^0-9]', '', str(data)))
 
         pattern = '%0{}d'.format(size)
-        self.content += pattern % data
+        val = (pattern % data)[:size]
+        self.content += val
+        return val
 
-    def write_str(self, data, size=None):
+    def write_str(self, data, size):
         if not data:
             data = ''
 
-        if size is not None:
-            stripped_data = data[:size]
-            stripped_data_len = len(stripped_data)
+        stripped_data = data[:size]
+        stripped_data_len = len(stripped_data)
 
-            if stripped_data_len < size:
-                stripped_data += ' ' * (size - stripped_data_len)
+        if stripped_data_len < size:
+            stripped_data += ' ' * (size - stripped_data_len)
 
-            self.content += stripped_data
-
-        else:
-            self.content += data
+        self.content += stripped_data
+        return stripped_data
 
     def write_date(self, date_str):
         if date_str:
@@ -112,6 +113,7 @@ class line:
             date_str = date.strftime('%d%m%Y')
 
         self.write_str(date_str, 8)
+        return date_str
 
 
 class sefip(osv.osv_memory):
@@ -125,6 +127,7 @@ class sefip(osv.osv_memory):
         'last_sync_date': fields.datetime('Last Sync Date'),
         'message': fields.text('Message'),
         'file': fields.binary(u'Arquivo', readonly=True),
+        'file_name': fields.char(u'Nome do Arquivo', 128, readonly=True),
         'company': fields.many2one('res.company', u'Empresa',
                                       required=True),
         'responsavel_tipo_de_inscricao': fields.selection([
@@ -206,7 +209,7 @@ class sefip(osv.osv_memory):
                 ('2', u'Centralizada'),
             ],
             u'Código de Centralização',
-            required=True
+            #required=True
             ),
         'codigo_de_outras_entidades': fields.integer(
             u'Código de Outras Entidades',
@@ -294,7 +297,6 @@ class sefip(osv.osv_memory):
             size=16,
             digits=(13, 2),
             ),
-        # TODO: atalho pras colunas (isso não é um todo)
         }
     _defaults = {
         'state': 'init',
@@ -615,6 +617,11 @@ class sefip(osv.osv_memory):
         sefip_data = self.browse(cr, uid, ids[0])
         recolhimento = sefip_data.recolhimento.code
         scope_month, scope_year = map(int, sefip_data.competencia.split('/'))
+        mes_competencia = scope_month
+
+        if scope_month == 13:
+            scope_month = 12
+
         scope_date = datetime.datetime.strptime(
             '%04d-%02d-%02d' % (scope_year, scope_month, 1),
             '%Y-%m-%d'
@@ -644,11 +651,22 @@ class sefip(osv.osv_memory):
         categories = [
             'SFAMILIA', 'SMATERNIDADE', '13SALAD', '13SALFI',
             ]
+        tomadores = []
+        active_contracts = 0
+
+        for category in categories:
+            grouped_payslips[category] = {'value': 0}
 
         for employee in employees:
             for contract in employee.contract_ids:
                 # check if contract was active in the base year and month
                 date_end = None
+
+                date_start = datetime.datetime.strptime(
+                    contract.date_start, '%Y-%m-%d'
+                    )
+                start_year = int(date_start.strftime('%Y'))
+                start_month = int(date_start.strftime('%m'))
 
                 if contract.data_de_desligamento:
                     date_end = datetime.datetime.strptime(
@@ -659,7 +677,13 @@ class sefip(osv.osv_memory):
                         contract.date_end, '%Y-%m-%d'
                         )
 
-                if date_end:
+                if not date_end:
+                    if (start_year == scope_year and start_month >
+                        scope_month) or start_year > scope_year:
+                        del employees[index]
+                        continue
+
+                else:
                     end_year = int(date_end.strftime('%Y'))
                     end_month = int(date_end.strftime('%m'))
 
@@ -667,6 +691,8 @@ class sefip(osv.osv_memory):
                         end_year < scope_year:
                         del employees[index]
                         continue
+
+                active_contracts += 1
 
                 payslip_ids = payslip_obj.search(cr, uid, [
                         ('state', '=', 'done'),
@@ -677,6 +703,9 @@ class sefip(osv.osv_memory):
                 payslips = payslip_obj.browse(
                     cr, uid, payslip_ids, context=context
                     )
+
+                if contract.tomador:
+                    tomadores.append(contract.tomador.id)
 
                 for m in range(1, 13):
                     grouped_payslips[m] = {'value': 0}
@@ -744,7 +773,10 @@ class sefip(osv.osv_memory):
                                     }
 
             index += 1
-        print grouped_payslips
+
+        if active_contracts == 0:
+            message = u'Não há contratos ativos na competência informada.'
+            raise osv.except_osv(u'Não foi possível gerar o arquivo.', message)
 
         if not company.cnpj:
             message = u'A empresa deve possuir CNPJ cadastrado'
@@ -884,7 +916,7 @@ class sefip(osv.osv_memory):
                     u'O código de recolhimento selecionado não aceita o ' + \
                     u'indicador de recolhimento do FGTS "GRF no prazo".',
                     )
-            if sefip_data.recolhimento.code == '211' or scope_month == 13:
+            if sefip_data.recolhimento.code == '211' or mes_competencia == 13:
                 r00.write_str('', 1)
             else:
                 r00.write_num(sefip_data.indicador_de_recolhimento_fgts, 1)
@@ -894,8 +926,8 @@ class sefip(osv.osv_memory):
             if modalidade == '0':
                 modalidade = None
 
-            if (scope_year < 1998 or (scope_year == 1998 and scope_month < 10)
-                ) and modalidade == '9':
+            if (scope_year < 1998 or (scope_year == 1998 and
+                mes_competencia < 10)) and modalidade == '9':
                 raise osv.except_osv(
                     u'Não foi possível gerar o arquivo.',
                     u'Modalidade deve ser recolhimento ou declaração para ' + \
@@ -923,7 +955,7 @@ class sefip(osv.osv_memory):
                     u'Para o FPAS selecionado, a modalidade deve ser ' + \
                     u'recolhimento ou confirmação/retificação.',
                     )
-            elif scope_month == 13 and modalidade is None:
+            elif mes_competencia == 13 and modalidade is None:
                 raise osv.except_osv(
                     u'Não foi possível gerar o arquivo.',
                     u'Para a competência 13, a modalidade deve ser ' + \
@@ -945,8 +977,8 @@ class sefip(osv.osv_memory):
 
             # 311 311  Indicador de Recolhimento da Previdência Social
             if sefip_data.indicador_de_recolhimento_previdencia != '3' and (
-                scope_year < 1998 or (scope_year == 1998 and scope_month < 10)
-                ):
+                scope_year < 1998 or (scope_year == 1998 and
+                mes_competencia < 10)):
                 raise osv.except_osv(
                     u'Não foi possível gerar o arquivo.',
                     u'Para a competência informada, o indicador de ' + \
@@ -990,10 +1022,9 @@ class sefip(osv.osv_memory):
                             u'competência.',
                             )
                     else:
-                        date_str = date.strftime('%d%m%Y')
-                        r00.write_str(date_str)
+                        r00.write_str(date.strftime('%d%m%Y'), 8)
     
-                elif scope_month == 13:
+                elif mes_competencia == 13:
                     alw_date = datetime.datetime.strptime(
                         '%04d-%02d-%02d' % (scope_year, 12, 20), '%Y-%m-%d'
                         )
@@ -1006,8 +1037,7 @@ class sefip(osv.osv_memory):
                             u'20/12/%d.' % scope_year,
                             )
                     else:
-                        date_str = date.strftime('%d%m%Y')
-                        r00.write_str(date_str)
+                        r00.write_str(date.strftime('%d%m%Y'), 8)
 
                 else:
                     r00.write_date(sefip_data.data_de_recolhimento_previdencia)
@@ -1051,7 +1081,7 @@ class sefip(osv.osv_memory):
             # 360 360  Final de Linha
             r00.write_str('*', 1)
 
-            lines.append(r00)
+            lines.append({'line': r00, 'order': '00'})
 
             '''
             Registro 10 - Informações da empresa
@@ -1122,7 +1152,7 @@ class sefip(osv.osv_memory):
             r10.write_str(cnae_changed, 1)
 
             # 215 216  Alíquota RAT
-            if sefip_data.company.optante_simples_nacional or \
+            if sefip_data.company.simples in ['2', '3', '6'] or \
                 sefip_data.recolhimento.code in ['604', '647', '825', '833',
                                                  '868']:
                 r10.write_val(0, 2)
@@ -1137,8 +1167,11 @@ class sefip(osv.osv_memory):
             else:
                 r10.write_num(sefip_data.aliquota_rat, 2)
 
-            # TODO: 217 217  Código de Centralização
-            # TODO: 218 218  SIMPLES
+            # 217 217  Código de Centralização
+            # FIXME: não implementado
+            r10.write_num(0, 1)
+            # 218 218  SIMPLES
+            r10.write_num(company.simples, 1)
 
             # 219 221  FPAS
             # FIXME: Trocar campo aberto por tabela de códigos
@@ -1156,7 +1189,8 @@ class sefip(osv.osv_memory):
             elif sefip_data.recolhimento.code in ['145', '307', '317', '327',
                                                   '337', '345', '640', '660']:
                 r10.write_str('', 4)
-            elif valor_competencia < 199810:
+            elif valor_competencia < 199810 or company.simples in ['2', '3',
+                                                                   '6']:
                 r10.write_str('', 4)
             elif sefip_data.fpas == '639' and valor_competencia < 199904:
                 r10.write_str('', 4)
@@ -1164,18 +1198,16 @@ class sefip(osv.osv_memory):
                 r10.write_val(0, 4)
             elif sefip_data.fpas == '868':
                 r10.write_val(0, 4)
-            # TODO: if simples in [2, 3, 6]
-            #    r10.write_str('', 4)
             else:
                 r10.write_num(sefip_data.codigo_de_outras_entidades, 4)
 
             # 226 229  Código de Pagamento GPS
             if not sefip_data.codigo_de_pagamento_gps and (scope_year > 1998 or
-                (scope_year == 1998 and scope_month >= 10)):
+                (scope_year == 1998 and mes_competencia >= 10)):
                 raise osv.except_osv(
                     u'Não foi possível gerar o arquivo.',
-                    u'Campo é obrigatório para competência maior ou igual ' + \
-                    u'a 10/1998.',
+                    u'Campo "Código de Pagamento GPS" é obrigatório para ' + \
+                    u'competência maior ou igual a 10/1998.',
                     )
             elif sefip_data.recolhimento.code in ['115', '150', '211', '650']:
                 r10.write_num(sefip_data.codigo_de_pagamento_gps, 4)
@@ -1243,7 +1275,11 @@ class sefip(osv.osv_memory):
             r10.write_str('', 4)
             # 360 360  Final de Linha
             r10.write_str('*', 1)
-            lines.append(r10)
+            lines.append({
+                'line': r10,
+                # Tipo do registro (10), tipo de inscrição (1) e CNPJ
+                'order': '101{}'.format(sefip_data.company.cnpj),
+                })
 
             '''
             Registro 12 - Informações adicionais do recolhimento da empresa
@@ -1272,7 +1308,7 @@ class sefip(osv.osv_memory):
                     )
 
             # 69  83   Receita Evento Desportivo/Patrocínio
-            if scope_month == 13 or sefip_data.fpas == '868' or \
+            if mes_competencia == 13 or sefip_data.fpas == '868' or \
                 sefip_data.recolhimento.code in ['130', '135', '145', '211',
                                                  '307', '317', '327', '337',
                                                  '345', '608', '640', '650',
@@ -1281,7 +1317,7 @@ class sefip(osv.osv_memory):
             else:
                 r12.write_val(sefip_data.receita_evento_desportivo, 15)
             # 84  84   Indicativo Origem da Receita
-            if scope_month == 13:
+            if mes_competencia == 13:
                 r12.write_str('', 1)
             else:
                 r12.write_str(sefip_data.indicativo_origem_da_receita, 1)
@@ -1407,7 +1443,11 @@ class sefip(osv.osv_memory):
             r12.write_str('', 6)
             # 360 360  Final da Linha
             r12.write_str('*', 1)
-            lines.append(r12)
+            lines.append({
+                'line': r12,
+                # Tipo do registro (10), tipo de inscrição (1) e CNPJ
+                'order': '121{}'.format(sefip_data.company.cnpj),
+            })
 
             '''
             Registro 13 - Alteração cadastral do trabalhador
@@ -1432,31 +1472,31 @@ class sefip(osv.osv_memory):
                         # 3   3    Tipo de Inscrição - Fixo: 1 - CNPJ
                         r13.write_val(1, 1)
                         # 4   17   Inscrição da Empresa
-                        r13.write_num(sefip_data.company.cnpj, 14)
+                        cnpj = r13.write_num(sefip_data.company.cnpj, 14)
                         # 18  53   Zeros
                         r13.write_val(0, 36)
                         # 54  64   PIS/PASEP
-                        r13.write_num(employee.pis_pasep, 11)
+                        pis_pasep = r13.write_num(employee.pis_pasep, 11)
 
                         # 65  72   Data de Admissão
                         if contract.date_start:
                             date_start = datetime.datetime.strptime(
                                 contract.date_start, '%Y-%m-%d'
                                 )
-                            r13.write_str(date_start.strftime('%d%m%Y'), 8)
+                            d = r13.write_str(date_start.strftime('%d%m%Y'), 8)
                         else:
-                            r13.write_val(0, 8)
+                            d = r13.write_val(0, 8)
 
                         # 73  74   Categoria Trabalhador
                         if not contract.type_id.code:
-                            contract_type = 1
+                            contract_type = '01'
                         else:
                             contract_type = contract.type_id.code
 
                         r13.write_val(contract_type, 2)
 
                         # 75  85   Matrícula do Trabalhador
-                        if contract_type == 6 or not employee.matricula:
+                        if contract_type == '06' or not employee.matricula:
                             r13.write_str('', 11)
                         else:
                             r13.write_val(employee.matricula, 11)
@@ -1466,8 +1506,10 @@ class sefip(osv.osv_memory):
                         r13.write_num(employee.carteira_de_trabalho_serie, 5)
                         # 98  167  Nome Trabalhador
                         r13.write_str(self._clear_alfanum(employee.name), 70)
-                        # TODO: 168 181  Código Empresa CAIXA
-                        # TODO: 182 192  Código Trabalhador CAIXA
+                        # 168 181  Código Empresa CAIXA
+                        r13.write_num(company.codigo_caixa, 14)
+                        # 182 192  Código Trabalhador CAIXA
+                        r13.write_num(employee.codigo_caixa, 11)
 
                         # 193 195  Código Alteração Cadastral
                         change_code = None
@@ -1489,9 +1531,14 @@ class sefip(osv.osv_memory):
 
                         # 266 359  Brancos
                         r13.write_str('', 94)
+
                         # 360 360  Final da Linha
                         r13.write_str('*', 1)
-                        lines.append(r13)
+
+                        order = '131' + str(cnpj) + str(pis_pasep) + str(d) + \
+                            contract_type
+
+                        lines.append({'line': r13, 'order': order})
 
             # hr_contract
             if contract_changed_employees:
@@ -1504,31 +1551,31 @@ class sefip(osv.osv_memory):
                         # 3   3    Tipo de Inscrição - Fixo: 1 - CNPJ
                         r13.write_val(1, 1)
                         # 4   17   Inscrição da Empresa
-                        r13.write_num(sefip_data.company.cnpj, 14)
+                        cnpj = r13.write_num(sefip_data.company.cnpj, 14)
                         # 18  53   Zeros
                         r13.write_val(0, 36)
                         # 54  64   PIS/PASEP
-                        r13.write_num(employee.pis_pasep, 11)
+                        pis_pasep = r13.write_num(employee.pis_pasep, 11)
 
                         # 65  72   Data de Admissão
                         if contract.date_start:
                             date_start = datetime.datetime.strptime(
                                 contract.date_start, '%Y-%m-%d'
                                 )
-                            r13.write_str(date_start.strftime('%d%m%Y'), 8)
+                            d = r13.write_str(date_start.strftime('%d%m%Y'), 8)
                         else:
-                            r13.write_val(0, 8)
+                            d = r13.write_val(0, 8)
 
                         # 73  74   Categoria Trabalhador
                         if not contract.type_id.code:
-                            contract_type = 1
+                            contract_type = '01'
                         else:
                             contract_type = contract.type_id.code
 
                         r13.write_val(contract_type, 2)
 
                         # 75  85   Matrícula do Trabalhador
-                        if contract_type == 6 or not employee.matricula:
+                        if contract_type == '06' or not employee.matricula:
                             r13.write_str('', 11)
                         else:
                             r13.write_val(employee.matricula, 11)
@@ -1545,8 +1592,10 @@ class sefip(osv.osv_memory):
                         r13.write_str(
                             self._clear_alfanum(contract.employee_id.name), 70
                             )
-                        # TODO: 168 181  Código Empresa CAIXA
-                        # TODO: 182 192  Código Trabalhador CAIXA
+                        # 168 181  Código Empresa CAIXA
+                        r13.write_num(company.codigo_caixa, 14)
+                        # 182 192  Código Trabalhador CAIXA
+                        r13.write_num(employee.codigo_caixa, 11)
 
                         # 193 195  Código Alteração Cadastral
                         change_code = None
@@ -1574,7 +1623,11 @@ class sefip(osv.osv_memory):
                         r13.write_str('', 94)
                         # 360 360  Final da Linha
                         r13.write_str('*', 1)
-                        lines.append(r13)
+
+                        order = '131' + str(cnpj) + str(pis_pasep) + str(d) + \
+                            contract_type
+
+                        lines.append({'line': r13, 'order': order})
 
             # res_partner
             if partner_changed_employees:
@@ -1590,31 +1643,31 @@ class sefip(osv.osv_memory):
                         # 3   3    Tipo de Inscrição - Fixo: 1 - CNPJ
                         r13.write_val(1, 1)
                         # 4   17   Inscrição da Empresa
-                        r13.write_num(sefip_data.company.cnpj, 14)
+                        cnpj = r13.write_num(sefip_data.company.cnpj, 14)
                         # 18  53   Zeros
                         r13.write_val(0, 36)
                         # 54  64   PIS/PASEP
-                        r13.write_num(employee.pis_pasep, 11)
+                        pis_pasep = r13.write_num(employee.pis_pasep, 11)
 
                         # 65  72   Data de Admissão
                         if contract.date_start:
                             date_start = datetime.datetime.strptime(
                                 contract.date_start, '%Y-%m-%d'
                                 )
-                            r13.write_str(date_start.strftime('%d%m%Y'), 8)
+                            d = r13.write_str(date_start.strftime('%d%m%Y'), 8)
                         else:
-                            r13.write_val(0, 8)
+                            d = r13.write_val(0, 8)
 
                         # 73  74   Categoria Trabalhador
                         if not contract.type_id.code:
-                            contract_type = 1
+                            contract_type = '01'
                         else:
                             contract_type = contract.type_id.code
 
                         r13.write_val(contract_type, 2)
 
                         # 75  85   Matrícula do Trabalhador
-                        if contract_type == 6 or not employee.matricula:
+                        if contract_type == '06' or not employee.matricula:
                             r13.write_str('', 11)
                         else:
                             r13.write_val(employee.matricula, 11)
@@ -1624,8 +1677,10 @@ class sefip(osv.osv_memory):
                         r13.write_num(employee.carteira_de_trabalho_serie, 5)
                         # 98  167  Nome Trabalhador
                         r13.write_str(self._clear_alfanum(employee.name), 70)
-                        # TODO: 168 181  Código Empresa CAIXA
-                        # TODO: 182 192  Código Trabalhador CAIXA
+                        # 168 181  Código Empresa CAIXA
+                        r13.write_num(company.codigo_caixa, 14)
+                        # 182 192  Código Trabalhador CAIXA
+                        r13.write_num(employee.codigo_caixa, 11)
 
                         # 193 195  Código Alteração Cadastral
                         # Alteração de data de nascimento
@@ -1639,7 +1694,11 @@ class sefip(osv.osv_memory):
                         r13.write_str('', 94)
                         # 360 360  Final da Linha
                         r13.write_str('*', 1)
-                        lines.append(r13)
+
+                        order = '131' + str(cnpj) + str(pis_pasep) + str(d) + \
+                            contract_type
+
+                        lines.append({'line': r13, 'order': order})
 
             '''
             Registro 14 - Inclusão/alteração do endereço do trabalhador
@@ -1661,22 +1720,22 @@ class sefip(osv.osv_memory):
                     # 3   3    Tipo de Inscrição - Fixo: 1 - CNPJ
                     r14.write_val(1, 1) 
                     # 4   17   Inscrição da Empresa
-                    r14.write_num(sefip_data.company.cnpj, 14)
+                    cnpj = r14.write_num(sefip_data.company.cnpj, 14)
                     # 18  53   Zeros
                     r14.write_val(0, 36)
                     # 54  64   PIS/PASEP/CI
-                    r14.write_val(employee.pis_pasep, 11)
+                    pis_pasep = r14.write_val(employee.pis_pasep, 11)
                     # 65  72   Data Admissão
                     if contract.date_start:
                         date_start = datetime.datetime.strptime(
                             contract.date_start, '%Y-%m-%d'
                             )
-                        r14.write_str(date_start.strftime('%d%m%Y'), 8)
+                        d = r14.write_str(date_start.strftime('%d%m%Y'), 8)
                     else:
-                        r14.write_val(0, 8)
+                        d = r14.write_val(0, 8)
                     # 73  74   Categoria Trabalhador
                     if not contract.type_id.code:
-                        contract_type = 1
+                        contract_type = '01'
                     else:
                         contract_type = contract.type_id.code
 
@@ -1724,20 +1783,33 @@ class sefip(osv.osv_memory):
                     r14.write_str('', 103)
                     # 360 360  Final da Linha
                     r14.write_str('*', 1)
-                    lines.append(r14)
+
+                    order = '141' + str(cnpj) + str(pis_pasep) + str(d) + \
+                            contract_type
+
+                    lines.append({'line': r14, 'order': order})
 
             invoice_ids = invoice_obj.search(cr, uid, [
                     ('fiscal_type', '=', 'service'),
-                    ('company_id', '=', company.id)
+                    ('company_id', '=', company.id),
+                    ('partner_id', 'in', tomadores),
                 ], context=context
                 )
             invoices = invoice_obj.browse(cr, uid, invoice_ids, context=context)
 
+            invoice_partners = {}
+
             for invoice in invoices:
+                if not invoice.contracts:
+                    continue
 
-                address = invoice.partner_id.address[0]
+                try:
+                    invoice_partners[invoice.partner_id] += invoice.amount_total
+                except:
+                    invoice_partners[invoice.partner_id] = invoice.amount_total
 
-                # TODO: Criar campo tomador no contrato
+            for partner in invoice_partners:
+                address = partner.address[0]
 
                 '''
                 Registro 20 - Registro do tomador de serviço/obra
@@ -1748,16 +1820,16 @@ class sefip(osv.osv_memory):
                 # 3   3    Tipo de Inscrição - Fixo: 1 - CNPJ
                 r20.write_val(1, 1)
                 # 4   17   Inscrição da Empresa
-                r20.write_num(sefip_data.company.cnpj, 14)
+                cnpj = r20.write_num(sefip_data.company.cnpj, 14)
                 # 18  18   Tipo de Inscrição-Tomador/Obra Const. Civil
                 # Fixo: 1 - CNPJ
                 r20.write_num(1, 1)
                 # 19  32   Inscrição Tomador/Obra Const. Civil
-                r20.write_num(invoice.partner_id.cnpj_cpf, 14)
+                partner_cnpj = r20.write_num(partner.cnpj_cpf, 14)
                 # 33  53   Zeros
                 r20.write_val(0, 21)
                 # 54  93   Nome do Tomador/Obra de Const. Civil
-                r20.write_str(self._clear_alfanum(invoice.partner_id.name), 40)
+                r20.write_str(self._clear_alfanum(partner.name), 40)
                 # 94  143  Logradouro, rua, nº, apto
                 street = ''
 
@@ -1784,9 +1856,13 @@ class sefip(osv.osv_memory):
                     raise osv.except_osv(
                         u'Não foi possível gerar o arquivo.',
                         u'Faltam dados no endereço do colaborador %s.' % \
-                            invoice.partner_id.name,
+                            partner.name,
                         )
-                # TODO: 194 197  Código de Pagamento GPS
+                # 194 197  Código de Pagamento GPS
+                if partner.codigo_pagamento_gps:
+                    r20.write_num(partner.codigo_pagamento_gps, 4)
+                else:
+                    r20.write_str('', 4)
                 # 198 212  Salário Família
                 if mes_competencia == 13 or valor_competencia < 199810 or \
                     sefip_data.fpas == '868' or \
@@ -1795,19 +1871,27 @@ class sefip(osv.osv_memory):
                 else:
                     sfamilia = grouped_payslips['SFAMILIA']['value']
                 r20.write_val(sfamilia, 15)
-                # TODO: 213 227  Contrib. Desc. Empregado Referente à Competência 13
-                # TODO: 228 228  Indicador de Valor Negativo ou Positivo
-                # TODO: 229 242  Valor Devido à Previdência Social Referente à Competência 13
-                # TODO: 243 257  Valor de Retenção
-                # TODO: 258 272  Valor das Faturas Emitidas para o Tomador
-
+                # 213 227  Contrib. Desc. Empregado Referente à Competência 13
+                r20.write_val(0, 15)
+                # 228 228  Indicador de Valor Negativo ou Positivo
+                r20.write_val(0, 1)
+                # 229 242  Valor Devido à Previdência Social Referente à Competência 13
+                r20.write_val(0, 14)
+                # 243 257  Valor de Retenção
+                # FIXME: Não implementado
+                r20.write_val(0, 15)
+                # 258 272  Valor das Faturas Emitidas para o Tomador
+                r20.write_val(invoice_partners[partner], 15)
                 # 273 317  Zeros
                 r20.write_val(0, 45)
                 # 318 359  Brancos
                 r20.write_str('', 42)
                 # 360 360  Final da Linha
                 r20.write_str('*', 1)
-                lines.append(r20)
+
+                order = '201' + str(cnpj) + '1' + str(partner_cnpj)
+
+                lines.append({'line': r20, 'order': order})
 
                 '''
                 Registro 21 - Informações adicionais do tomador de serviço/obra
@@ -1818,12 +1902,12 @@ class sefip(osv.osv_memory):
                 # 3   3    Tipo de Inscrição - Fixo: 1 - CNPJ
                 r21.write_val(1, 1)
                 # 4   17   Inscrição da Empresa
-                r21.write_num(sefip_data.company.cnpj, 14)
+                cnpj = r21.write_num(sefip_data.company.cnpj, 14)
                 # 18  18   Tipo de Inscrição-Trabalhador/Obra Const. Civil
                 # Fixo: 1 - CNPJ
                 r21.write_val(1, 1)
                 # 19  32   Inscrição Tomador/Obra Const. Civil
-                r21.write_num(invoice.partner_id.cnpj_cpf, 14)
+                partner_cnpj = r21.write_num(partner.cnpj_cpf, 14)
                 # 33  53   Zeros
                 r21.write_val(0, 21)
                 
@@ -1877,7 +1961,10 @@ class sefip(osv.osv_memory):
                 r21.write_str('', 204)
                 # 360 360  Final da Linha
                 r21.write_str('*', 1)
-                lines.append(r21)
+
+                order = '211' + str(cnpj) + '1' + str(partner_cnpj)
+
+                lines.append({'line': r21, 'order': '21'})
 
             for employee in employees:
 
@@ -1888,9 +1975,12 @@ class sefip(osv.osv_memory):
                 if not contract:
                     continue
 
+                base_calculo_previdencia = 0
                 contract_payslips = {}
                 categories = [
                     'GROSS', 'SFAMILIA', 'SMATERNIDADE', '13SALAD', '13SALFI',
+                    'CPREV', 'RECL', 'DISSIDIO', 'RECLAMATORIA',
+                    'CPREVMATERNIDADE',
                     ]
 
                 payslip_ids = payslip_obj.search(cr, uid, [
@@ -1915,6 +2005,8 @@ class sefip(osv.osv_memory):
 
                     if month != scope_month:
                         continue
+
+                    base_calculo_previdencia = payslip.base_calculo_previdencia
 
                     p_line_ids = payslip_line_obj.search(cr, uid, [
                         ('slip_id', '=', payslip.id),
@@ -1946,9 +2038,6 @@ class sefip(osv.osv_memory):
                                     'create_date': create_date,
                                     }
 
-
-
-
                 '''
                 Registro 30 - Registro do trabalhador
                 '''
@@ -1958,7 +2047,7 @@ class sefip(osv.osv_memory):
                 # 3   3    Tipo de Inscrição - Fixo: 1 - CNPJ
                 r30.write_val(1, 1)
                 # 4   17   Inscrição da Empresa
-                r30.write_num(sefip_data.company.cnpj, 14)
+                cnpj = r30.write_num(sefip_data.company.cnpj, 14)
                 # 18  18   Tipo de Inscrição-Tomador/Obra Const. Civil
                 # Fixo: 1 - CNPJ
                 r30.write_val(1, 1)
@@ -1966,18 +2055,18 @@ class sefip(osv.osv_memory):
                 r30.write_num(sefip_data.company.cnpj, 14)
 
                 # 33  43   PIS/PASEP/CI
-                r30.write_num(employee.pis_pasep, 11)
+                pis_pasep = r30.write_num(employee.pis_pasep, 11)
                 # 44  51   Data de Admissão
                 if contract.date_start:
                     date_start = datetime.datetime.strptime(
                         contract.date_start, '%Y-%m-%d'
                         )
-                    r30.write_str(date_start.strftime('%d%m%Y'), 8)
+                    d = r30.write_str(date_start.strftime('%d%m%Y'), 8)
                 else:
-                    r30.write_val(0, 8)
+                    d = r30.write_val(0, 8)
                 # 52  53   Categoria Trabalhador
                 if not contract.type_id.code:
-                    contract_type = 1
+                    contract_type = '01'
                 else:
                     contract_type = contract.type_id.code
 
@@ -1986,7 +2075,7 @@ class sefip(osv.osv_memory):
                 # 54  123  Nome Trabalhador
                 r30.write_str(self._clear_alfanum(employee.name), 70)
                 # 124 134  Matrícula do Empregado
-                if contract_type == 6 or not employee.matricula:
+                if contract_type == '06' or not employee.matricula:
                     r30.write_str('', 11)
                 else:
                     r30.write_val(employee.matricula, 11)
@@ -1994,9 +2083,20 @@ class sefip(osv.osv_memory):
                 r30.write_num(employee.carteira_de_trabalho_numero, 7)
                 # 142 146  Série CTPS
                 r30.write_num(employee.carteira_de_trabalho_serie, 5)
-                # TODO: 147 154  Data de Opção
+                # 147 154  Data de Opção
+                date_start = datetime.datetime.strptime(
+                    contract.date_start, '%Y-%m-%d'
+                    )
+                date_limit = datetime.datetime.strptime(
+                    '1988-10-05', '%Y-%m-%d'
+                    )
+                if date_start < date_limit and contract.optante_fgts \
+                    and contract.data_de_opcao:
+                    r30.write_date(contract.data_de_opcao)
+                else:
+                    r30.write_str('', 8)
                 # 155 162  Data de Nascimento
-                r30.write_num(employee.address_home_id.partner_id.birthday, 5)
+                r30.write_date(employee.address_home_id.partner_id.birthday)
                 # 163 167  CBO - Código Brasileiro de Ocupação
                 '''
                 SEFIP pede o código da família, que é composto pelos 4
@@ -2016,18 +2116,47 @@ class sefip(osv.osv_memory):
                 sal13 = contract_payslips['13SALAD']['value'] + \
                     contract_payslips['13SALFI']['value']
                 r30.write_val(re.sub('[^0-9]', '', '%.02f' % sal13), 15)
-                # TODO: 198 199  Classe de Contribuição
+                # 198 199  Classe de Contribuição
+                # FIXME: Não implementado (Campo relativo à construção civil)
+                r30.write_str('', 2)
                 # 200 201  Ocorrência
                 r30.write_str(contract.ocorrencia.code, 2)
-                # TODO: 202 216  Valor Descontado do Segurado
-                # TODO: 217 231  Remuneração Base de Cálculo da Contribuição Previdenciária
+
+                # 202 216  Valor Descontado do Segurado
+                valor = 0
+
+                # Múltiplos vínculos ou trabalhador avulso
+                if (contract.ocorrencia and contract.ocorrencia.code in ['05',
+                    '06', '07', '08']) or contract.type_id.code == '01' or \
+                    contract_payslips['DISSIDIO']['value'] or \
+                    contract_payslips['RECLAMATORIA']['value']:
+
+                    valor = contract_payslips['CPREV']['value']
+
+                elif contract_payslips['CPREVMATERNIDADE']['value']:
+                    valor = contract_payslips['CPREVMATERNIDADE']['value']
+
+                r30.write_val(valor, 15)
+
+                # 217 231  Remuneração Base de Cálculo da Contribuição Previdenciária
+                r30.write_val(base_calculo_previdencia, 15)
+
                 # TODO: 232 246  Base de Cálculo 13º Salário Previdência Social - Referente a Competência do Movimento
-                # TODO: 247 261  Base de Cálculo 13º Salário Previdência Social - Referente a GPS da Competência 13
+                
+
+                # 247 261  Base de Cálculo 13º Salário Previdência Social - Referente a GPS da Competência 13
+                # FIXME: Não suportado
+                r30.write_val(0, 15)
+
                 # 262 359  Brancos
                 r30.write_str('', 98)
                 # 360 360  Final da Linha
                 r30.write_str('*', 1)
-                lines.append(r30)
+
+                order = '301' + str(cnpj) + '1' + str(cnpj) + str(pis_pasep) +\
+                    str(d) + contract_type
+
+                lines.append({'line': r30, 'order': order})
 
                 '''
                 Registro 32 - Registro de movimentação do trabalhador
@@ -2038,26 +2167,26 @@ class sefip(osv.osv_memory):
                 # 3   3    Tipo de Inscrição - Fixo: 1 - CNPJ
                 r32.write_val(1, 1)
                 # 4   17   Inscrição da Empresa
-                r32.write_num(sefip_data.company.cnpj, 14)
+                cnpj = r32.write_num(sefip_data.company.cnpj, 14)
                 # 18  18   Tipo de Inscrição-Trabalhador/Obra Const. Civil
                 # Fixo: 1 - CNPJ
                 r32.write_val(1, 1)
                 # 19  32   Inscrição Tomador/Obra Const. Civil
                 r32.write_num(sefip_data.company.cnpj, 14)
                 # 33  43   PIS/PASEP/CI
-                r32.write_num(employee.pis_pasep, 11)
+                pis_pasep = r32.write_num(employee.pis_pasep, 11)
                 # 44  51   Data de Admissão
                 if contract.date_start:
                     date_start = datetime.datetime.strptime(
                         contract.date_start, '%Y-%m-%d'
                         )
-                    r32.write_str(date_start.strftime('%d%m%Y'), 8)
+                    d = r32.write_str(date_start.strftime('%d%m%Y'), 8)
                 else:
-                    r32.write_val(0, 8)
+                    d = r32.write_val(0, 8)
 
                 # 52  53   Categoria Trabalhador
                 if not contract.type_id.code:
-                    contract_type = 1
+                    contract_type = '01'
                 else:
                     contract_type = contract.type_id.code
 
@@ -2065,157 +2194,25 @@ class sefip(osv.osv_memory):
 
                 # 54  123  Nome Trabalhador
                 r32.write_str(self._clear_alfanum(employee.name), 70)
-                # TODO: 124 125  Código da Movimentação
-                # TODO: 126 133  Data de Movimentação
+
+                if contract.movimentacao:
+                    # 124 125  Código da Movimentação
+                    r32.write_str(contract.movimentacao.code, 2)
+                    # 126 133  Data de Movimentação
+                    r32.write_date(contract.data_de_movimentacao)
+                else:
+                    r32.write_str('', 10)
+
                 # TODO: 134 134  Indicativo de Recolhimento do FGTS
                 # 135 359  Brancos
                 r32.write_str('', 225)
                 # 360 360  Final da Linha
                 r32.write_str('*', 1)
-                lines.append(r32)
 
-            """
-            '''
-            Registro 50 - Registro de empresa - documento específico de
-            recolhimento do FGTS (sua utilização exige autorização da CAIXA)
-            '''
-            r50 = line()
-            # 1   2    Tipo de Registro
-            r50.write_val(50, 2)
-            # 3   3    Tipo de Inscrição - Fixo: 1 - CNPJ
-            r50.write_val(1, 1)
-            # 4   17   Inscrição da Empresa
-            r50.write_num(sefip_data.company.cnpj, 14)
-            # 18  53   Zeros
-            r50.write_val(0, 36)
-            # 54  93   Nome Empresa/Razão Social
-            r50.write_str(sefip_data.company.legal_name, 40)
-            # TODO: 94  94   Tipo de Inscrição - Tomador
-            # TODO: 95  108  Inscrição Tomador
-            # TODO: 109 148  Nome do Tomador de Serviço/Obra de Const. Civil
-            # 149 198  Logradouro, rua, nº, apto
-            default_address = partner_obj.address_get(
-                cr, uid, [sefip_data.company.partner_id.id], ['default']
-                )
-            company_address = partner_address_obj.browse(
-                cr, uid, default_address['default'], context=context
-                )
-            address = ''
+                order = '321' + str(cnpj) + '1' + str(cnpj) + str(pis_pasep) +\
+                    str(d) + contract_type
 
-            if company_address.street:
-                address += company_address.street + ' '
-            if company_address.number:
-                address += company_address.number + ' '
-            if company_address.street2:
-                address += company_address.street2
-
-            r50.write_str(self._clear_alfanum(address), 50)
-            # 199 218  Bairro
-            r50.write_str(company_address.district, 20)
-            # 219 226  CEP
-            r50.write_str(company_address.zip, 8)
-            # 227 246  Cidade
-            r50.write_str(
-                self._clear_alfanum(company_address.l10n_br_city_id.name), 20
-                )
-            # 247 248  Unidade da Federação
-            if company_address.state_id:
-                r50.write_str(company_address.state_id.country_id.code, 2)
-            else:
-                raise osv.except_osv(
-                    u'Não foi possível gerar o arquivo.',
-                    u'Faltam dados no endereço da empresa.',
-                    )
-            # 249 260  Telefone
-            r50.write_str(company_address.phone, 12)
-            # 261 267  CNAE
-            r50.write_num(company.cnae_main_id.code, 7)
-            # TODO: 268 268  Código de Centralização
-            # TODO: 269 283  Valor da Multa - Informar o valor total da multa a ser recolhida
-            # 284 359  Brancos
-            r50.write_str('', 76)
-            # 360 360  Final da Linha
-            r50.write_str('*', 1)
-            lines.append(r50)
-
-            # TODO: verificar como obter se empresa está autorizada
-            '''
-            Registro 51 - Registro de individualização de valores recolhidos -
-            documento específico de recolhimento do FGTS (sua utilização exige
-            autorização da CAIXA)
-            '''
-            for employee in employees:
-
-                contract = employee_obj.get_active_contract(
-                    cr, uid, employee.id, date=scope_date, context=context
-                    )
-
-                if not contract:
-                    continue
-
-                r51 = line()
-                # 1   2    Tipo de Registro30
-                r51.write_val(51, 2)
-                # 3   3    Tipo de Inscrição - Fixo: 1 - CNPJ
-                r51.write_val(1, 1)
-                # 4   17   Inscrição da Empresa
-                r51.write_num(sefip_data.company.cnpj, 14)
-                # TODO: 18  18   Tipo de Inscrição - Tomador
-                # TODO: 19  32   Inscrição Tomador
-                # 33  43   PIS/PASEP
-                r51.write_num(employee.pis_pasep, 11)
-                # 44  51   Data de Admissão
-                if contract.date_start:
-                    date_start = datetime.datetime.strptime(
-                        contract.date_start, '%Y-%m-%d'
-                        )
-                    r51.write_str(date_start.strftime('%d%m%Y'), 8)
-                else:
-                    r51.write_val(0, 8)
-
-                # 52  53   Categoria Trabalhador
-                if not contract.type_id.code:
-                    contract_type = 1
-                else:
-                    contract_type = contract.type_id.code
-
-                r51.write_val(contract_type, 2)
-
-                # 54  123  Nome Trabalhador
-                r51.write_str(self._clear_alfanum(employee.name), 70)
-                # 124 134  Matrícula do Empregado
-                if contract_type == 6 or not employee.matricula:
-                    r51.write_str('', 11)
-                else:
-                    r51.write_val(employee.matricula, 11)
-                # 135 141  Número CTPS
-                r51.write_num(employee.carteira_de_trabalho_numero, 7)
-                # 142 146  Série CTPS
-                r51.write_num(employee.carteira_de_trabalho_serie, 5)
-                # TODO: 147 154  Data de Opção
-                # 155 162  Data de Nascimento
-                r51.write_num(employee.address_home_id.partner_id.birthday, 5)
-                # 163 167  CBO - Código Brasileiro de Ocupação
-                '''
-                SEFIP pede o código da família, que é composto pelos 4
-                primeiros dígitos da ocupação
-                '''
-                if not contract.ocupacao_id:
-                    raise osv.except_osv(
-                        u'Não foi possível gerar o arquivo.',
-                        u'É necessário informar a ocupação no contrato %s.' % \
-                            contract.name,
-                        )
-                r51.write_val(contract.ocupacao_id.code[:4], 5)
-                # TODO: 168 182  Valor do Depósito - sem 13º Salário
-                # TODO: 183 197  Valor do Depósito - sobre 13º Salário
-                # TODO: 198 212  Valor do JAM
-                # 213 359  Brancos
-                r51.write_str('', 147)
-                # 360 360  Final da Linha
-                r51.write_str('*', 1)
-                lines.append(r51)
-            """
+                lines.append({'line': r32, 'order': order})
 
             '''
             Registro 90 - Totalizador de arquivo
@@ -2229,17 +2226,22 @@ class sefip(osv.osv_memory):
             r90.write_str('', 306)
             # 360 360  Final da Linha
             r90.write_str('*', 1)
-            lines.append(r90)
+            lines.append({'line': r90, 'order': '90'})
 
-            file_content = '\n'.join([l.content.upper() for l in lines])
+            # Ordena linhas de acordo chave "order"
+            lines = sorted(lines, key=lambda k: k['order'])
+
+            file_content = '\n'.join([l['line'].content.upper() for l in lines])
             message = u'Arquivo gerado com sucesso'
             state = 'done'
 
             print file_content
+            file_name = 'SEFIP.RE'
 
             encoded_data = file_content.encode("utf-8").encode("base64")
             self.write(cr, uid, ids, {
                 'file': encoded_data,
+                'file_name': file_name,
                 #'state': state,
                 'message': message,
                 },

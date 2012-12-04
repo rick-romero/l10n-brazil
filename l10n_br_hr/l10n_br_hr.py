@@ -127,6 +127,17 @@ class l10n_br_hr_motivo_de_desligamento(osv.osv):
 l10n_br_hr_motivo_de_desligamento()
 
 
+class l10n_br_hr_movimentacao(osv.osv):
+    _name = 'l10n_br_hr.movimentacao'
+    _description = u'Movimentação'
+    _columns = {
+        'code': fields.char(u'Código', size=2, required=True),
+        'name': fields.char(u'Descrição', size=170, required=True),
+        }
+
+l10n_br_hr_movimentacao()
+
+
 class l10n_br_hr_changes(osv.osv):
     _name = 'l10n_br_hr.changes'
     _description = u'Registra alterações para envio via SEFIP'
@@ -199,6 +210,7 @@ class hr_employee(osv.osv):
                 u'declarado na RAIS.'
             ),
         'matricula': fields.integer(u'Matrícula', size=11),
+        'codigo_caixa': fields.char(u'Código Trabalhador CAIXA', size=11),
         }
     _defaults = {
         'matricula': lambda self, cr, uid, context: int(
@@ -316,6 +328,12 @@ class hr_employee(osv.osv):
         for c in employee.contract_ids:
             end_date = None
 
+            date_start = datetime.datetime.strptime(
+                c.date_start, '%Y-%m-%d'
+                )
+            start_year = int(date_start.strftime('%Y'))
+            start_month = int(date_start.strftime('%m'))
+
             if c.data_de_desligamento:
                 end_date = datetime.datetime.strptime(
                     c.data_de_desligamento, '%Y-%m-%d'
@@ -324,26 +342,30 @@ class hr_employee(osv.osv):
                 end_date = datetime.datetime.strptime(c.date_end, '%Y-%m-%d')
 
             if not end_date:
-                date_start = datetime.datetime.strptime(
-                    c.date_start, '%Y-%m-%d'
-                    )
-                start_year = int(date_start.strftime('%Y'))
-                start_month = int(date_start.strftime('%m'))
-
-                if (start_year == current_year and start_month <= current_month
-                    ) or start_year < current_year:
+                if (start_year == current_year and 
+                    start_month <= current_month) or start_year < current_year:
                     contract = c
                     break
             else:
                 end_year = int(end_date.strftime('%Y'))
                 end_month = int(end_date.strftime('%m'))
 
-                if (end_year == current_year and end_month >= current_month
-                    ) or end_year > current_year:
+                start_year_condition = ((start_year == current_year and
+                    start_month <= current_month) or start_year < current_year)
+
+                if start_year_condition and ((end_year == current_year and
+                    end_month >= current_month) or end_year > current_year):
+
                     contract = c
                     break
 
         return contract
+
+    def onchange_codigo_caixa(self, cr, uid, ids, codigo_caixa):
+        if not codigo_caixa:
+            return {}
+        return {'value': {'codigo_caixa': re.sub('[^0-9]', '', codigo_caixa)}}
+
 
 hr_employee()
 
@@ -408,7 +430,20 @@ class hr_contract(osv.osv):
         'sindicato_cconf': fields.many2one(
             'res.partner', u'Contribuição Confederativa'
             ),
-        'ocorrencia': fields.many2one('l10n_br_hr.ocorrencia', u'Ocorrência'),
+        'ocorrencia': fields.many2one(
+            'l10n_br_hr.ocorrencia', u'Ocorrência', required=True,
+            ),
+        'tomador': fields.many2one(
+            'res.partner',
+            u'Tomador de Serviços',
+            domain=[('tipo_pessoa', '=', 'J')],
+            ),
+        'optante_fgts': fields.boolean(u'Optante pelo FGTS'),
+        'data_de_opcao': fields.date(u'Data de Opção pelo FGTS'),
+        'movimentacao': fields.many2one(
+            'l10n_br_hr.movimentacao', u'Movimentação'
+            ),
+        'data_de_movimentacao': fields.date(u'Data de Movimentação'),
         }
 
     def _get_default_company_address(self, cr, uid, context):

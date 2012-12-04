@@ -21,6 +21,7 @@
 #                                                                            #
 ##############################################################################
 
+import hr_payslip
 import l10n_br_hr
 import res_partner_address
 import res_company

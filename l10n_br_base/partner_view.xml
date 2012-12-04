@@ -94,22 +94,23 @@
    		</record>
 		
 
-		<record model="ir.ui.view" id="l10n_br_base_view_partner_form5">
-			<field name="name">l10n_br_base.partner.form5</field>
-			<field name="model">res.partner</field>
-			<field name="inherit_id" ref="base.view_partner_form"/>
-			<field name="arch" type="xml">
-				 <notebook>
-					<page position="inside" string="l10n br - NF">
-						<separator colspan="4" string="Dados Adicionais do Parceiro"/>						
-						<newline/>
-						<field name="inscr_est" />
-						<field name="inscr_mun"/>
-						<field name="suframa"/>
-		        	</page>
-				</notebook>
-			</field>
-		</record>
+    <record model="ir.ui.view" id="l10n_br_base_view_partner_form5">
+      <field name="name">l10n_br_base.partner.form5</field>
+      <field name="model">res.partner</field>
+      <field name="inherit_id" ref="base.view_partner_form"/>
+      <field name="arch" type="xml">
+        <notebook>
+          <page position="inside" string="Outras Informações">
+            <separator colspan="4" string="Dados Adicionais do Parceiro"/>
+            <newline/>
+            <field name="inscr_est" />
+            <field name="inscr_mun"/>
+            <field name="suframa"/>
+            <field name="codigo_pagamento_gps"/>
+          </page>
+        </notebook>
+      </field>
+    </record>
 		
 		<!-- Contato do Parceiro Personalizado -->
 		<record model="ir.ui.view" id="view_l10n_br_base_partner_address_form1">

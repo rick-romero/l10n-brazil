@@ -57,6 +57,12 @@ class res_partner(osv.osv):
                                                 type="char", size=2, multi='all',
                                                 store={'res.partner.address': (_get_partner_address, ['country_id', 'state_id'], 20),}),
                 'birthday': fields.date(u'Data de Nascimento'),
+                'codigo_pagamento_gps': fields.integer(
+                    u'Código de Pagamento da GPS',
+                    size=4,
+                    help=u'Informar o código de pagamento da GPS, conforme ' +\
+                        u'tabela divulgada pelo INSS.',
+                    ),
                 }
 
     _defaults = {

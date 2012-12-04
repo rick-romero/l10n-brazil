@@ -22,8 +22,10 @@
           <field name="inscr_est" />
           <field name="inscr_mun" />
           <field name="suframa" />
-          <field name="optante_simples_nacional" attrs="{'readonly':[('porte_id','=',3)]}" />
+          <field name="simples" />
           <field name="participa_pat" />
+          <field name="codigo_caixa"
+            on_change="onchange_codigo_caixa(codigo_caixa)" />
         </xpath>
       </field>
     </record>

@@ -33,8 +33,21 @@ class res_company(osv.osv):
             'l10n_br.natureza_juridica', u'Natureza Jurídica', required=True
             ),
         'porte_id': fields.many2one('l10n_br.porte', u'Porte', required=True),
-        'optante_simples_nacional': fields.boolean(
-            u'Optante pelo Simples Nacional'
+        'simples': fields.selection([
+                ('1', u'Não Optante'),
+                ('2', u'Optante'),
+                ('3', u'Optante - faturamento anual superior a R$1.200.000,00'),
+                ('4', u'Não Optante - Produtor Rural Pessoa Física (CEI e ' + \
+                    u'FPAS 604 ) com faturamento anual superior a ' + \
+                    u'R$1.200.000,00'),
+                ('5', u'Não Optante - Empresa com Liminar para não ' + \
+                    u'recolhimento da Contribuição Social - Lei ' + \
+                    u'Complementar 110/01, de 26/06/2001'),
+                ('6', u'Optante - faturamento anual superior a ' + \
+                    u'R$1.200.000,00 - Empresa com Liminar para não ' + \
+                    u'recolhimento da Contribuição Social - Lei ' + \
+                    u'Complementar 110/01, de 26/06/2001'),
+            ], u'Simples'
             ),
         'participa_pat': fields.boolean(
             u'Participa do Programa de Alimentação do Trabalhador (PAT)'
@@ -50,6 +63,7 @@ class res_company(osv.osv):
         'inscr_est': fields.char(u'Inscr. Estadual', size=16),
         'inscr_mun': fields.char(u'Inscr. Municipal', size=18),
         'suframa': fields.char(u'Suframa', size=18),
+        'codigo_caixa': fields.char(u'Código Empresa CAIXA', size=14),
         }
 
     def _validate_cnpj(self, cr, uid, ids):
@@ -96,6 +110,11 @@ class res_company(osv.osv):
             cnpj = "%s.%s.%s/%s-%s" % (val[0:2], val[2:5], val[5:8], val[8:12], val[12:14])
 
         return {'value': {'cnpj': cnpj}}
+
+    def onchange_codigo_caixa(self, cr, uid, ids, codigo_caixa):
+        if not codigo_caixa:
+            return {}
+        return {'value': {'codigo_caixa': re.sub('[^0-9]', '', codigo_caixa)}}
 
 
 res_company()

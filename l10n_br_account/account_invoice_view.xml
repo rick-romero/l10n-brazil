@@ -155,6 +155,9 @@
 								</page>
 							</notebook>
 					</page>
+					<page string="Alocação">
+            <field name="contracts" />
+          </page>
 				</notebook>
 			</field>
 		</record>

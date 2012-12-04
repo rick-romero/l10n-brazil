@@ -333,9 +333,10 @@ class account_invoice(osv.osv):
                 'account.invoice.tax': (_get_invoice_tax, None, 20),
                 'account.invoice.line': (_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount'], 20),
             },
-            multi='all'),            
+            multi='all'),
+        'contracts': fields.many2many('hr.contract', string=u'Contratos'),
     }
-    
+
     _defaults = {
                  'own_invoice': True,
                  'fiscal_type': _get_fiscal_type,

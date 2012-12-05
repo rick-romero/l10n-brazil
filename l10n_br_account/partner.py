@@ -63,7 +63,7 @@ class account_fiscal_position(osv.osv):
                 if tax.tax_code_id.id and tax.tax_code_id.id == t.tax_code_id.id:
                     if fp_tax.tax_dest_id:
                         result.append(fp_tax.tax_dest_id.id)
-                        ok=True
+                    ok=True
             if not ok:
                 result.append(t.id)
         return result

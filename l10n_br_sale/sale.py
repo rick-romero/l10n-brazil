@@ -300,7 +300,7 @@ class sale_order_line(osv.osv):
                 'cfop_id': fields.many2one('l10n_br_account.cfop', u'Código Fiscal',
                                                        readonly=True, states={'draft': [('readonly', False)], 'confirmed': [('readonly', False)]},
                                                        domain="[('type','=','output'),('internal_type','=','normal')]"),
-                'fiscal_position': fields.many2one('account.fiscal.position', 'Fiscal Position', readonly=True,
+                'fiscal_position': fields.many2one('account.fiscal.position', u'Posição Fiscal', readonly=True,
                                                    domain="[('fiscal_operation_id','=',fiscal_operation_id)]",
                                                    states={'draft': [('readonly', False)], 'confirmed': [('readonly', False)]}),
                 'price_subtotal': fields.function(_amount_line, string='Subtotal', digits_compute=dp.get_precision('Sale Price')),

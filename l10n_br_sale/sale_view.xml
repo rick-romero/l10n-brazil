@@ -74,7 +74,8 @@
 	   		<field name="arch" type="xml">
    				<xpath expr="/form/notebook/page/field/form/notebook/page/group/field[@name='discount']" position="after">
 		            	<field colspan="3" name="fiscal_operation_category_id" groups="base.group_sale_salesman" required="1"/>
-			   			<field name="fiscal_operation_id" groups="base.group_sale_salesman" required="1"/>
+			   			<field name="fiscal_operation_id" groups="base.group_sale_salesman" required="1" on_change="fiscal_operation_id_change(fiscal_operation_id)"/>
+			   			<field name="cfop_id" groups="base.group_sale_salesman"/>
 			   	</xpath>
        		</field>        
    		</record>

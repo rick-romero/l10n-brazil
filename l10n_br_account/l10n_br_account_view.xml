@@ -182,7 +182,7 @@
 				<field name="type">tree</field>
 				<field name="arch" type="xml">
 					<tree string="Linha da Operação Fiscal">
-						<field name="company_id"/>
+                        <field name="company_id"/>
 						<field name="fiscal_classification_id"/>
 						<field name="tax_code_id"/>
 						<field name="cst_id"/>

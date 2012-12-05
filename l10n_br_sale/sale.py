@@ -57,14 +57,15 @@ class sale_order(osv.osv):
         return res
 
     _columns = {
+                'order_line': fields.one2many('sale.order.line', 'order_id', 'Order Lines', readonly=True, states={'draft': [('readonly', False)], 'manual': [('readonly', False)]}),
                 'fiscal_operation_category_id': fields.many2one('l10n_br_account.fiscal.operation.category', 'Categoria',
                                                                 domain="[('type','=','output'),('use_sale','=',True)]",
-                                                                readonly=True, states={'draft': [('readonly', False)]}),
+                                                                readonly=True, states={'draft': [('readonly', False)], 'manual': [('readonly', False)]}),
                 'fiscal_operation_id': fields.many2one('l10n_br_account.fiscal.operation', 'Operação Fiscal',
-                                                       readonly=True, states={'draft': [('readonly', False)]},
+                                                       readonly=True, states={'draft': [('readonly', False)], 'manual': [('readonly', False)]},
                                                        domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),('type','=','output'),('use_sale','=',True)]"),
                 'fiscal_position': fields.many2one('account.fiscal.position', 'Fiscal Position', readonly=True,
-                                                   states={'draft': [('readonly', False)]}),
+                                                   states={'draft': [('readonly', False)], 'manual': [('readonly', False)]}),
                 'invoiced_rate': fields.function(_invoiced_rate, method=True, string='Invoiced', type='float'),
                }
 
@@ -220,7 +221,7 @@ class sale_order(osv.osv):
                 if inv_line_id:
                     obj_invoice_line.write(cr, uid, inv_line_id[0].id, {'fiscal_operation_category_id': order_line.fiscal_operation_category_id.id or order.fiscal_operation_category_id.id,
                                                                         'fiscal_operation_id': order_line.fiscal_operation_id.id or order.fiscal_operation_id.id,
-                                                                        'cfop_id': (order_line.fiscal_operation_id and order_line.fiscal_operation_id.cfop_id.id) or (order.fiscal_operation_id and order.fiscal_operation_id.cfop_id.id) or False})
+                                                                        'cfop_id': order_line.cfop_id.id or order.fiscal_operation_id.cfop_id.id or False})
 
                     if order_line.product_id.fiscal_type == 'service' or inv_line.product_id.is_on_service_invoice:
                         fiscal_operation_category_id = order_line.fiscal_operation_category_id or order.fiscal_operation_category_id or False
@@ -287,16 +288,26 @@ class sale_order_line(osv.osv):
     _columns = {
                 'fiscal_operation_category_id': fields.many2one('l10n_br_account.fiscal.operation.category', 'Categoria',
                                                                 domain="[('type','=','output'),('use_sale','=',True)]",
-                                                                readonly=True, states={'draft': [('readonly', False)]}),
+                                                                readonly=True, states={'draft': [('readonly', False)], 'confirmed': [('readonly', False)]}),
                 'fiscal_operation_id': fields.many2one('l10n_br_account.fiscal.operation', 'Operação Fiscal',
-                                                       readonly=True, states={'draft': [('readonly', False)]},
+                                                       readonly=True, states={'draft': [('readonly', False)], 'confirmed': [('readonly', False)]},
                                                        domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),('type','=','output'),('use_sale','=',True)]"),
+                'cfop_id': fields.many2one('l10n_br_account.cfop', u'Código Fiscal',
+                                                       readonly=True, states={'draft': [('readonly', False)], 'confirmed': [('readonly', False)]},
+                                                       domain="[('type','=','output'),('internal_type','=','normal')]"),
                 'fiscal_position': fields.many2one('account.fiscal.position', 'Fiscal Position', readonly=True,
                                                    domain="[('fiscal_operation_id','=',fiscal_operation_id)]",
-                                                   states={'draft': [('readonly', False)]}),
+                                                   states={'draft': [('readonly', False)], 'confirmed': [('readonly', False)]}),
                 'price_subtotal': fields.function(_amount_line, string='Subtotal', digits_compute=dp.get_precision('Sale Price')),
                 }
 
+    def fiscal_operation_id_change(self, cr, uid, ids, fop_id):
+        result = {'value': {} }
+        obj_fop = self.pool.get('l10n_br_account.fiscal.operation').browse(cr, uid, fop_id)
+        if obj_fop.cfop_id:
+            result['value']['cfop_id'] = obj_fop.cfop_id.id
+        return result
+    
     def product_id_change(self, cr, uid, ids, pricelist, product, qty=0,
                           uom=False, qty_uos=0, uos=False, name='', partner_id=False,
                           lang=False, update_tax=True, date_order=False, packaging=False,
@@ -382,10 +393,11 @@ class sale_order_line(osv.osv):
                             inv_ids.append(inv_line.id)
                             self.pool.get('account.invoice').write(cr, uid, inv_line.invoice_id.id, {'fiscal_operation_category_id': so_line.order_id.fiscal_operation_category_id.id,
                                                                                                      'fiscal_operation_id': so_line.order_id.fiscal_operation_id.id,
+                                                                                                     'cfop_id': so_line.order_id.fiscal_operation_id.cfop_id.id,
                                                                                                      'fiscal_document_id': so_line.order_id.fiscal_operation_id.fiscal_document_id.id,
                                                                                                      'document_serie_id': company_id.document_serie_product_ids[0].id})
 
-                        self.pool.get('account.invoice.line').write(cr, uid, inv_line.id, {'cfop_id': so_line.fiscal_operation_id.cfop_id.id,
+                        self.pool.get('account.invoice.line').write(cr, uid, inv_line.id, {'cfop_id': so_line.cfop_id.id,
                                                                                            'fiscal_operation_category_id': so_line.fiscal_operation_category_id.id,
                                                                                            'fiscal_operation_id': so_line.fiscal_operation_id.id})
 

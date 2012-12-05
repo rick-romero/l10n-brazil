@@ -55,7 +55,8 @@ class sale_order(osv.osv):
                                                                                  'incoterm': order.incoterm and order.incoterm.id or False
                                                                                  })
                     for inv_line in invoice.invoice_line:
-                        self.pool.get('account.invoice.line').write(cr, uid, inv_line.id, {'cfop_id': order.fiscal_operation_id.cfop_id.id})
+                        if not inv_line.cfop_id:
+                            self.pool.get('account.invoice.line').write(cr, uid, inv_line.id, {'cfop_id': order.fiscal_operation_id.cfop_id.id})
 
         return result
     

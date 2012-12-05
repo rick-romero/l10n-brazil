@@ -13,6 +13,18 @@
 					<field name="fiscal_operation_id" domain="[('type','=','input'),('use_purchase','=',True),('fiscal_operation_category_id','=',fiscal_operation_category_id)]" required="1"/>
 					<field domain="[('fiscal_operation_id','=',fiscal_operation_id)]" name="fiscal_position" />
 				</field>
+				<field name="state" position="replace">
+				  <field name="state" widget="statusbar"
+				    statusbar_visible="draft,to_invoice,approved,done"
+				    statusbar_colors='{"except_picking":"red","except_invoice":"red","confirmed":"blue","wait":"blue"}'
+				    readonly="1"/>
+				</field>
+				<button name="purchase_confirm" position="replace">
+				  <button name="purchase_to_invoice" states="draft" string="Confirmar"
+				    icon="gtk-go-forward"/>
+				  <button name="purchase_confirm" states="to_invoice"
+				    string="Convert to Purchase Order" icon="gtk-go-forward"/>
+				</button>
 			</field>
 		</record>
 
@@ -49,17 +61,20 @@
 			</field>
 		</record>
 		
-		<record model="ir.ui.view" id="l10n_br_purchase_order_line_form2">
-			<field name="name">l10n_br_purchase.order.line.form2</field>
-			<field name="model">purchase.order.line</field>
-			<field name="inherit_id" ref="purchase.purchase_order_line_form"/>
-			<field name="arch" type="xml">
-				<field name="name" position="after" >
-	               <field name="fiscal_operation_category_id" required="1" />
-	               <field name="fiscal_operation_id" required="1" />
-				</field>
-			</field>
-		</record>
+    <record model="ir.ui.view" id="l10n_br_purchase_order_line_form2">
+      <field name="name">l10n_br_purchase.order.line.form2</field>
+      <field name="model">purchase.order.line</field>
+      <field name="inherit_id" ref="purchase.purchase_order_line_form"/>
+      <field name="arch" type="xml">
+        <field name="name" position="after" >
+          <field name="fiscal_operation_category_id" required="1" />
+          <field name="fiscal_operation_id" required="1"
+            on_change="fiscal_operation_id_change(fiscal_operation_id)" />
+          <field name="cfop_id" groups="base.group_sale_salesman"/>
+          <field name="state" readonly="1" invisible="1" />
+        </field>
+      </field>
+    </record>
 
 	</data>
 

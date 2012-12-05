@@ -26,6 +26,18 @@ import decimal_precision as dp
 class purchase_order(osv.osv):
     _inherit = 'purchase.order'
 
+    STATE_SELECTION = [
+        ('draft', 'Request for Quotation'),
+        ('to_invoice', u'Para Faturar'),
+        ('wait', 'Waiting'),
+        ('confirmed', 'Waiting Approval'),
+        ('approved', 'Approved'),
+        ('except_picking', 'Shipping Exception'),
+        ('except_invoice', 'Invoice Exception'),
+        ('done', 'Done'),
+        ('cancel', 'Cancelled')
+    ]
+
     def _amount_all(self, cr, uid, ids, field_name, arg, context=None):
         res = {}
         cur_obj = self.pool.get('res.currency')
@@ -55,20 +67,139 @@ class purchase_order(osv.osv):
         return result.keys()
 
     _columns = {
-                'fiscal_operation_category_id': fields.many2one('l10n_br_account.fiscal.operation.category',
-                                                                'Categoria', domain="[('type','=','input'),('use_purchase','=',True)]"),
-                'fiscal_operation_id': fields.many2one('l10n_br_account.fiscal.operation', 'Operação Fiscal',
-                                                       domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),(type,'=','input'),('use_purchase','=',True)]"),
-                'amount_untaxed': fields.function(_amount_all, method=True, digits_compute=dp.get_precision('Purchase Price'),
-                                                  string='Untaxed Amount', store={'purchase.order.line': (_get_order, None, 10), },
-                                                  multi="sums", help="The amount without tax"),
-                'amount_tax': fields.function(_amount_all, method=True, digits_compute=dp.get_precision('Purchase Price'),
-                                              string='Taxes', store={'purchase.order.line': (_get_order, None, 10), },
-                                              multi="sums", help="The tax amount"),
-                'amount_total': fields.function(_amount_all, method=True, digits_compute=dp.get_precision('Purchase Price'),
-                                                string='Total', store={'purchase.order.line': (_get_order, None, 10), },
-                                                multi="sums", help="The total amount"),
+        'fiscal_operation_category_id': fields.many2one(
+            'l10n_br_account.fiscal.operation.category',
+            u'Categoria',
+            domain="[('type','=','input'),('use_purchase','=',True)]"
+            ),
+        'fiscal_operation_id': fields.many2one(
+            'l10n_br_account.fiscal.operation',
+            u'Operação Fiscal',
+            domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),(type,'=','input'),('use_purchase','=',True)]"
+            ),
+        'amount_untaxed': fields.function(
+            _amount_all,
+            method=True,
+            digits_compute=dp.get_precision('Purchase Price'),
+            string='Untaxed Amount',
+            store={'purchase.order.line': (_get_order, None, 10), },
+            multi="sums",
+            help="The amount without tax"
+            ),
+        'amount_tax': fields.function(
+            _amount_all,
+            method=True,
+            digits_compute=dp.get_precision('Purchase Price'),
+            string='Taxes',
+            store={'purchase.order.line': (_get_order, None, 10), },
+            multi="sums",
+            help="The tax amount"
+            ),
+        'amount_total': fields.function(
+            _amount_all,
+            method=True,
+            digits_compute=dp.get_precision('Purchase Price'),
+            string='Total',
+            store={'purchase.order.line': (_get_order, None, 10), },
+            multi="sums",
+            help="The total amount"
+            ),
+        'state': fields.selection(
+            STATE_SELECTION,
+            'State',
+            readonly=True,
+            help="The state of the purchase order or the quotation request. A quotation is a purchase order in a 'Draft' state. Then the order has to be confirmed by the user, the state switch to 'Confirmed'. Then the supplier must confirm the order to change the state to 'Approved'. When the purchase order is paid and received, the state becomes 'Done'. If a cancel action occurs in the invoice or in the reception of goods, the state becomes in exception.",
+            select=True
+            ),
+        'partner_ref': fields.char(
+            'Supplier Reference',
+            states={
+                'to_invoice': [('readonly', True)],
+                'confirmed': [('readonly', True)],
+                'approved': [('readonly', True)],
+                'done': [('readonly', True)]
+                },
+            size=64
+            ),
+        'date_order':fields.date(
+            'Order Date',
+            required=True,
+            states={
+                'to_invoice': [('readonly', True)],
+                'confirmed': [('readonly', True)],
+                'approved': [('readonly', True)]
+                },
+            select=True,
+            help="Date on which this document has been created."
+            ),
+        'partner_id':fields.many2one(
+            'res.partner',
+            'Supplier',
+            required=True,
+            states={
+                'to_invoice': [('readonly', True)],
+                'confirmed': [('readonly', True)],
+                'approved': [('readonly', True)],
+                'done': [('readonly', True)]
+                },
+            change_default=True
+            ),
+        'partner_address_id': fields.many2one(
+            'res.partner.address',
+            'Address',
+            required=True,
+            states={
+                'to_invoice': [('readonly', True)],
+                'confirmed': [('readonly', True)],
+                'approved': [('readonly', True)],
+                'done': [('readonly', True)]
+                },
+            domain="[('partner_id', '=', partner_id)]"
+            ),
+        'dest_address_id': fields.many2one(
+            'res.partner.address',
+            'Destination Address',
+            domain="[('partner_id', '!=', False)]",
+            states={
+                'to_invoice': [('readonly', True)],
+                'confirmed': [('readonly', True)],
+                'approved': [('readonly', True)],
+                'done': [('readonly', True)]
+                },
+            help="Put an address if you want to deliver directly from the supplier to the customer." \
+                "In this case, it will remove the warehouse link and set the customer location."
+        ),
+        'warehouse_id': fields.many2one(
+            'stock.warehouse',
+            'Warehouse',
+            states={
+                'to_invoice': [('readonly', True)],
+                'confirmed': [('readonly', True)],
+                'approved': [('readonly', True)],
+                'done': [('readonly', True)]}
+            ),
+        'pricelist_id':fields.many2one(
+            'product.pricelist',
+            'Pricelist',
+            required=True,
+            states={
+                'to_invoice': [('readonly', True)],
+                'confirmed': [('readonly', True)],
+                'approved': [('readonly', True)],
+                'done': [('readonly', True)]
+                },
+            help="The pricelist sets the currency used for this purchase order. It also computes the supplier price for the selected products/quantities."
+            ),
+        'order_line': fields.one2many(
+            'purchase.order.line',
+            'order_id',
+            'Order Lines',
+            states={
+                'approved':[('readonly', True)],
+                'done':[('readonly', True)]
                 }
+            ),
+        }
 
     def _default_fiscal_operation_category(self, cr, uid, context=None):
         user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
@@ -116,8 +247,10 @@ class purchase_order(osv.osv):
                                               or order.fiscal_operation_category_id and order.fiscal_operation_category_id.id
         result['fiscal_operation_id'] = order_line.fiscal_operation_id and order_line.fiscal_operation_id.id \
                                      or order.fiscal_operation_id and order.fiscal_operation_id.id
-        result['cfop_id'] = order.fiscal_operation_id and order.fiscal_operation_id.cfop_id and order.fiscal_operation_id.cfop_id.id \
-                          or order.fiscal_operation_id and order.fiscal_operation_id.cfop_id and order.fiscal_operation_id.cfop_id.id
+        result['cfop_id'] = (order_line.cfop_id and order_line.cfop_id.id) or\
+            (order.fiscal_operation_id and
+             order.fiscal_operation_id.cfop_id and
+             order.fiscal_operation_id.cfop_id.id) or False
         return result
 
     def action_invoice_create(self, cr, uid, ids, *args):  # TODO ask OpenERP SA for a _prepare_invoice method!
@@ -147,6 +280,51 @@ class purchase_order(osv.osv):
             self.pool.get('stock.picking').write(cr, uid, picking_id, {'fiscal_operation_category_id': order.fiscal_operation_category_id.id, 'fiscal_operation_id': order.fiscal_operation_id.id, 'fiscal_position': order.fiscal_position.id})
         return picking_id
 
+    def wkf_confirm_order(self, cr, uid, ids, context=None):
+        todo = []
+        for po in self.browse(cr, uid, ids, context=context):
+            if not po.order_line:
+                raise osv.except_osv(
+                    _('Error !'),
+                    _('You cannot confirm a purchase order without any lines.')
+                    )
+            for line in po.order_line:
+                if line.state == 'to_invoice':
+                    todo.append(line.id)
+            message = _("Purchase order '%s' is confirmed.") % (po.name,)
+            self.log(cr, uid, po.id, message)
+
+        self.pool.get('purchase.order.line').action_confirm(cr, uid, todo,
+                                                            context)
+        for id in ids:
+            self.write(cr, uid, [id], {'state': 'confirmed',
+                                       'validator': uid})
+        return True
+
+    def to_invoice(self, cr, uid, ids, context=None):
+        todo = []
+        for po in self.browse(cr, uid, ids, context=context):
+            if not po.order_line:
+                raise osv.except_osv(
+                    _('Error !'),
+                    _('You cannot confirm a purchase order without any lines.')
+                    )
+            for line in po.order_line:
+                if line.state == 'draft':
+                    todo.append(line.id)
+            message = _("Purchase order '%s' is confirmed.") % (po.name,)
+            self.log(cr, uid, po.id, message)
+
+        self.pool.get('purchase.order.line').write(
+            cr, uid, todo, {'state': 'to_invoice'}, context=context
+            )
+
+        for id in ids:
+            self.write(cr, uid, [id], {'state': 'to_invoice',
+                                       'validator': uid})
+        return True
+
+
 purchase_order()
 
 
@@ -154,14 +332,96 @@ class purchase_order_line(osv.osv):
     _inherit = 'purchase.order.line'
 
     _columns = {
-                'fiscal_operation_category_id': fields.many2one('l10n_br_account.fiscal.operation.category', 'Categoria',
-                                                                domain="[('type','=','input'),('use_purchase','=',True)]"),
-                'fiscal_operation_id': fields.many2one('l10n_br_account.fiscal.operation', 'Operação Fiscal',
-                                                       domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),('type','=','input'),('use_purchase','=',True)]"),
-                'fiscal_position': fields.many2one('account.fiscal.position', 'Fiscal Position', readonly=True,
-                                                   domain="[('fiscal_operation_id','=',fiscal_operation_id)]",
-                                                   states={'draft': [('readonly', False)]}),
+        'fiscal_operation_category_id': fields.many2one(
+            'l10n_br_account.fiscal.operation.category',
+            u'Categoria',
+            domain="[('type','=','input'),('use_purchase','=',True)]"
+            ),
+        'fiscal_operation_id': fields.many2one(
+            'l10n_br_account.fiscal.operation',
+            u'Operação Fiscal',
+            domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),('type','=','input'),('use_purchase','=',True)]"
+            ),
+        'fiscal_position': fields.many2one(
+            'account.fiscal.position',
+            'Fiscal Position',
+            readonly=True,
+            domain="[('fiscal_operation_id','=',fiscal_operation_id)]",
+            states={
+                'draft': [('readonly', False)],
                 }
+            ),
+        'state': fields.selection(
+            [('draft', 'Draft'),
+             ('to_invoice', u'Para Faturar'),
+             ('confirmed', 'Confirmed'),
+             ('done', 'Done'),
+             ('cancel', 'Cancelled')],
+            'State',
+            required=True,
+            readonly=True,
+            help=' * The \'Draft\' state is set automatically when purchase order in draft state. \
+                \n* The \'Confirmed\' state is set automatically as confirm when purchase order in confirm state. \
+                \n* The \'Done\' state is set automatically when purchase order is set as done. \
+                \n* The \'Cancelled\' state is set automatically when user cancel purchase order.'
+            ),
+
+        'name': fields.char(
+            'Description',
+            size=256,
+            required=True,
+            states={'to_invoice': [('readonly', True)]},
+            ),
+        'product_qty': fields.float(
+            'Quantity',
+            digits_compute=dp.get_precision('Product UoM'),
+            required=True,
+            states={'to_invoice': [('readonly', True)]},
+            ),
+        'date_planned': fields.date(
+            'Scheduled Date', required=True, select=True,
+            states={'to_invoice': [('readonly', True)]},
+            ),
+        'product_uom': fields.many2one(
+            'product.uom', 'Product UOM', required=True,
+            states={'to_invoice': [('readonly', True)]},
+            ),
+        'product_id': fields.many2one(
+            'product.product',
+            'Product',
+            domain=[('purchase_ok','=',True)],
+            change_default=True,
+            states={'to_invoice': [('readonly', True)]},
+            ),
+        'move_dest_id': fields.many2one(
+            'stock.move',
+            'Reservation Destination',
+            ondelete='set null',
+            states={'to_invoice': [('readonly', True)]},
+            ),
+        'price_unit': fields.float(
+            'Unit Price',
+            required=True,
+            digits_compute=dp.get_precision('Purchase Price'),
+            states={'to_invoice': [('readonly', True)]},
+            ),
+        'notes': fields.text(
+            'Notes', states={'to_invoice': [('readonly', True)]},
+            ),
+        'order_id': fields.many2one(
+            'purchase.order',
+            'Order Reference',
+            select=True,
+            required=True,
+            ondelete='cascade',
+            states={'to_invoice': [('readonly', True)]},
+            ),
+        'cfop_id': fields.many2one(
+            'l10n_br_account.cfop',
+            u'Código Fiscal',
+            domain="[('type','=','output'),('internal_type','=','normal')]"
+            ),
+        }
 
     def product_id_change(self, cr, uid, ids, pricelist, product, qty, uom,
                           partner_id, date_order=False, fiscal_position=False, date_planned=False,
@@ -177,6 +437,17 @@ class purchase_order_line(osv.osv):
         if fiscal_position:
             result['value']['fiscal_position'] = fiscal_position
         return result
+
+    def fiscal_operation_id_change(self, cr, uid, ids, fop_id):
+        result = {'value': {}}
+        obj_fop = self.pool.get('l10n_br_account.fiscal.operation').browse(
+            cr, uid, fop_id
+            )
+        if obj_fop.cfop_id:
+            result['value']['cfop_id'] = obj_fop.cfop_id.id
+
+        return result
+
 
 purchase_order_line()
 

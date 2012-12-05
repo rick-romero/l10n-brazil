@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record id="act_to_invoice" model="workflow.activity">
+            <field name="wkf_id" ref="purchase.purchase_order"/>
+            <field name="name">to_invoice</field>
+            <field name="kind">function</field>
+            <field name="action">to_invoice()</field>
+        </record>
+
+        <record id="trans_draft_to_invoice" model="workflow.transition">
+            <field name="act_from" ref="purchase.act_draft"/>
+            <field name="act_to" ref="act_to_invoice"/>
+            <field name="signal">purchase_to_invoice</field>
+        </record>
+        <record id="trans_draft_confirmed" model="workflow.transition">
+            <field name="act_from" ref="act_to_invoice"/>
+            <field name="act_to" ref="purchase.act_confirmed"/>
+            <field name="signal">purchase_confirm</field>
+        </record>
+
+    </data>
+</openerp>

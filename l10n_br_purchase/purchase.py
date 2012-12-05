@@ -344,12 +344,8 @@ class purchase_order_line(osv.osv):
             ),
         'fiscal_position': fields.many2one(
             'account.fiscal.position',
-            'Fiscal Position',
-            readonly=True,
+            u'Posição Fiscal',
             domain="[('fiscal_operation_id','=',fiscal_operation_id)]",
-            states={
-                'draft': [('readonly', False)],
-                }
             ),
         'state': fields.selection(
             [('draft', 'Draft'),

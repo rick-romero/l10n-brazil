@@ -70,6 +70,8 @@
           <field name="fiscal_operation_category_id" required="1" />
           <field name="fiscal_operation_id" required="1"
             on_change="fiscal_operation_id_change(fiscal_operation_id)" />
+          <field name="fiscal_position" 
+            on_change="product_id_change(parent.pricelist_id,product_id,product_qty,product_uom,parent.partner_id, parent.date_order,fiscal_position,date_planned,name,price_unit,notes,context,fiscal_operation_category_id,fiscal_operation_id)"/>
           <field name="cfop_id" groups="base.group_sale_salesman"/>
           <field name="state" readonly="1" invisible="1" />
         </field>

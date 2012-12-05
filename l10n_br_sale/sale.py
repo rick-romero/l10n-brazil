@@ -219,9 +219,14 @@ class sale_order(osv.osv):
             for order_line in self.pool.get('sale.order.line').browse(cr, uid, order_lines, context=context):
                 inv_line_id = [inv_line for inv_line in order_line.invoice_lines if inv_line.id in inv_line_ids]
                 if inv_line_id:
-                    obj_invoice_line.write(cr, uid, inv_line_id[0].id, {'fiscal_operation_category_id': order_line.fiscal_operation_category_id.id or order.fiscal_operation_category_id.id,
-                                                                        'fiscal_operation_id': order_line.fiscal_operation_id.id or order.fiscal_operation_id.id,
-                                                                        'cfop_id': order_line.cfop_id.id or order.fiscal_operation_id.cfop_id.id or False})
+                    obj_invoice_line.write(cr, uid, inv_line_id[0].id, {
+                        'fiscal_operation_category_id': order_line.fiscal_operation_category_id.id or order.fiscal_operation_category_id.id,
+                        'fiscal_operation_id': order_line.fiscal_operation_id.id or order.fiscal_operation_id.id,
+                        'cfop_id': (order_line.cfop_id and order_line.cfop_id.id) or \
+                            (order.fiscal_operation_id and
+                             order.fiscal_operation_id.cfop_id and
+                             order.fiscal_operation_id.cfop_id.id) or False
+                        })
 
                     if order_line.product_id.fiscal_type == 'service' or inv_line.product_id.is_on_service_invoice:
                         fiscal_operation_category_id = order_line.fiscal_operation_category_id or order.fiscal_operation_category_id or False

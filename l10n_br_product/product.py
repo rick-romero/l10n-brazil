@@ -24,12 +24,53 @@ from osv import fields, osv
 class product_template(osv.osv):
     _inherit = "product.template"
     _columns = {
-                'origin': fields.selection((('0', 'Nacional'), ('1', 'Internacional'), ('2', 'Inter. Adiquirido Internamente')), 'Origem'),
-                }
+        'origin': fields.selection(
+            (('0', 'Nacional'),
+             ('1', 'Internacional'),
+             ('2', 'Inter. Adiquirido Internamente')),
+            u'Origem'
+            ),
+        'company_id':fields.many2one('res.company','Company', required=True),
+        }
     _defaults = {
-                 'origin': '0',
-                 }
+        'origin': '0',
+        'company_id': lambda self, cr, uid, c: \
+            self.pool.get('res.users').browse(
+                cr, uid, uid, context=c
+                ).company_id.id,
+        }
+
 
 product_template()
 
-# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
+
+class product_product(osv.osv):
+    _inherit = "product.product"
+
+    def name_search(self, cr, user, name='', args=None, operator='ilike',
+                    context=None, limit=100):
+        if not args:
+            args = []
+        company = self.pool.get('res.users').browse(
+            cr, user, user, context=context
+            ).company_id
+        args.append(('company_id', '=', company.id))
+        return super(product_product, self).name_search(
+            cr, user, name, args, operator, context, limit
+            )
+
+    def search(self, cr, user, args, offset=0, limit=None, order=None,
+               context=None, count=False):
+        if not args:
+            args = []
+        company = self.pool.get('res.users').browse(
+            cr, user, user, context=context
+            ).company_id
+        args.append(('company_id', '=', company.id))
+        return super(product_product, self).search(
+            cr, user, args, offset=offset, limit=limit, order=order,
+            context=context, count=count
+            )
+
+
+product_product()

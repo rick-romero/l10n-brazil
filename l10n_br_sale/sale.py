@@ -57,17 +57,42 @@ class sale_order(osv.osv):
         return res
 
     _columns = {
-                'order_line': fields.one2many('sale.order.line', 'order_id', 'Order Lines', readonly=True, states={'draft': [('readonly', False)], 'manual': [('readonly', False)]}),
-                'fiscal_operation_category_id': fields.many2one('l10n_br_account.fiscal.operation.category', 'Categoria',
-                                                                domain="[('type','=','output'),('use_sale','=',True)]",
-                                                                readonly=True, states={'draft': [('readonly', False)], 'manual': [('readonly', False)]}),
-                'fiscal_operation_id': fields.many2one('l10n_br_account.fiscal.operation', 'Operação Fiscal',
-                                                       readonly=True, states={'draft': [('readonly', False)], 'manual': [('readonly', False)]},
-                                                       domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),('type','=','output'),('use_sale','=',True)]"),
-                'fiscal_position': fields.many2one('account.fiscal.position', 'Fiscal Position', readonly=True,
-                                                   states={'draft': [('readonly', False)], 'manual': [('readonly', False)]}),
-                'invoiced_rate': fields.function(_invoiced_rate, method=True, string='Invoiced', type='float'),
-               }
+        'order_line': fields.one2many(
+            'sale.order.line', 'order_id', 'Order Lines', readonly=True,
+            states={
+                'draft': [('readonly', False)],
+                'manual': [('readonly', False)]
+                }
+            ),
+        'fiscal_operation_category_id': fields.many2one(
+            'l10n_br_account.fiscal.operation.category', 'Categoria',
+            domain="[('type','=','output'),('use_sale','=',True)]",
+            readonly=True,
+            states={
+                'draft': [('readonly', False)],
+                'manual': [('readonly', False)]
+                }
+            ),
+        'fiscal_operation_id': fields.many2one(
+            'l10n_br_account.fiscal.operation', u'Operação Fiscal',
+            readonly=True,
+            states={
+                'draft': [('readonly', False)],
+                'manual': [('readonly', False)]
+                },
+            domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),('type','=','output'),('use_sale','=',True)]"
+            ),
+        'fiscal_position': fields.many2one(
+            'account.fiscal.position', 'Fiscal Position', readonly=True,
+            states={
+                'draft': [('readonly', False)],
+                'manual': [('readonly', False)]
+                }
+            ),
+        'invoiced_rate': fields.function(
+            _invoiced_rate, method=True, string='Invoiced', type='float'
+            ),
+       }
 
     def onchange_partner_id(self, cr, uid, ids, partner_id=False, partner_invoice_id=False,
                             shop_id=False, fiscal_operation_category_id=False):
@@ -291,20 +316,84 @@ class sale_order_line(osv.osv):
         return res
 
     _columns = {
-                'fiscal_operation_category_id': fields.many2one('l10n_br_account.fiscal.operation.category', 'Categoria',
-                                                                domain="[('type','=','output'),('use_sale','=',True)]",
-                                                                readonly=True, states={'draft': [('readonly', False)], 'confirmed': [('readonly', False)]}),
-                'fiscal_operation_id': fields.many2one('l10n_br_account.fiscal.operation', 'Operação Fiscal',
-                                                       readonly=True, states={'draft': [('readonly', False)], 'confirmed': [('readonly', False)]},
-                                                       domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),('type','=','output'),('use_sale','=',True)]"),
-                'cfop_id': fields.many2one('l10n_br_account.cfop', u'Código Fiscal',
-                                                       readonly=True, states={'draft': [('readonly', False)], 'confirmed': [('readonly', False)]},
-                                                       domain="[('type','=','output'),('internal_type','=','normal')]"),
-                'fiscal_position': fields.many2one('account.fiscal.position', u'Posição Fiscal', readonly=True,
-                                                   domain="[('fiscal_operation_id','=',fiscal_operation_id)]",
-                                                   states={'draft': [('readonly', False)], 'confirmed': [('readonly', False)]}),
-                'price_subtotal': fields.function(_amount_line, string='Subtotal', digits_compute=dp.get_precision('Sale Price')),
+        'fiscal_operation_category_id': fields.many2one(
+            'l10n_br_account.fiscal.operation.category',
+            u'Categoria',
+            domain="[('type','=','output'),('use_sale','=',True)]",
+            readonly=True,
+            states={
+                'draft': [('readonly', False)],
+                'confirmed': [('readonly', False)]
                 }
+            ),
+        'fiscal_operation_id': fields.many2one(
+            'l10n_br_account.fiscal.operation',
+            u'Operação Fiscal',
+            readonly=True,
+            states={
+                'draft': [('readonly', False)],
+                'confirmed': [('readonly', False)]
+                },
+            domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),('type','=','output'),('use_sale','=',True)]"
+            ),
+        'cfop_id': fields.many2one(
+            'l10n_br_account.cfop',
+            u'Código Fiscal',
+            readonly=True,
+            states={
+                'draft': [('readonly', False)],
+                'confirmed': [('readonly', False)]
+                },
+            domain="[('type','=','output'),('internal_type','=','normal')]"
+            ),
+        'fiscal_position': fields.many2one(
+            'account.fiscal.position',
+            u'Posição Fiscal',
+            readonly=True,
+            domain="[('fiscal_operation_id','=',fiscal_operation_id)]",
+            states={
+                'draft': [('readonly', False)],
+                'confirmed': [('readonly', False)],
+                }
+            ),
+        'price_subtotal': fields.function(
+            _amount_line, string='Subtotal', digits_compute=dp.get_precision('Sale Price')
+            ),
+        'tax_id': fields.many2many(
+            'account.tax', 
+            'sale_order_tax', 'order_line_id', 'tax_id', 'Taxes', 
+            readonly=True,
+            states={
+                'draft': [('readonly', False)],
+                'confirmed': [('readonly', False)]
+                }
+            ),
+        'product_id': fields.many2one(
+            'product.product',
+            'Product',
+            domain=[('sale_ok', '=', True)],
+            change_default=True,
+            states={'confirmed': [('readonly', True)]}
+            ),
+        'address_allotment_id': fields.many2one(
+            'res.partner.address',
+            'Allotment Partner',
+            states={'confirmed': [('readonly', True)]}
+            ),
+        'product_uos': fields.many2one(
+            'product.uom',
+            'Product UoS',
+            states={'confirmed': [('readonly', True)]}
+            ),
+        'product_packaging': fields.many2one(
+            'product.packaging',
+            'Packaging',
+            states={'confirmed': [('readonly', True)]}
+            ),
+        'notes': fields.text(
+            'Notes', states={'confirmed': [('readonly', True)]}
+            ),
+        }
 
     def fiscal_operation_id_change(self, cr, uid, ids, fop_id):
         result = {'value': {} }
@@ -337,6 +426,9 @@ class sale_order_line(osv.osv):
 
             if fiscal_operation_id:
                 result['value']['fiscal_operation_id'] = fiscal_operation_id
+
+            if fiscal_position:
+                result['value']['fiscal_position'] = fiscal_position
 
             return result
 

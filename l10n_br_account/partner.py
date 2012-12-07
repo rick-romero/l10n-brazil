@@ -60,7 +60,7 @@ class account_fiscal_position(osv.osv):
             for fp_tax in fposition_id.tax_ids:
                 # change behavior to search by the tax code
                 tax = tax_obj.browse(cr, uid, fp_tax.tax_src_id.id)
-                if tax.tax_code_id.id and tax.tax_code_id.id == t.tax_code_id.id:
+                if tax.tax_code_id and tax.tax_code_id.id == t.tax_code_id.id:
                     if fp_tax.tax_dest_id:
                         result.append(fp_tax.tax_dest_id.id)
                     ok=True

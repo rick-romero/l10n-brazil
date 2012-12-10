@@ -295,6 +295,18 @@ class sale_order(osv.osv):
                 val += c_tax.get('amount', 0.0)
         return val
 
+    def manual_invoice(self, cr, uid, ids, context=None):
+        for order in self.pool.get('sale.order').browse(cr, uid, ids):
+            for line in order.order_line:
+                if not line.fiscal_operation_id or \
+                    not line.fiscal_operation_category_id:
+                    raise osv.except_osv(
+                        _('Error !'),
+                        u'Faltam dados na(s) linha(s) do pedido.'
+                        )
+        return super(sale_order, self).manual_invoice(cr, uid, ids, context=context)
+
+
 sale_order()
 
 

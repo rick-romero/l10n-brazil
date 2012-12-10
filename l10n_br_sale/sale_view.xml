@@ -18,8 +18,9 @@
           position="replace">
           <field name="fiscal_operation_category_id"
             on_change="onchange_fiscal_operation_category_id(partner_id, partner_invoice_id, shop_id, fiscal_operation_category_id)"
-            required="1"/>
-          <field name="fiscal_operation_id" required="1"/>
+            attrs="{'required':[('state','!=','draft')]}" />
+          <field name="fiscal_operation_id"
+            attrs="{'required':[('state','!=','draft')]}" />
           <field domain="[('fiscal_operation_id','=',fiscal_operation_id)]"
             name="fiscal_position" />
         </xpath>
@@ -74,9 +75,14 @@
       <field name="arch" type="xml">
         <xpath expr="/form/notebook/page/field/form/notebook/page/group/field[@name='discount']" position="after">
 
-          <field colspan="3" name="fiscal_operation_category_id" groups="base.group_sale_salesman" required="1"/>
+          <field colspan="3" name="fiscal_operation_category_id"
+            groups="base.group_sale_salesman"
+            attrs="{'required':[('state','!=','draft')]}" />
           <newline/>
-          <field colspan="3" name="fiscal_operation_id" groups="base.group_sale_salesman" required="1" on_change="fiscal_operation_id_change(fiscal_operation_id)"/>
+          <field colspan="3" name="fiscal_operation_id"
+            groups="base.group_sale_salesman"
+            on_change="fiscal_operation_id_change(fiscal_operation_id)"
+            attrs="{'required':[('state','!=','draft')]}" />
           <newline/>
           <field colspan="3" name="fiscal_position"
           groups="base.group_sale_salesman"

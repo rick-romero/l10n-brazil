@@ -21,10 +21,15 @@
 #                                                                            #
 ##############################################################################
 
-import account_invoice
-import hr_payslip
-import hr_employee
-import l10n_br_hr
-import res_partner_address
-import res_company
-import wizard
+from osv import fields, osv
+from tools.translate import _
+
+class account_invoice(osv.osv):
+    _inherit = 'account.invoice'
+
+    _columns = {
+        'contracts': fields.many2many('hr.contract', string=u'Contratos'),
+        }
+
+
+account_invoice()

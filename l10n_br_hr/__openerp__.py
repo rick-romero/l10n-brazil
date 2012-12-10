@@ -60,7 +60,9 @@
         'data/l10n_br_hr.vinculo.csv',
         'security/ir.model.access.csv',
 
+        'account_invoice_view.xml',
         'hr_employee_sequence.xml',
+        'hr_employee_view.xml',
         'hr_payslip_view.xml',
         'l10n_br_hr_view.xml',
         'wizard/rais_view.xml',

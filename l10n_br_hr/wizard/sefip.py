@@ -209,6 +209,7 @@ class sefip(osv.osv_memory):
                 ('2', u'Centralizada'),
             ],
             u'Código de Centralização',
+            # FIXME: Campo deve ser obrigatório, mas dá erro de integridade
             #required=True
             ),
         'codigo_de_outras_entidades': fields.integer(
@@ -648,6 +649,8 @@ class sefip(osv.osv_memory):
         index = 0
 
         grouped_payslips = {}
+
+        # FIXME: check if this is being used
         categories = [
             'SFAMILIA', 'SMATERNIDADE', '13SALAD', '13SALFI',
             ]

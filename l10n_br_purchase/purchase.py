@@ -374,12 +374,6 @@ class purchase_order_line(osv.osv):
             required=True,
             states={'to_invoice': [('readonly', True)]},
             ),
-        'product_qty': fields.float(
-            'Quantity',
-            digits_compute=dp.get_precision('Product UoM'),
-            required=True,
-            states={'to_invoice': [('readonly', True)]},
-            ),
         'date_planned': fields.date(
             'Scheduled Date', required=True, select=True,
             states={'to_invoice': [('readonly', True)]},

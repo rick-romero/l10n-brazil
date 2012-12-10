@@ -34,7 +34,8 @@
 				<field name="lang" position="replace">
 					<field colspan="4" name="legal_name"/>
 					<field name="tipo_pessoa" on_change="onchange_mask_cnpj_cpf(tipo_pessoa,cnpj_cpf)"/>
-					<field name="cnpj_cpf" colspan="4" on_change="onchange_mask_cnpj_cpf(tipo_pessoa,cnpj_cpf)"/> 
+					<field name="cnpj_cpf" colspan="4" on_change="onchange_mask_cnpj_cpf(tipo_pessoa,cnpj_cpf)"
+					  attrs="{'required':['|',('customer','=',True),('supplier','=',True)]}"/> 
 					<field name="lang"/>
                     <field name="birthday"
                         attrs="{'invisible':[('tipo_pessoa','=','J')]}" />

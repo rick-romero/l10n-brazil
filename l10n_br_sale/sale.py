@@ -202,6 +202,10 @@ class sale_order(osv.osv):
             context = {}
 
         obj_company = self.pool.get('res.company').browse(cr, uid, order.company_id.id)
+        '''
+        FIXME: check if fiscal_operation_category_id.fiscal_type is service or
+        product and change list below.
+        '''
         fiscal_document_serie_ids = [fdoc for fdoc in obj_company.document_serie_product_ids if fdoc.fiscal_document_id.id == order.fiscal_operation_id.fiscal_document_id.id and fdoc.active]
 
         if not fiscal_document_serie_ids:

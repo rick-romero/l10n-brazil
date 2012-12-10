@@ -600,18 +600,18 @@ class account_invoice(osv.osv):
             elif move_line_item['credit'] > 0 and \
                  move_line_item['product_id'] and \
                  invoice_browse.type in ('out_invoice','in_refund'):
-                final_credit_inds.append(ind)
+                 final_credit_inds.append(ind)
             
             # get final invoice debit line 
             elif move_line_item['debit'] > 0 and \
                  move_line_item['product_id'] and \
                  invoice_browse.type in ('in_invoice', 'out_refund'):
-                final_debit_inds.append(ind)
+                 final_debit_inds.append(ind)
             
         # fix total amount removing taxes diferent from tax_add type
         if final_credit_inds:
             if invoice_browse.type in ('out_invoice','in_refund'):
-                total_taxes_included = total_taxes_credit - ( invoice_browse.amount_total - invoice_browse.amount_untaxed )
+                total_taxes_included = total_taxes_credit - (invoice_browse.amount_total - invoice_browse.amount_untaxed)
                 for cr_ind in final_credit_inds:
                     tax_included_prod = (total_taxes_included / invoice_browse.amount_untaxed) * move_lines[cr_ind][2]['credit']
                     move_lines[cr_ind][2]['credit'] = move_lines[cr_ind][2]['credit'] - tax_included_prod
@@ -622,9 +622,17 @@ class account_invoice(osv.osv):
 
         # fix total amount to in_invoices
         if final_debit_inds:
-            total_credits = invoice_browse.amount_total + total_taxes_credit 
-            for cr_ind in final_debit_inds:
-                move_lines[cr_ind][2]['debit'] = total_credits - total_taxes_debit
+            if invoice_browse.type in ('in_invoice', 'out_refund'):
+                if total_taxes_credit:
+                    total_prods = (invoice_browse.amount_total + total_taxes_credit) - total_taxes_debit
+                    for dt_ind in final_debit_inds:
+                        tax_diff_prod = (total_prods / invoice_browse.amount_untaxed) * (move_lines[dt_ind][2]['debit'] - total_taxes_credit)
+                        move_lines[dt_ind][2]['debit'] = tax_diff_prod
+                else:
+                    total_taxes_included = total_taxes_debit - ( invoice_browse.amount_total - invoice_browse.amount_untaxed )
+                    for dt_ind in final_debit_inds:
+                        tax_included_prod = (total_taxes_included / invoice_browse.amount_untaxed) * move_lines[dt_ind][2]['debit']
+                        move_lines[dt_ind][2]['debit'] = move_lines[dt_ind][2]['debit'] - tax_included_prod
 
         # create a credit entry for each debit entry for tax_retain
         for mv_ind in tax_retained_itens:

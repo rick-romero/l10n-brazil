@@ -289,6 +289,12 @@ class purchase_order(osv.osv):
                     _('You cannot confirm a purchase order without any lines.')
                     )
             for line in po.order_line:
+                if not line.fiscal_operation_id or \
+                    not line.fiscal_operation_category_id:
+                    raise osv.except_osv(
+                        _('Error !'),
+                        u'Faltam dados na(s) linha(s) do pedido.'
+                        )
                 if line.state == 'to_invoice':
                     todo.append(line.id)
             message = _("Purchase order '%s' is confirmed.") % (po.name,)

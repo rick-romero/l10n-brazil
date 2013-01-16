@@ -130,6 +130,7 @@ class sefip(osv.osv_memory):
         'file_name': fields.char(u'Nome do Arquivo', 128, readonly=True),
         'company': fields.many2one('res.company', u'Empresa',
                                       required=True),
+        'responsavel': fields.many2one('res.partner', u'Responsável'),
         'responsavel_tipo_de_inscricao': fields.selection([
             ('1', 'CNPJ'),
             ('3', 'CPF'),
@@ -498,6 +499,42 @@ class sefip(osv.osv_memory):
 
         return {'value': {field_name: cep}}
 
+    def onchange_responsavel(self, cr, uid, ids, partner_id):
+        partner_data = {}
+        partner_obj = self.pool.get('res.partner')
+        partner_address_obj = self.pool.get('res.partner.address')
+        partner = partner_obj.browse(cr, uid, partner_id)
+        if partner:
+            tipo_de_inscricao = partner.tipo_pessoa == 'J' and '1' or '3'
+            partner_data = {
+                'responsavel_razao_social': partner.legal_name,
+                'responsavel_tipo_de_inscricao': tipo_de_inscricao,
+                }
+
+            if partner.tipo_pessoa == 'J':
+                partner_data['responsavel_cnpj'] = partner.cnpj_cpf
+            else:
+                partner_data['responsavel_cpf'] = partner.cnpj_cpf
+
+            default_address = partner_obj.address_get(
+                cr, uid, [partner_id], ['default']
+                )
+
+            if default_address['default']:
+                partner_addr = partner_address_obj.browse(
+                    cr, uid, default_address['default']
+                    )
+                partner_data['responsavel_contato'] = partner_addr.name
+                partner_data['responsavel_email'] = partner_addr.email
+                partner_data['responsavel_telefone'] = partner_addr.phone
+                partner_data['responsavel_endereco'] = partner_addr.street
+                partner_data['responsavel_bairro'] = partner_addr.district
+                partner_data['responsavel_cep'] = partner_addr.zip
+                partner_data['responsavel_pais'] = partner_addr.country_id.id
+                partner_data['responsavel_cidade'] = partner_addr.l10n_br_city_id.id
+
+        return {'value': partner_data}
+
     def onchange_responsavel_cnpj(self, cr, uid, ids, cnpj):
         return self._mask_cnpj(cnpj, 'responsavel_cnpj')
 
@@ -619,6 +656,9 @@ class sefip(osv.osv_memory):
         recolhimento = sefip_data.recolhimento.code
         scope_month, scope_year = map(int, sefip_data.competencia.split('/'))
         mes_competencia = scope_month
+
+        month, year = sefip_data.competencia.split('/')
+        valor_competencia = int(year + month)
 
         if scope_month == 13:
             scope_month = 12
@@ -894,9 +934,6 @@ class sefip(osv.osv_memory):
             r00.write_str(sefip_data.responsavel_email, 60)
 
             # 292 297  Competência
-            month, year = sefip_data.competencia.split('/')
-            mes_competencia = int(month)
-            valor_competencia = int(year + month)
             r00.write_num(valor_competencia, 6)
             # 298 300  Código de Recolhimento
             r00.write_num(sefip_data.recolhimento.code, 3)
@@ -2144,8 +2181,15 @@ class sefip(osv.osv_memory):
                 # 217 231  Remuneração Base de Cálculo da Contribuição Previdenciária
                 r30.write_val(base_calculo_previdencia, 15)
 
-                # TODO: 232 246  Base de Cálculo 13º Salário Previdência Social - Referente a Competência do Movimento
-                
+                '''
+                TODO: 232 246  Base de Cálculo 13º Salário Previdência Social -
+                Referente a Competência do Movimento
+                '''
+                base_calculo = 0
+                if contract_type in (01, 02, 04 ,06 , 07, 12, 19, 20, 21, 26):
+                    pass
+
+                r30.write_val(base_calculo, 15)
 
                 # 247 261  Base de Cálculo 13º Salário Previdência Social - Referente a GPS da Competência 13
                 # FIXME: Não suportado
@@ -2207,6 +2251,24 @@ class sefip(osv.osv_memory):
                     r32.write_str('', 10)
 
                 # TODO: 134 134  Indicativo de Recolhimento do FGTS
+                # possible values: 'S', 'N', 'C', ' '
+                indicativo_recolhimento = ' '
+
+                # Required
+                if contract.movimentacao.code in ('I1', 'I2', 'I3', 'I4', 'L'):
+                    pass
+                # Not required
+                    pass
+
+                if indicativo_recolhimento in ('S', 'N') and \
+                    valor_competencia <= 199801:
+                    indicativo_recolhimento = ' '
+                elif indicativo_recolhimento == 'C' and \
+                    valor_competencia < 199810:
+                    indicativo_recolhimento = ' '
+
+                r32.write_str(indicativo_recolhimento, 1)
+                
                 # 135 359  Brancos
                 r32.write_str('', 225)
                 # 360 360  Final da Linha

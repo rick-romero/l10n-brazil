@@ -77,7 +77,7 @@ class rais(osv.osv_memory):
         'participa_pat': fields.boolean(u'Participa do PAT'),
         'cnpj': fields.char(u'CNPJ', size=18),
         'ano_da_declaracao': fields.integer(u'Ano da Declaração', size=4),
-
+        'responsavel': fields.many2one('res.partner', u'Responsável'),
         'responsavel_tipo_de_inscricao': fields.selection([
             ('1', 'CNPJ'),
             ('4', 'CPF'),
@@ -350,6 +350,54 @@ class rais(osv.osv_memory):
 
         return result
 
+    def onchange_responsavel(self, cr, uid, ids, partner_id):
+        partner_data = {}
+        partner_obj = self.pool.get('res.partner')
+        partner_address_obj = self.pool.get('res.partner.address')
+        partner = partner_obj.browse(cr, uid, partner_id)
+        if partner:
+            tipo_de_inscricao = partner.tipo_pessoa == 'J' and '1' or '4'
+            partner_data = {
+                'responsavel_legal_name': partner.legal_name,
+                'responsavel_tipo_de_inscricao': tipo_de_inscricao,
+                'responsavel_birthday': partner.birthday,
+                }
+
+            if partner.tipo_pessoa == 'J':
+                partner_data['responsavel_cnpj'] = partner.cnpj_cpf
+            else:
+                partner_data['responsavel_cpf'] = partner.cnpj_cpf
+
+            default_address = partner_obj.address_get(
+                cr, uid, [partner_id], ['default']
+                )
+
+            if default_address['default']:
+                partner_addr = partner_address_obj.browse(
+                    cr, uid, default_address['default']
+                    )
+                partner_data['responsavel_name'] = partner_addr.name
+                partner_data['responsavel_email'] = partner_addr.email
+                if partner_addr.phone:
+                    phone_str = re.sub(
+                        '[^0-9]', '', str(partner_addr.phone)
+                        )
+                    partner_data['responsavel_phone_ddd'] = int(phone_str[:2])
+                    partner_data['responsavel_phone'] = int(phone_str[2:])
+
+                partner_data['responsavel_street'] = partner_addr.street
+                partner_data['responsavel_number'] = partner_addr.number
+                partner_data['responsavel_street2'] = partner_addr.street2
+                partner_data['responsavel_district'] = partner_addr.district
+                if partner_addr.zip:
+                    partner_data['responsavel_zip'] = int(re.sub(
+                        '[^0-9]', '', str(partner_addr.zip)
+                        ))
+                partner_data['responsavel_l10n_br_city_id'] = \
+                    partner_addr.l10n_br_city_id.id
+
+        return {'value': partner_data}
+
     def generate_file(self, cr, uid, ids, context=None):
 
         rais_data = self.browse(cr, uid, ids[0])
@@ -475,6 +523,8 @@ class rais(osv.osv_memory):
                     rais_data.responsavel_birthday, '%Y-%m-%d'
                     )
                 type0.write_str(birthday.strftime('%d%m%Y'), 8)
+            else:
+                type0.write_num(0, 8)
 
             # 392 a 551 160  Alfanum  Espaços
             type0.write_str('', 160)

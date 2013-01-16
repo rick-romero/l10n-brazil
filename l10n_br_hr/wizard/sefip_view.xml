@@ -60,6 +60,8 @@
                 </page>
 
                 <page string="Responsável pela Entrega">
+                  <field name="responsavel"
+                    on_change="onchange_responsavel(responsavel)"/>
                   <field name="responsavel_razao_social" />
                   <field name="responsavel_tipo_de_inscricao" />
                   <field name="responsavel_cnpj"

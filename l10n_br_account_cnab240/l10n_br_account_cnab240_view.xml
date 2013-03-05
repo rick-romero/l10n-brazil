@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+  <data>
+
+    <record model="ir.ui.view" id="view_l10n_br_account_cnab240_form">
+      <field name="name">l10n_br_account_cnab240.payment.form</field>
+      <field name="model">l10n_br_account_cnab240.payment</field>
+      <field name="type">form</field>
+      <field name="arch" type="xml">
+        <form string="Pagamento" col="4">
+          <field name="type" colspan="2" />
+          <field name="service_type" />
+          <separator string="Pagador" colspan="4" />
+          <field name="payer_company" colspan="2"
+            on_change="onchange_payer_company(payer_company)" />
+          <field name="payer_bank" colspan="2" />
+          <separator string="Beneficiário" colspan="4" />
+          <field name="recipient_partner" colspan="2"
+            on_change="onchange_recipient_partner(recipient_partner)" />
+          <field name="recipient_bank" colspan="2" />
+          <field name="agreement_number" />
+
+          <field name="payment_line" colspan="4" >
+            <form string="Pagamento">
+              <field name="document_number" />
+              <field name="expiration_date" />
+              <field name="value" />
+              <field name="type" />
+              <field name="action" />
+              <field name="acceptance" />
+              <field name="emission_date" />
+              <field name="daily_interest" />
+              <field name="description" />
+              <field name="protest" />
+              <field name="protest_time" />
+              <field name="devolution" />
+              <field name="devolution_time" />
+            </form>
+            <tree>
+              <field name="document_number" />
+              <field name="emission_date" />
+              <field name="expiration_date" />
+              <field name="value" />
+            </tree>
+          </field>
+
+          <separator colspan="4" />
+          <group col="4" colspan="4">
+            <label colspan="3" />
+            <button name="generate_file" string="Gerar Arquivo" type="object"
+              icon="gtk-go-forward" colspan="1" />
+          </group>
+
+          <separator colspan="4" />
+          <group col="4" colspan="4">
+            <field name="file_name" invisible="1" />
+            <field name="file" colspan="4" filename="file_name"
+              attrs="{'invisible':[('file','=','')]}" />
+          </group>
+
+        </form>
+      </field>
+    </record>
+
+    <record model="ir.ui.view" id="view_l10n_br_account_cnab240_tree">
+      <field name="name">l10n_br_account_cnab240.payment.tree</field>
+      <field name="model">l10n_br_account_cnab240.payment</field>
+      <field name="type">tree</field>
+      <field name="arch" type="xml">
+        <tree string="Pagamento">
+          <field name="payer_company" />
+          <field name="recipient_partner" />
+        </tree>
+      </field>
+    </record>
+
+    <record model="ir.actions.act_window"
+      id="action_l10n_br_account_cnab240_form">
+      <field name="name">Pagamento</field>
+      <field name="type">ir.actions.act_window</field>
+      <field name="res_model">l10n_br_account_cnab240.payment</field>
+      <field name="view_type">form</field>
+      <field name="view_mode">tree,form</field>
+      <field name="view_id" ref="view_l10n_br_account_cnab240_tree" />
+    </record>
+
+    <menuitem id="menu_l10n_br_account_cnab240" name="Pagamento"
+      parent="account.menu_finance_periodical_processing" sequence="2"
+      action="action_l10n_br_account_cnab240_form" />
+
+  </data>
+</openerp>

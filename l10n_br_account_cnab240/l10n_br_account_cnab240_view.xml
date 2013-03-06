@@ -15,13 +15,13 @@
             on_change="onchange_payer_company(payer_company)" />
           <field name="payer_bank" colspan="2" />
           <separator string="Beneficiário" colspan="4" />
-          <field name="recipient_partner" colspan="2"
-            on_change="onchange_recipient_partner(recipient_partner)" />
-          <field name="recipient_bank" colspan="2" />
           <field name="agreement_number" />
 
           <field name="payment_line" colspan="4" >
             <form string="Pagamento">
+              <field name="recipient_partner" colspan="2"
+                on_change="onchange_recipient_partner(recipient_partner)" />
+              <field name="recipient_bank" colspan="2" />
               <field name="document_number" />
               <field name="expiration_date" />
               <field name="value" />
@@ -44,18 +44,27 @@
             </tree>
           </field>
 
-          <separator colspan="4" />
+          <separator string="Arquivos" colspan="4" />
+
           <group col="4" colspan="4">
-            <label colspan="3" />
-            <button name="generate_file" string="Gerar Arquivo" type="object"
-              icon="gtk-go-forward" colspan="1" />
+            <field name="delivery_file_name" invisible="1" />
+            <field name="delivery_file" colspan="4"
+              filename="delivery_file_name"
+              attrs="{'invisible':[('delivery_file','=','')]}" />
+
+            <field name="return_file_name" invisible="1" />
+            <field name="return_file" colspan="4"
+              filename="return_file_name" />
           </group>
 
           <separator colspan="4" />
+
           <group col="4" colspan="4">
-            <field name="file_name" invisible="1" />
-            <field name="file" colspan="4" filename="file_name"
-              attrs="{'invisible':[('file','=','')]}" />
+            <label colspan="2" />
+            <button name="generate_file" string="Gerar Arquivo de Remessa"
+              type="object" icon="gtk-go-forward" colspan="1" />
+            <button name="load_file" type="object" icon="gtk-ok"
+              string="Carregar Arquivo de Retorno" colspan="1" />
           </group>
 
         </form>
@@ -69,7 +78,9 @@
       <field name="arch" type="xml">
         <tree string="Pagamento">
           <field name="payer_company" />
-          <field name="recipient_partner" />
+          <field name="type" />
+          <field name="service_type" />
+          <field name="agreement_number" />
         </tree>
       </field>
     </record>

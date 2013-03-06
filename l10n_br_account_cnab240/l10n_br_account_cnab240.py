@@ -40,6 +40,12 @@ class payment_line(osv.osv):
             ondelete='cascade',
             select=True,
             ),
+        'recipient_partner': fields.many2one(
+            'res.partner', u'Parceiro', required=True
+            ),
+        'recipient_bank': fields.many2one(
+            'res.partner.bank', u'Banco', required=True
+            ),
         'document_number': fields.integer(
             u'Número do Documento', required=True
             ),
@@ -132,6 +138,16 @@ class payment_line(osv.osv):
         'action': '0',
         }
 
+    def onchange_recipient_partner(self, cr, uid, ids, partner_id):
+        bank_obj = self.pool.get('res.partner.bank')
+        bank_ids = bank_obj.search(cr, uid, [('partner_id', '=', partner_id)])
+        bank_id = len(bank_ids) and bank_ids[0] or None
+
+        result = {'value': {}}
+        if bank_id is not None:
+            result['value']['recipient_bank'] = bank_id
+        return result
+
 
 payment_line()
 
@@ -142,8 +158,6 @@ class payment(osv.osv):
     _columns = {
         'payer_company': fields.many2one('res.company', u'Empresa'),
         'payer_bank': fields.many2one('res.partner.bank', u'Banco'),
-        'recipient_partner': fields.many2one('res.partner', u'Parceiro'),
-        'recipient_bank': fields.many2one('res.partner.bank', u'Banco'),
         'payment_line': fields.one2many(
             'l10n_br_account_cnab240.payment.line',
             'payment',
@@ -174,8 +188,14 @@ class payment(osv.osv):
             size=9,
             required=True,
             ),
-        'file': fields.binary(u'Arquivo', readonly=True),
-        'file_name': fields.char(u'Nome do Arquivo', 128, readonly=True),
+        'delivery_file': fields.binary(u'Remessa', readonly=True),
+        'delivery_file_name': fields.char(
+            u'Nome do Arquivo', 128, readonly=True
+            ),
+        'return_file': fields.binary(u'Retorno'),
+        'return_file_name': fields.char(
+            u'Nome do Arquivo', 128, readonly=True
+            ),
         }
     _defaults = {
         'payer_company': lambda self, cr, uid, c: self.pool.get(
@@ -191,16 +211,6 @@ class payment(osv.osv):
         result = {'value': {}}
         if bank_id is not None:
             result['value']['payer_bank'] = bank_id
-        return result
-
-    def onchange_recipient_partner(self, cr, uid, ids, partner_id):
-        bank_obj = self.pool.get('res.partner.bank')
-        bank_ids = bank_obj.search(cr, uid, [('partner_id', '=', partner_id)])
-        bank_id = len(bank_ids) and bank_ids[0] or None
-
-        result = {'value': {}}
-        if bank_id is not None:
-            result['value']['recipient_bank'] = bank_id
         return result
 
     def generate_file(self, cr, uid, ids, context=None):
@@ -220,18 +230,10 @@ class payment(osv.osv):
         company_default_address = partner_obj.address_get(
             cr, uid, [order.payer_company.partner_id.id], ['default']
             )
-        default_address = partner_obj.address_get(
-            cr, uid, [order.recipient_partner.id], ['default']
-            )
 
         if company_default_address['default']:
             company_address = partner_address_obj.browse(
                 cr, uid, company_default_address['default']
-                )
-
-        if default_address['default']:
-            address = partner_address_obj.browse(
-                cr, uid, default_address['default']
                 )
 
         today = datetime.datetime.today()
@@ -288,21 +290,37 @@ class payment(osv.osv):
 
         for line in order.payment_line:
             
+            default_address = partner_obj.address_get(
+                cr, uid, [line.recipient_partner.id], ['default']
+                )
+    
+            if default_address['default']:
+                address = partner_address_obj.browse(
+                    cr, uid, default_address['default']
+                    )
+            
             sequencial_registro_lote = 1
             
-            p_type = order.recipient_partner.tipo_pessoa == 'F' and 1 or 2
-            
+            p_type = line.recipient_partner.tipo_pessoa == 'F' and 1 or 2
+
+            if not line.recipient_partner.cnpj_cpf:
+                raise osv.except_osv(
+                    u'Não foi possível gerar o arquivo.',
+                    u'O campo CNPJ/CPF deve ser informado no cadastro do ' + \
+                    u'parceiro.'
+                    )
+
             data = {
-                'favorecido_banco': int(order.recipient_bank.bank_bic),
-                'favorecido_agencia': int(order.recipient_bank.bra_number),
-                'favorecido_agencia_dv': order.recipient_bank.bra_number_dig,
-                'favorecido_conta': int(order.recipient_bank.acc_number),
-                'favorecido_conta_dv': order.recipient_bank.acc_number_dig,
+                'favorecido_banco': int(line.recipient_bank.bank_bic),
+                'favorecido_agencia': int(line.recipient_bank.bra_number),
+                'favorecido_agencia_dv': line.recipient_bank.bra_number_dig,
+                'favorecido_conta': int(line.recipient_bank.acc_number),
+                'favorecido_conta_dv': line.recipient_bank.acc_number_dig,
                 'favorecido_inscricao_tipo': p_type,
                 'favorecido_inscricao_numero': int(
-                    re.sub('[^0-9]', '', str(order.recipient_partner.cnpj_cpf))
+                    re.sub('[^0-9]', '', str(line.recipient_partner.cnpj_cpf))
                     ),
-                'favorecido_nome': order.recipient_partner.name,
+                'favorecido_nome': line.recipient_partner.name,
                 'favorecido_aviso': 0,
                 'carteira_numero': int(line.wallet),
                 'numero_documento': line.document_number,
@@ -372,16 +390,23 @@ class payment(osv.osv):
                     'favorecido_endereco_cidade': address.l10n_br_city_id.name,
                     'favorecido_endereco_uf': address.state_id.code,
                     })
-                
+
             arquivo.incluir_pagamento(order.service_type, **data)
             sequencial_registro_lote += 1
 
-        encoded_data = arquivo._remover_acentos().encode("base64")
+        encoded_data = arquivo._remover_acentos().encode('base64')
         self.write(cr, uid, ids, {
-            'file': encoded_data,
-            'file_name': 'cnab240.txt',
+            'delivery_file': encoded_data,
+            'delivery_file_name': 'cnab240_{}.txt'.format(ids[0]),
             },
             context=context)
+
+    def load_file(self, cr, uid, ids):
+        pass
+#        data = {
+#            'status': ?,
+#            }
+#        self.write(cr, uid, ids, data, context=context)
 
 
 payment()

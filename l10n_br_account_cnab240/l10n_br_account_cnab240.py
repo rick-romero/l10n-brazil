@@ -130,6 +130,7 @@ class payment_line(osv.osv):
             u'Tipo de Movimento',
             required=True,
             ),
+        'control_number': fields.integer(u'Número de Controle', size=4),
         }
     _defaults = {
         'emission_date': lambda self, cr, uid, c: \
@@ -137,6 +138,11 @@ class payment_line(osv.osv):
         'protest': '3',
         'action': '0',
         }
+
+    _sql_constraints = [
+       ('document_number', 'UNIQUE(document_number)',
+        u'O número do documento deve ser único!'),
+       ]
 
     def onchange_recipient_partner(self, cr, uid, ids, partner_id):
         bank_obj = self.pool.get('res.partner.bank')
@@ -193,9 +199,6 @@ class payment(osv.osv):
             u'Nome do Arquivo', 128, readonly=True
             ),
         'return_file': fields.binary(u'Retorno'),
-        'return_file_name': fields.char(
-            u'Nome do Arquivo', 128, readonly=True
-            ),
         }
     _defaults = {
         'payer_company': lambda self, cr, uid, c: self.pool.get(
@@ -214,6 +217,7 @@ class payment(osv.osv):
         return result
 
     def generate_file(self, cr, uid, ids, context=None):
+        order_line_obj = self.pool.get('l10n_br_account_cnab240.payment.line')
         partner_obj = self.pool.get('res.partner')
         partner_address_obj = self.pool.get('res.partner.address')
         order = self.browse(cr, uid, ids[0])
@@ -258,7 +262,7 @@ class payment(osv.osv):
             "arquivo_codigo":   1,
             "arquivo_data_de_geracao": int(today.strftime('%d%m%Y')),
             "arquivo_hora_de_geracao": int(today.strftime('%H%M%S')),
-            "arquivo_sequencia": 0,
+            "arquivo_sequencia": ids[0],
             "arquivo_layout": 84,
             "arquivo_densidade": 0,
 
@@ -299,8 +303,6 @@ class payment(osv.osv):
                     cr, uid, default_address['default']
                     )
             
-            sequencial_registro_lote = 1
-            
             p_type = line.recipient_partner.tipo_pessoa == 'F' and 1 or 2
 
             if not line.recipient_partner.cnpj_cpf:
@@ -338,7 +340,6 @@ class payment(osv.osv):
                 'prazo_baixa': line.devolution_time,
                 'controle_lote': lote,
                 'lote_servico': lote,
-                'sequencial_registro_lote': sequencial_registro_lote,
                 'tipo_movimento': int(line.action),
                 }
 
@@ -370,7 +371,7 @@ class payment(osv.osv):
                 'complemente_finalidade_pagamento': '',
 
                 # Segmento C
-                # TODO: Registros não tratado atualmente pelo Banco do Brasil
+                # TODO: Registros não tratados atualmente pelo Banco do Brasil
                 'valor_ir': 0,
                 'valor_iss': 0,
                 'valor_iof': 0,
@@ -392,7 +393,10 @@ class payment(osv.osv):
                     })
 
             arquivo.incluir_pagamento(order.service_type, **data)
-            sequencial_registro_lote += 1
+            order_line_obj.write(cr, uid, line.id, {
+                'control_number': lote,
+                })
+            lote += 1
 
         encoded_data = arquivo._remover_acentos().encode('base64')
         self.write(cr, uid, ids, {
@@ -401,8 +405,73 @@ class payment(osv.osv):
             },
             context=context)
 
-    def load_file(self, cr, uid, ids):
-        pass
+    def load_file(self, cr, uid, ids, context=None):
+        order_line_obj = self.pool.get('l10n_br_account_cnab240.payment.line')
+        order = self.browse(cr, uid, ids[0])
+
+        if not order.return_file:
+            raise osv.except_osv(
+                u'Não foi possível ler o arquivo.',
+                u'Favor informar um arquivo de retorno válido.'
+                )
+
+        decoded_data = order.return_file.decode('base64')
+        print decoded_data
+        data = decoded_data.split('\r\n')
+
+        header = data[0]
+        block_header = data[1]
+
+        # Check if the return file is the right one
+        if int(header[157:163]) != order.id:
+            raise osv.except_osv(
+                u'Não foi possível ler o arquivo.',
+                u'O retorno não é deste pagamento.'
+                )
+
+        payments = {}
+
+        # Blocks A, B and C
+        for line in data[1:-2]:
+            print line[7], line[13]
+            # Block number as key
+            k = int(line[3:7])
+
+            if line[7] == '4':
+                chave = 'header'
+            elif line[7] in ('A', 'B', 'C'):
+                chave = line[7]
+            else:
+                chave = 'trailer'
+
+            try:
+                payments[k][chave].append(line)
+            except KeyError:
+                payments[k] = {chave: [line]}
+
+        print payments
+
+        for k in payments:
+            lines = payments[k]
+
+            ids = order_line_obj.search(cr, uid, [
+                ('payment', '=', order.id),
+                ('control_number', '=', k),
+                ])
+            order_line = order_line_obj.browse(cr, uid, ids[0])
+
+        trailer_header = data[-2]
+        trailer = data[-1]
+
+        return_type = header[180:191]
+
+        raise osv.except_osv(
+            u'Retorno do banco:',
+            return_type
+            )
+
+        # return_type can be: PREVIA, PROCESSAM, CONSOLIDAD
+
 #        data = {
 #            'status': ?,
 #            }

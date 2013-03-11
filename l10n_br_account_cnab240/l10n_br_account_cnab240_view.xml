@@ -52,9 +52,7 @@
               filename="delivery_file_name"
               attrs="{'invisible':[('delivery_file','=','')]}" />
 
-            <field name="return_file_name" invisible="1" />
-            <field name="return_file" colspan="4"
-              filename="return_file_name" />
+            <field name="return_file" colspan="4" />
           </group>
 
           <separator colspan="4" />

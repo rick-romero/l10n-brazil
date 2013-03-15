@@ -8,15 +8,12 @@
       <field name="type">form</field>
       <field name="inherit_id" ref="base.view_company_form" />
       <field name="arch" type="xml">
-        <xpath expr="/form[@string='Company']/group/group/field[@name='parent_id']"
-          position="after">
+        <field name="company_registry" position="after">
           <field name="legal_name" />
           <field name="cnpj" on_change="onchange_mask_cnpj(cnpj)" />
           <field name="responsavel_legal_id" />
-        </xpath>
-        <xpath expr="/form/notebook/page/separator[@string='Address Information']"
-          position="before">
-          <separator string="Informações da Empresa" colspan="4" />
+        </field>
+        <field name="website" position="after">
           <field name="porte_id" />
           <field name="natureza_juridica_id" />
           <field name="inscr_est" />
@@ -26,7 +23,7 @@
           <field name="participa_pat" />
           <field name="codigo_caixa"
             on_change="onchange_codigo_caixa(codigo_caixa)" />
-        </xpath>
+        </field>
       </field>
     </record>
 

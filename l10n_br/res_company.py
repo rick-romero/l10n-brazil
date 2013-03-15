@@ -50,7 +50,7 @@ class res_company(osv.osv):
             ], u'Simples'
             ),
         'participa_pat': fields.boolean(
-            u'Participa do Programa de Alimentação do Trabalhador (PAT)'
+            u'Participa do PAT'
             ),
         'responsavel_legal_id': fields.many2one(
             'res.partner', u'Responsável Legal'

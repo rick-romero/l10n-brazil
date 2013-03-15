@@ -28,7 +28,7 @@ class res_partner(osv.osv):
 
     def _get_partner_address(self, cr, uid, ids, context=None):
         result = {}
-        for parnter_addr in self.pool.get('res.partner.address').browse(cr, uid, ids, context=context):
+        for parnter_addr in self.pool.get('res.partner').browse(cr, uid, ids, context=context):
             result[parnter_addr.partner_id.id] = True
         return result.keys()
 
@@ -39,35 +39,40 @@ class res_partner(osv.osv):
             
             partner_addr = self.pool.get('res.partner').address_get(cr, uid, [partner.id], ['invoice'])
             if partner_addr:
-                partner_addr_default = self.pool.get('res.partner.address').browse(cr, uid, [partner_addr['invoice']])[0]
+                partner_addr_default = self.pool.get('res.partner').browse(cr, uid, [partner_addr['invoice']])[0]
                 addr_fs_code = partner_addr_default.state_id and partner_addr_default.state_id.code or ''
                 res[partner.id]['addr_fs_code'] = addr_fs_code.lower()
                 
         return res
 
     _columns = {
-                'tipo_pessoa': fields.selection([('F', 'Física'), ('J', 'Jurídica')], 'Tipo de pessoa', required=True),
-                'cnpj_cpf': fields.char('CNPJ/CPF', size=18),
-                'inscr_est': fields.char('Inscr. Estadual/RG', size=16),
-                'inscr_mun': fields.char('Inscr. Municipal', size=18),
-                'suframa': fields.char('Suframa', size=18),
-                'legal_name' : fields.char('Razão Social', size=128, help="nome utilizado em documentos fiscais"),
-                'addr_fs_code': fields.function(_address_default_fs, method=True, 
-                                                string='Address Federal State Code', 
-                                                type="char", size=2, multi='all',
-                                                store={'res.partner.address': (_get_partner_address, ['country_id', 'state_id'], 20),}),
-                'birthday': fields.date(u'Data de Nascimento'),
-                'codigo_pagamento_gps': fields.integer(
-                    u'Código de Pagamento da GPS',
-                    size=4,
-                    help=u'Informar o código de pagamento da GPS, conforme ' +\
-                        u'tabela divulgada pelo INSS.',
-                    ),
-                }
+        'tipo_pessoa': fields.selection([('F', 'Física'), ('J', 'Jurídica')], 'Tipo de pessoa', required=True),
+        'cnpj_cpf': fields.char('CNPJ/CPF', size=18),
+        'inscr_est': fields.char('Inscr. Estadual/RG', size=16),
+        'inscr_mun': fields.char('Inscr. Municipal', size=18),
+        'suframa': fields.char('Suframa', size=18),
+        'legal_name' : fields.char('Razão Social', size=128, help="nome utilizado em documentos fiscais"),
+        'addr_fs_code': fields.function(
+            _address_default_fs, method=True, 
+            string='Address Federal State Code', 
+            type="char", size=2, multi='all',
+            store={'res.partner': (_get_partner_address, ['country_id', 'state_id'], 20),}
+            ),
+        'birthday': fields.date(u'Data de Nascimento'),
+        'codigo_pagamento_gps': fields.integer(
+            u'Código de Pagamento da GPS',
+            size=4,
+            help=u'Informar o código de pagamento da GPS, conforme ' +\
+            u'tabela divulgada pelo INSS.',
+            ),
+        'l10n_br_city_id': fields.many2one('l10n_br_base.city', u'Cidade', domain="[('state_id','=',state_id)]"),
+        'district': fields.char(u'Bairro', size=32),
+        'number': fields.char(u'Número', size=10),
+        }
 
     _defaults = {
-                'tipo_pessoa': lambda *a: 'J',
-                }
+        'tipo_pessoa': lambda *a: 'J',
+        }
 
     def _check_cnpj_cpf(self, cr, uid, ids):
 
@@ -485,18 +490,6 @@ class res_partner(osv.osv):
         
         return {'value': {'tipo_pessoa': tipo_pessoa, 'cnpj_cpf': cnpj_cpf}}
     
-res_partner()
-
-class res_partner_address(osv.osv):
-    
-    _inherit = 'res.partner.address'
-
-    _columns = {
-	            'l10n_br_city_id': fields.many2one('l10n_br_base.city', u'Cidade', domain="[('state_id','=',state_id)]"),
-                'district': fields.char('Bairro', size=32),
-                'number': fields.char('Número', size=10),
-                }
-
     def onchange_l10n_br_city_id(self, cr, uid, ids, l10n_br_city_id):
 
         result = {'value': {'city': False, 'l10n_br_city_id': False}}
@@ -602,19 +595,129 @@ class res_partner_address(osv.osv):
             self.write(cr, uid, res_partner_address.id, result)
             return False
 
-res_partner_address()
+res_partner()
+
 
 class res_partner_bank(osv.osv):
 
     _inherit = 'res.partner.bank'
 
     _columns = {
-                'acc_number': fields.char('Account Number', size=64, required=False),
-                'bank': fields.many2one('res.bank', 'Bank', required=False),
-                'acc_number_dig': fields.char("Digito Conta", size=8),
-                'bra_number': fields.char("Agência", size=8),
-                'bra_number_dig': fields.char("Dígito Agência", size=8),
-               }
+        'acc_number': fields.char('Account Number', size=64, required=False),
+        'bank': fields.many2one('res.bank', 'Bank', required=False),
+        'acc_number_dig': fields.char(u'Dígito Conta', size=8),
+        'bra_number': fields.char(u'Agência', size=8),
+        'bra_number_dig': fields.char(u'Dígito Agência', size=8),
+        'l10n_br_city_id': fields.many2one('l10n_br_base.city', u'Cidade', domain="[('state_id','=',state_id)]"),
+        'district': fields.char(u'Bairro', size=32),
+        'number': fields.char(u'Número', size=10),
+        'street2': fields.char(u'Complemento', size=128),
+        }
+
+    def onchange_l10n_br_city_id(self, cr, uid, ids, l10n_br_city_id):
+
+        result = {'value': {'city': False, 'l10n_br_city_id': False}}
+
+        if not l10n_br_city_id:
+            return result
+
+        obj_city = self.pool.get('l10n_br_base.city').read(cr, uid, l10n_br_city_id, ['name','id'])
+
+        if obj_city:
+            result['value']['city'] = obj_city['name']
+            result['value']['l10n_br_city_id'] = obj_city['id']
+
+        return result
+    
+    def onchange_mask_zip(self, cr, uid, ids, zip):
+        
+        result = {'value': {'zip': False}}
+        
+        if not zip:
+            return result
+
+        val = re.sub('[^0-9]', '', zip)
+
+        if len(val) == 8:
+            zip = "%s-%s" % (val[0:5], val[5:8])
+            result['value']['zip'] = zip
+        return result
+
+    def zip_search(self, cr, uid, ids, context=None):
+        
+        result = {
+                  'street': False, 
+                  'l10n_br_city_id': False, 
+                  'city': False, 
+                  'state_id': False, 
+                  'country_id': False, 
+                  'zip': False
+                  }
+
+        obj_zip = self.pool.get('l10n_br_base.zip')
+        
+        for res_partner_address in self.browse(cr, uid, ids):
+            
+            domain = []
+            if res_partner_address.zip:
+                zip = re.sub('[^0-9]', '', res_partner_address.zip or '')
+                domain.append(('code', '=', zip))
+            else:
+                domain.append(('street', '=', res_partner_address.street))
+                domain.append(('district', '=', res_partner_address.district))
+                domain.append(('country_id', '=', res_partner_address.country_id.id))
+                domain.append(('state_id', '=', res_partner_address.state_id.id))
+                domain.append(('l10n_br_city_id', '=', res_partner_address.l10n_br_city_id.id))
+            
+            zip_id = obj_zip.search(cr, uid, domain)
+
+            if not len(zip_id) == 1:
+
+                context.update({
+                                'zip': res_partner_address.zip,
+                                'street': res_partner_address.street,
+                                'district': res_partner_address.district,
+                                'country_id': res_partner_address.country_id.id,
+                                'state_id': res_partner_address.state_id.id,
+                                'l10n_br_city_id': res_partner_address.l10n_br_city_id.id,
+                                'address_id': ids,
+                                'object_name': self._name,
+                                })
+
+                result = {
+                        'name': 'Zip Search',
+                        'view_type': 'form',
+                        'view_mode': 'form',
+                        'res_model': 'l10n_br_base.zip.search',
+                        'view_id': False,
+                        'context': context,
+                        'type': 'ir.actions.act_window',
+                        'target': 'new',
+                        'nodestroy': True,
+                        }
+                return result
+
+            zip_read = obj_zip.read(cr, uid, zip_id, [
+                                                      'street_type', 
+                                                      'street','district', 
+                                                      'code',
+                                                      'l10n_br_city_id', 
+                                                      'city', 'state_id', 
+                                                      'country_id'], context=context)[0]
+
+            zip = re.sub('[^0-9]', '', zip_read['code'] or '')
+            if len(zip) == 8:
+                zip = '%s-%s' % (zip[0:5], zip[5:8])
+            
+            result['street'] = ((zip_read['street_type'] or '') + ' ' + (zip_read['street'] or ''))
+            result['district'] = zip_read['district']
+            result['zip'] = zip
+            result['l10n_br_city_id'] = zip_read['l10n_br_city_id'] and zip_read['l10n_br_city_id'][0] or False
+            result['city'] = zip_read['l10n_br_city_id'] and zip_read['l10n_br_city_id'][1] or ''
+            result['state_id'] = zip_read['state_id'] and zip_read['state_id'][0] or False
+            result['country_id'] = zip_read['country_id'] and zip_read['country_id'][0] or False
+            self.write(cr, uid, res_partner_address.id, result)
+            return False
 
 res_partner_bank()
 

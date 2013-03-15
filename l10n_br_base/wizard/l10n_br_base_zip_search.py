@@ -22,13 +22,10 @@ import string
 
 from osv import osv, fields
 
-class l10n_br_base_zip_search(osv.osv_memory):
+class l10n_br_base_zip_search(osv.TransientModel):
     
     _name = 'l10n_br_base.zip.search'
     _description = 'Zipcode Search'
-
-    _inherit = "ir.wizard.screen"
-    
     _columns = {
                 'code': fields.char('CEP', size=8),
                 'street': fields.char('Logradouro', size=72),

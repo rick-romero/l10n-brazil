@@ -27,13 +27,11 @@
                         </group>
                         <group colspan="8" col="8" states="init">
 							<separator string="" colspan="8"/>
-                            <label colspan="6" width="220"/>
                             <button special="cancel" string="Cancelar" icon="gtk-cancel"/>
                             <button name="zip_search" string="Pesquisar" type="object" icon="gtk-ok"/>
                         </group>
                         <group colspan="8" col="8" states="done">
 							<separator string="" colspan="8"/>
-                            <label colspan="6" width="220"/>
                             <button name="zip_search_end" type="object" string="Fechar" icon="gtk-cancel"/>
                         </group>
                     </group>

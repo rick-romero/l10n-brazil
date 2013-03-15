@@ -43,58 +43,38 @@
 			</field>
 		</record>
 		
-		<record model="ir.ui.view" id="l10n_br_base_view_partner_form1" >
-	   		<field name="name">l10n_br_base.partner.form1</field>
-       		<field name="model">res.partner</field>
-	   		<field name="inherit_id" ref="base.view_partner_form"/>
-	   		<field name="priority">32</field>
-	   		<field name="arch" type="xml">
-	   			<xpath expr="/form/notebook/page/field/form/group/field[@name='street']" position="replace">
-						<field name="street" />
-						<field name="number" />
-						<field name="district" />						
-	        		</xpath>
-        		</field>
-   		</record>
+    <record model="ir.ui.view" id="l10n_br_base_view_partner_form1" >
+      <field name="name">l10n_br_base.partner.form1</field>
+      <field name="model">res.partner</field>
+      <field name="inherit_id" ref="base.view_partner_form"/>
+      <field name="priority">32</field>
+      <field name="arch" type="xml">
+        <field name="street" position="replace">
+          <field name="street" placeholder="Logradouro" />
+          <field name="number" placeholder="Número" />
+          <field name="district" placeholder="Bairro" />
+        </field>
+        <field name="street2" position="replace">
+          <field name="street2" placeholder="Complemento" />
+        </field>
+        <field name="zip" position="replace">
+        </field>
+        <field name="country_id" position="replace">
+          <field name="l10n_br_city_id" placeholder="City"
+            on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
+            options='{"no_open": True}' />
+          <field name="zip" placeholder="CEP" on_change="onchange_mask_zip(zip)" />
+        </field>
+        <field name="state_id" position="replace">
+          <field name="country_id" placeholder="Country" options='{"no_open": True}'/>
+          <field name="state_id" placeholder="State" options='{"no_open": True}'/>
+        </field>
+        <field name="city" position="replace">
+          <field name="city" invisible="1" />
+        </field>
+      </field>
+    </record>
 		
-		<record model="ir.ui.view" id="l10n_br_base_view_partner_form2">
-	   		<field name="name">l10n_br_base.partner.form2</field>
-      		<field name="model">res.partner</field>
-	   		<field name="inherit_id" ref="base.view_partner_form"/>
-	   		<field name="priority">33</field>
-	   		<field name="arch" type="xml">
-	   			<xpath expr="/form/notebook/page/field/form/group/field[@name='zip']" position="replace">
-						<field name="zip" on_change="onchange_mask_zip(zip)" />
-						<button name="zip_search" colspan="2" string="Pesquisar CEP" type="object" icon="gtk-select-all"/>
-        			</xpath>
-        		</field>
-   		</record>
-		
-		<record model="ir.ui.view" id="l10n_br_base_view_partner_form3">
-	   		<field name="name">l10n_br_base.partner.form3</field>
-		    <field name="model">res.partner</field>
-	   		<field name="inherit_id" ref="base.view_partner_form"/>
-	   		<field name="priority">34</field>
-	   		<field name="arch" type="xml">
-	   			<xpath expr="/form/notebook/page/field/form/group/field[@name='state_id']" position="after">
-					<field name="l10n_br_city_id" on_change="onchange_l10n_br_city_id(l10n_br_city_id)" />
-        			</xpath>
-        		</field>
-   		</record>
-
-		<record model="ir.ui.view" id="l10n_br_base_view_partner_form4">
-	   		<field name="name">l10n_br_base.partner.form4</field>
-		    <field name="model">res.partner</field>
-	   		<field name="inherit_id" ref="base.view_partner_form"/>
-	   		<field name="priority">34</field>
-	   		<field name="arch" type="xml">
-	   			<xpath expr="/form/notebook/page/field/form/group/field[@name='city']" position="replace">
-						<field name="city" invisible="1" />
-        			</xpath>
-        		</field>
-   		</record>
-		
-
     <record model="ir.ui.view" id="l10n_br_base_view_partner_form5">
       <field name="name">l10n_br_base.partner.form5</field>
       <field name="model">res.partner</field>
@@ -113,109 +93,43 @@
       </field>
     </record>
 		
-		<!-- Contato do Parceiro Personalizado -->
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_address_form1">
-			<field name="name">l10n_br_base.partner.address</field>
-			<field name="model">res.partner.address</field>
-			<field name="inherit_id" ref="base.view_partner_address_form1"/>
-			<field name="arch" type="xml">
-				<field name="zip" position="replace">
-					<field name="zip" on_change="onchange_mask_zip(zip)" />
-					<button name="zip_search" string="Pesquisar CEP" colspan="2" type="object" icon="gtk-select-all"/>
-				</field>
-
-			</field>
-		</record>
-		
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_address_form2">
-			<field name="name">l10n_br_base.partner.address</field>
-			<field name="model">res.partner.address</field>
-			<field name="inherit_id" ref="base.view_partner_address_form1"/>
-			<field name="arch" type="xml">
-				<field name="city" position="replace">
-					 <field name="city" invisible="1" />
-				</field>
-			</field>
-		</record>
-		
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_address_form4">
-			<field name="name">l10n_br_base.partner.address</field>
-			<field name="model">res.partner.address</field>
-			<field name="inherit_id" ref="base.view_partner_address_form1"/>
-			<field name="arch" type="xml">
-				<field name="state_id" position="after">
-					<field name="l10n_br_city_id" on_change="onchange_l10n_br_city_id(l10n_br_city_id)" />
-				</field>
-			</field>
-		</record> 
-		 			
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_address_form5">
-			<field name="name">l10n_br_base.partner.address</field>
-			<field name="model">res.partner.address</field>
-			<field name="inherit_id" ref="base.view_partner_address_form1"/>
-			<field name="arch" type="xml">
-				<field name="street" position="replace">
-					<field name="street"/>
-					<field name="number"/>
-					<field name="district"/>
-				</field>
-			</field>
-		</record>
-				
-		<!-- Contato do Parceiro Personalizado usado no form partner -->
-		
-		<!-- Contato do Parceiro Personalizado -->
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_address_form6">
-			<field name="name">l10n_br_base.partner.address</field>
-			<field name="model">res.partner.address</field>
-			<field name="inherit_id" ref="base.view_partner_address_form2"/>
-			<field name="arch" type="xml">
-				<field name="city" position="replace">
-					 <field name="city" invisible="1" />
-				</field>
-			</field>
-		</record>
-		
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_address_form7">
-			<field name="name">l10n_br_base.partner.address</field>
-			<field name="model">res.partner.address</field>
-			<field name="inherit_id" ref="base.view_partner_address_form2"/>
-			<field name="arch" type="xml">
-				<field name="state_id" position="after">
-					 <field name="l10n_br_city_id" on_change="onchange_l10n_br_city_id(l10n_br_city_id)" />
-				</field>
-			</field>
-		</record>
-		
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_address_form8">
-			<field name="name">l10n_br_base.partner.address</field>
-			<field name="model">res.partner.address</field>
-			<field name="inherit_id" ref="base.view_partner_address_form2"/>
-			<field name="arch" type="xml">
-				<field name="street" position="replace">
-					<field name="street"/>
-					<field name="number"/>
-					<field name="district"/>					
-				</field>
-			</field>
-		</record>
-		
 		<!-- res.partner.bank -->
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_bank_form">
-			<field name="name">view_l10n_br_base.partner.bank.form</field>
-			<field name="model">res.partner.bank</field>
-			<field name="inherit_id" ref="base.view_partner_bank_form"/>
-			<field name="arch" type="xml">
-				<field name="acc_number" position="replace">
-					<field name="acc_number" select="1"/>
-					<field name="acc_number_dig" select="1"/>
-					<newline/>
-					<field name="bra_number" select="1"/>
-					<field name="bra_number_dig" select="1"/>				
-				</field>
-			</field>
-		</record>
-		
+    <record model="ir.ui.view" id="view_l10n_br_base_partner_bank_form">
+      <field name="name">view_l10n_br_base.partner.bank.form</field>
+      <field name="model">res.partner.bank</field>
+      <field name="inherit_id" ref="base.view_partner_bank_form"/>
+      <field name="arch" type="xml">
+        <field name="acc_number" position="replace">
+          <field name="acc_number" select="1"/>
+          <field name="acc_number_dig" select="1"/>
+          <newline/>
+          <field name="bra_number" select="1"/>
+          <field name="bra_number_dig" select="1"/>
+        </field>
+        <field name="street" position="replace">
+          <field name="street" placeholder="Logradouro" />
+          <field name="number" placeholder="Número" />
+          <field name="district" placeholder="Bairro" />
+          <field name="street2" placeholder="Complemento" />
+        </field>
+        <field name="zip" position="replace">
+        </field>
+        <field name="country_id" position="replace">
+          <field name="l10n_br_city_id" placeholder="City"
+            on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
+            options='{"no_open": True}' />
+          <field name="zip" placeholder="CEP" on_change="onchange_mask_zip(zip)" />
+        </field>
+        <field name="state_id" position="replace">
+          <field name="country_id" placeholder="Country" options='{"no_open": True}'/>
+          <field name="state_id" placeholder="State" options='{"no_open": True}'/>
+        </field>
+        <field name="city" position="replace">
+          <field name="city" invisible="1" />
+        </field>
+      </field>
+    </record>
+
 		<record model="ir.ui.view" id="view_l10n_br_base_partner_bank_tree">
 			<field name="name">view_l10n_br_base.partner.bank.tree</field>
 			<field name="model">res.partner.bank</field>
@@ -230,22 +144,37 @@
 			</field>
 		</record>
 
-        <record model="ir.ui.view" id="l10n_br_base_view_company_form">
-          <field name="name">l10n_br_base.company.form</field>
-          <field name="model">res.company</field>
-          <field name="inherit_id" ref="base.view_company_form" />
-          <field name="type">form</field>
-          <field name="arch" type="xml">
-            <xpath expr="/form/notebook/page[@string='General Information']/field[@name='state_id']"
-              position="after">
-              <field name="l10n_br_city_id" on_change="onchange_l10n_br_city_id(l10n_br_city_id)" />
-            </xpath>
-            <xpath expr="/form/notebook/page[@string='General Information']/field[@name='city']"
-              position="replace">
-              <field name="city" invisible="1" />
-            </xpath>
-          </field>
-        </record>
+    <record model="ir.ui.view" id="l10n_br_base_view_company_form">
+      <field name="name">l10n_br_base.company.form</field>
+      <field name="model">res.company</field>
+      <field name="inherit_id" ref="base.view_company_form" />
+      <field name="type">form</field>
+      <field name="arch" type="xml">
+        <field name="street" position="replace">
+          <field name="street" placeholder="Logradouro" />
+          <field name="number" placeholder="Número" />
+          <field name="district" placeholder="Bairro" />
+        </field>
+        <field name="street2" position="replace">
+          <field name="street2" placeholder="Complemento" />
+        </field>
+        <field name="zip" position="replace">
+        </field>
+        <field name="country_id" position="replace">
+          <field name="l10n_br_city_id" placeholder="City"
+            on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
+            options='{"no_open": True}' />
+          <field name="zip" placeholder="CEP" on_change="onchange_mask_zip(zip)" />
+        </field>
+        <field name="state_id" position="replace">
+          <field name="country_id" placeholder="Country" options='{"no_open": True}'/>
+          <field name="state_id" placeholder="State" options='{"no_open": True}'/>
+        </field>
+        <field name="city" position="replace">
+          <field name="city" invisible="1" />
+        </field>
+      </field>
+    </record>
 
 	</data>
 </openerp>

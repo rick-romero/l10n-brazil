@@ -29,44 +29,19 @@ class res_company(osv.osv):
 
     _inherit = "res.company"
 
-    def _get_address_data(self, cr, uid, ids, field_names, arg, context=None):
-        """ Read the 'address' functional fields. """
-        result = {}
-        part_obj = self.pool.get('res.partner')
-        address_obj = self.pool.get('res.partner.address')
-        for company in self.browse(cr, uid, ids, context=context):
-            result[company.id] = {}.fromkeys(field_names, False)
-            if company.partner_id:
-                address_data = part_obj.address_get(cr, uid,
-                                                    [company.partner_id.id],
-                                                    adr_pref=['default'])
-                if address_data['default']:
-                    address = address_obj.read(cr, uid,
-                                               address_data['default'],
-                                               field_names, context=context)
-                    for field in field_names:
-                        result[company.id][field] = address[field] or False
-        return result
+    def _get_address_data(
+        self, cr, uid, ids, field_names, arg, context=None
+        ):
+        return super(res_company, self)._get_address_data(
+            cr, uid, ids, field_names, arg, context
+            )
 
-    def _set_address_data(self, cr, uid, company_id, name, value, arg,
-                          context=None):
-        """ Write the 'address' functional fields. """
-        company = self.browse(cr, uid, company_id, context=context)
-        if company.partner_id:
-            part_obj = self.pool.get('res.partner')
-            address_obj = self.pool.get('res.partner.address')
-            address_data = part_obj.address_get(cr, uid,
-                                                [company.partner_id.id],
-                                                adr_pref=['default'])
-            address = address_data['default']
-            if address:
-                address_obj.write(cr, uid, [address], {name: value or False})
-            else:
-                address_obj.create(cr, uid, {
-                    name: value or False,
-                    'partner_id': company.partner_id.id,
-                    }, context=context)
-        return True
+    def _set_address_data(
+        self, cr, uid, company_id, name, value, arg, context=None
+        ):
+        return super(res_company, self)._set_address_data(
+            cr, uid, company_id, name, value, arg, context
+            )
 
     _columns = {
         'l10n_br_city_id': fields.function(
@@ -76,6 +51,22 @@ class res_company(osv.osv):
             domain="[('state_id','=',state_id)]",
             relation='l10n_br_base.city',
             string=u'Cidade',
+            multi='address'
+            ),
+        'number': fields.function(
+            _get_address_data,
+            fnct_inv=_set_address_data,
+            size=10,
+            type='char',
+            string=u'Número',
+            multi='address'
+            ),
+        'district': fields.function(
+            _get_address_data,
+            fnct_inv=_set_address_data,
+            size=32,
+            type='char',
+            string=u'Bairro',
             multi='address'
             ),
         }

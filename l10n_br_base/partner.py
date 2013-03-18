@@ -28,21 +28,15 @@ class res_partner(osv.osv):
 
     def _get_partner_address(self, cr, uid, ids, context=None):
         result = {}
-        for parnter_addr in self.pool.get('res.partner').browse(cr, uid, ids, context=context):
-            result[parnter_addr.partner_id.id] = True
+        for partner in self.browse(cr, uid, ids, context=context):
+            result[partner.id] = True
         return result.keys()
 
     def _address_default_fs(self, cr, uid, ids, name, arg, context=None):
         res = {}
         for partner in self.browse(cr, uid, ids, context=context):
-            res[partner.id] = {'addr_fs_code': False}
-            
-            partner_addr = self.pool.get('res.partner').address_get(cr, uid, [partner.id], ['invoice'])
-            if partner_addr:
-                partner_addr_default = self.pool.get('res.partner').browse(cr, uid, [partner_addr['invoice']])[0]
-                addr_fs_code = partner_addr_default.state_id and partner_addr_default.state_id.code or ''
-                res[partner.id]['addr_fs_code'] = addr_fs_code.lower()
-                
+            addr_fs_code = partner.state_id and partner.state_id.code or ''
+            res[partner.id] = {'addr_fs_code': addr_fs_code.lower()}
         return res
 
     _columns = {
@@ -71,7 +65,7 @@ class res_partner(osv.osv):
         }
 
     _defaults = {
-        'tipo_pessoa': lambda *a: 'J',
+        'tipo_pessoa': lambda *a: 'F',
         }
 
     def _check_cnpj_cpf(self, cr, uid, ids):
@@ -476,6 +470,10 @@ class res_partner(osv.osv):
                     ('res_partner_inscr_est_uniq', 'unique (inscr_est)', 
                      u'Já existe um parceiro cadastrado com esta Inscrição Estadual/RG !')
     ]
+
+    def onchange_type(self, cr, uid, ids, is_company):
+        tipo_pessoa = is_company and 'J' or 'F'
+        return {'value': {'tipo_pessoa': tipo_pessoa}}
 
     def onchange_mask_cnpj_cpf(self, cr, uid, ids, tipo_pessoa, cnpj_cpf):
         if not cnpj_cpf or not tipo_pessoa:

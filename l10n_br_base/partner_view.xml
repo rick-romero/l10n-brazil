@@ -31,14 +31,20 @@
 			<field name="model">res.partner</field>
 			<field name="inherit_id" ref="base.view_partner_form"/>
 			<field name="arch" type="xml">
-				<field name="lang" position="replace">
-					<field colspan="4" name="legal_name"/>
-					<field name="tipo_pessoa" on_change="onchange_mask_cnpj_cpf(tipo_pessoa,cnpj_cpf)"/>
-					<field name="cnpj_cpf" colspan="4" on_change="onchange_mask_cnpj_cpf(tipo_pessoa,cnpj_cpf)"
-					  attrs="{'required':['|',('customer','=',True),('supplier','=',True)]}"/> 
-					<field name="lang"/>
-                    <field name="birthday"
-                        attrs="{'invisible':[('tipo_pessoa','=','J')]}" />
+			  <field name="parent_id" position="before">
+			    <field name="cnpj_cpf" placeholder="CNPJ/CPF"
+            on_change="onchange_mask_cnpj_cpf(tipo_pessoa,cnpj_cpf)"
+            attrs="{'required':['|',('customer','=',True),('supplier','=',True)]}"/>
+			  </field>
+				<field name="parent_id" position="after">
+					<field name="legal_name" placeholder="Razão Social"
+					  attrs="{'invisible':[('is_company','=',False)]}" />
+					<field name="tipo_pessoa" invisible="1"
+					  on_change="onchange_mask_cnpj_cpf(tipo_pessoa,cnpj_cpf)"/>
+        </field>
+        <field name="title" position="after">
+          <field name="birthday"
+            attrs="{'invisible':[('is_company','=',True)]}" />
 				</field>
 			</field>
 		</record>
@@ -63,11 +69,14 @@
           <field name="l10n_br_city_id" placeholder="City"
             on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
             options='{"no_open": True}' />
-          <field name="zip" placeholder="CEP" on_change="onchange_mask_zip(zip)" />
+          <field name="zip" placeholder="CEP"
+            on_change="onchange_mask_zip(zip)" />
         </field>
         <field name="state_id" position="replace">
-          <field name="country_id" placeholder="Country" options='{"no_open": True}'/>
-          <field name="state_id" placeholder="State" options='{"no_open": True}'/>
+          <field name="country_id" placeholder="Country"
+            options='{"no_open": True}'/>
+          <field name="state_id" placeholder="State"
+            options='{"no_open": True}'/>
         </field>
         <field name="city" position="replace">
           <field name="city" invisible="1" />
@@ -118,11 +127,14 @@
           <field name="l10n_br_city_id" placeholder="City"
             on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
             options='{"no_open": True}' />
-          <field name="zip" placeholder="CEP" on_change="onchange_mask_zip(zip)" />
+          <field name="zip" placeholder="CEP"
+            on_change="onchange_mask_zip(zip)" />
         </field>
         <field name="state_id" position="replace">
-          <field name="country_id" placeholder="Country" options='{"no_open": True}'/>
-          <field name="state_id" placeholder="State" options='{"no_open": True}'/>
+          <field name="country_id" placeholder="Country"
+            options='{"no_open": True}'/>
+          <field name="state_id" placeholder="State"
+            options='{"no_open": True}'/>
         </field>
         <field name="city" position="replace">
           <field name="city" invisible="1" />
@@ -164,11 +176,14 @@
           <field name="l10n_br_city_id" placeholder="City"
             on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
             options='{"no_open": True}' />
-          <field name="zip" placeholder="CEP" on_change="onchange_mask_zip(zip)" />
+          <field name="zip" placeholder="CEP"
+            on_change="onchange_mask_zip(zip)" />
         </field>
         <field name="state_id" position="replace">
-          <field name="country_id" placeholder="Country" options='{"no_open": True}'/>
-          <field name="state_id" placeholder="State" options='{"no_open": True}'/>
+          <field name="country_id" placeholder="Country"
+            options='{"no_open": True}'/>
+          <field name="state_id" placeholder="State"
+            options='{"no_open": True}'/>
         </field>
         <field name="city" position="replace">
           <field name="city" invisible="1" />

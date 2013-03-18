@@ -28,7 +28,12 @@ class crm_lead(osv.osv):
         'l10n_br_city_id': fields.many2one(
             'l10n_br_base.city',
             u'Cidade',
-            domain="[('state_id','=',state_id)]"
+            domain="[('state_id','=',state_id)]",
+            ),
+        'state_id': fields.many2one(
+            'res.country.state',
+            u'Estado',
+            domain="[('country_id','=',country_id)]",
             ),
         'district': fields.char(u'Bairro', size=32),
         'number': fields.char(u'Número', size=10),

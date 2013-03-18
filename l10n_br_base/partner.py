@@ -59,7 +59,16 @@ class res_partner(osv.osv):
             help=u'Informar o código de pagamento da GPS, conforme ' +\
             u'tabela divulgada pelo INSS.',
             ),
-        'l10n_br_city_id': fields.many2one('l10n_br_base.city', u'Cidade', domain="[('state_id','=',state_id)]"),
+        'l10n_br_city_id': fields.many2one(
+            'l10n_br_base.city',
+            u'Cidade',
+            domain="[('state_id','=',state_id)]",
+            ),
+        'state_id': fields.many2one(
+            'res.country.state',
+            u'Estado',
+            domain="[('country_id','=',country_id)]",
+            ),
         'district': fields.char(u'Bairro', size=32),
         'number': fields.char(u'Número', size=10),
         }
@@ -606,7 +615,16 @@ class res_partner_bank(osv.osv):
         'acc_number_dig': fields.char(u'Dígito Conta', size=8),
         'bra_number': fields.char(u'Agência', size=8),
         'bra_number_dig': fields.char(u'Dígito Agência', size=8),
-        'l10n_br_city_id': fields.many2one('l10n_br_base.city', u'Cidade', domain="[('state_id','=',state_id)]"),
+        'l10n_br_city_id': fields.many2one(
+            'l10n_br_base.city',
+            u'Cidade',
+            domain="[('state_id','=',state_id)]",
+            ),
+        'state_id': fields.many2one(
+            'res.country.state',
+            u'Estado',
+            domain="[('country_id','=',country_id)]",
+            ),
         'district': fields.char(u'Bairro', size=32),
         'number': fields.char(u'Número', size=10),
         'street2': fields.char(u'Complemento', size=128),

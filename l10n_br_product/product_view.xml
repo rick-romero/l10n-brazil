@@ -8,19 +8,9 @@
       <field name="type">form</field>
       <field name="inherit_id" ref="product.product_normal_form_view" />
       <field name="arch" type="xml">
-        <field name="supply_method" position="after">
+        <field name="type" position="after">
           <field name="origin" attrs="{'required': [('type', '!=', 'service')]}" />
         </field>
-
-        <xpath
-          expr="/form/notebook/page/group[@name='misc']/field[@name='company_id']"
-          position="replace"></xpath>
-
-        <field name="variants" position="after">
-          <field name="company_id" groups="base.group_multi_company"
-          widget="selection"/>
-        </field>
-
       </field>
     </record>
 

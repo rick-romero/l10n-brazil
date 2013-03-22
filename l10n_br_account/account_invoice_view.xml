@@ -44,9 +44,9 @@
             <field name="priority">15</field>
 			<field name="arch" type="xml">
 				<field position="after" name="move_id">
-					<field name="fiscal_operation_category_id" on_change="onchange_fiscal_operation_category_id(address_invoice_id, partner_id, company_id, fiscal_operation_category_id)"  domain="[('use_invoice','=',True),('fiscal_type','=','product')]" required="1" />
-					<field name="fiscal_operation_id" on_change="onchange_fiscal_operation_id(address_invoice_id, partner_id, company_id, fiscal_operation_category_id, fiscal_operation_id)" domain="[('type','=','output'),('use_invoice','=',True),('fiscal_type','=','product')]" required="1" />
-					<field name="fiscal_position" domain="[('fiscal_operation_id','=',fiscal_operation_id)]" groups="base.group_extended,base.group_user" />
+					<field name="fiscal_operation_category_id" on_change="onchange_fiscal_operation_category_id(partner_id, company_id, fiscal_operation_category_id)"  domain="[('use_invoice','=',True),('fiscal_type','=','product')]" required="1" />
+					<field name="fiscal_operation_id" on_change="onchange_fiscal_operation_id(partner_id, company_id, fiscal_operation_category_id, fiscal_operation_id)" domain="[('type','=','output'),('use_invoice','=',True),('fiscal_type','=','product')]" required="1" />
+					<field name="fiscal_position" domain="[('fiscal_operation_id','=',fiscal_operation_id)]" />
 			    </field>
 			</field>
 		</record>
@@ -69,7 +69,7 @@
 			<field name="inherit_id" ref="account.invoice_form" />
 			<field name="arch" type="xml">
 				<field position="replace" name="company_id">
-					<field name="company_id" on_change="onchange_company_id(company_id, partner_id, type, invoice_line, currency_id, address_invoice_id, fiscal_operation_category_id)" widget="selection" groups="base.group_multi_company"/>
+					<field name="company_id" on_change="onchange_company_id(company_id, partner_id, type, invoice_line, currency_id, fiscal_operation_category_id)" widget="selection" groups="base.group_multi_company"/>
 			    </field>
 			</field>
 		</record>
@@ -103,7 +103,7 @@
 			<field name="model">account.invoice</field>
 			<field name="inherit_id" ref="account.invoice_form"/>
 			<field name="arch" type="xml">
-				<field position="after" name="address_invoice_id">
+				<field position="after" name="move_id">
 					<field name="own_invoice" attrs="{'invisible': [('type', '=', 'out_invoice')]}" />
 			    </field>
 			</field>
@@ -120,17 +120,6 @@
 			</field>
 		</record>
 		
-		<record model="ir.ui.view" id="view_l10n_br_delivery_invoice_form9">
-			<field name="name">l10n_br_account.invoice.form9</field>
-			<field name="model">account.invoice</field>
-			<field name="inherit_id" ref="account.invoice_form"/>
-			<field name="arch" type="xml">
-				<field position="after" name="address_contact_id">
-					<field colspan="4" domain="[('partner_id','=',partner_id)]" name="partner_shipping_id" groups="base.group_extended"/>
-				</field>
-			</field>
-		</record>
-
 		<record model="ir.ui.view" id="view_l10n_br_account_invoice_form10">
 			<field name="name">l10n_br_account.invoice.form10</field>
 			<field name="model">account.invoice</field>
@@ -164,14 +153,17 @@
 			<field name="model">account.invoice</field>
 			<field name="inherit_id" ref="account.invoice_form"/>
 			<field name="arch" type="xml">
-				<field position="replace" name="currency_id">
+				<field name="fiscal_position" position="after">
 					<field name="document_serie_id" domain="[('fiscal_type','=','product'),('fiscal_document_id','=',fiscal_document_id)]" attrs="{'invisible': [('own_invoice', '=', False)], 'required': [('own_invoice', '=', True)]}" />
 				</field>
+				<!-- FIXME: Stopped working on 7.0
 				<button position="replace" name="%(account.action_account_change_currency)d">
 				</button>
+				-->
 				<field position="after" name="name">
-					<field name="currency_id" width="50"/>
+					<!-- FIXME: Stopped working on 7.0
         				<button name="%(account.action_account_change_currency)d" type="action" icon="terp-stock_effects-object-colorize" string="Change" attrs="{'invisible':[('state','!=','draft')]}" groups="account.group_account_user"/>
+          -->
 				</field>
 			</field>
 		</record>
@@ -181,7 +173,7 @@
         </record>
 
 		<record id="action_invoice_tree_service_out" model="ir.actions.act_window">
-			<field name="name">Nota Fiscal de Serviço de Saida</field>
+			<field name="name">Nota Fiscal de Serviço de Saída</field>
 			<field name="res_model">account.invoice</field>
 			<field name="view_type">form</field>
 			<field name="view_mode">tree,form,calendar,graph</field>
@@ -292,9 +284,9 @@
 			<field name="inherit_id" ref="account.invoice_supplier_form"/>
 			<field name="arch" type="xml">
 				<field position="after" name="move_id">
-					<field name="fiscal_operation_category_id" on_change="onchange_fiscal_operation_category_id(address_invoice_id, partner_id, company_id, fiscal_operation_category_id)" domain="[('use_invoice','=',True)]" required="1" />
-					<field name="fiscal_operation_id" on_change="onchange_fiscal_operation_id(address_invoice_id, partner_id, company_id, fiscal_operation_category_id, fiscal_operation_id)" domain="[('type','=','input')]" required="1" />
-					<field name="fiscal_position" domain="[('fiscal_operation_id','=',fiscal_operation_id)]" groups="base.group_extended,base.group_user" />
+					<field name="fiscal_operation_category_id" on_change="onchange_fiscal_operation_category_id(partner_id, company_id, fiscal_operation_category_id)" domain="[('use_invoice','=',True)]" required="1" />
+					<field name="fiscal_operation_id" on_change="onchange_fiscal_operation_id(partner_id, company_id, fiscal_operation_category_id, fiscal_operation_id)" domain="[('type','=','input')]" required="1" />
+					<field name="fiscal_position" domain="[('fiscal_operation_id','=',fiscal_operation_id)]" />
 			    </field>
 			</field>
 		</record>
@@ -339,7 +331,7 @@
 			<field name="model">account.invoice</field>
 			<field name="inherit_id" ref="account.invoice_supplier_form" />
 			<field name="arch" type="xml">
-				<field name="address_invoice_id" position="after">
+				<field name="move_id" position="after">
 					<field name="own_invoice" />
 			    </field>
 			</field>
@@ -374,19 +366,18 @@
 			<field name="model">account.invoice</field>
 			<field name="inherit_id" ref="account.invoice_supplier_form"/>
 			<field name="arch" type="xml">
-				 <field position="replace" name="currency_id">
+				 <field name="date_due" position="after">
 					<field name="vendor_serie"
 						attrs="{'invisible': [('own_invoice', '=', True)], 'required': [('own_invoice', '=', False)]}" />
 					<field name="document_serie_id"
 						domain="[('fiscal_type','=','product'),('fiscal_document_id','=',fiscal_document_id)]"
 						attrs="{'invisible': [('own_invoice', '=', False)], 'required': [('own_invoice', '=', True)]}" />
 					</field>
+					<!-- FIXME: Stopped working on 7.0
 					<button position="replace" name="%(account.action_account_change_currency)d">
 					</button>
-					<group colspan="2">
-						<field name="currency_id" width="50"/>
-	                	<button name="240" type="action" icon="terp-stock_effects-object-colorize" string="Change" attrs="{'invisible':[('state','!=','draft')]}" groups="account.group_account_user"/>
-					</group>
+          <button name="240" type="action" icon="terp-stock_effects-object-colorize" string="Change" attrs="{'invisible':[('state','!=','draft')]}" groups="account.group_account_user" />
+          -->
 			</field>
 		</record>
 
@@ -396,28 +387,26 @@
 			<field name="model">account.invoice.line</field>
 			<field name="inherit_id" ref="account.view_invoice_line_form" />
 			<field name="arch" type="xml">
-				<form position="replace" string="Invoice Line" >
+				<form position="replace" string="Invoice Line" version="7.0">
 					<form string="Invoice Line">
 						<notebook>
 							<page string="General">
-			                			<field name="product_id" domain="[('fiscal_type','=','product')]" on_change="product_id_change(product_id, uos_id, quantity, name, parent.type, parent.partner_id, parent.fiscal_position, price_unit, parent.address_invoice_id, parent.currency_id, context, parent.company_id, parent.fiscal_operation_category_id, parent.fiscal_operation_id)"/>
+          			<field name="product_id" domain="[('fiscal_type','=','product')]" on_change="product_id_change(product_id, uos_id, quantity, name, parent.type, parent.partner_id, parent.fiscal_position, price_unit, parent.currency_id, context, parent.company_id, parent.fiscal_operation_category_id, parent.fiscal_operation_id)"/>
 								<field colspan="2" name="name"/>
 								<label string="Quantity :" align="1.0"/>
 								<group colspan="1" col="2">
 									<field name="quantity" nolabel="1"/>
-									<field name="uos_id" on_change="uos_id_change(product_id, uos_id, quantity, name, parent.type, parent.partner_id, parent.fiscal_position, price_unit, parent.address_invoice_id, parent.currency_id, context, parent.company_id)" nolabel="1"/>
+									<field name="uos_id" on_change="uos_id_change(product_id, uos_id, quantity, name, parent.type, parent.partner_id, parent.fiscal_position, price_unit, parent.currency_id, context, parent.company_id)" nolabel="1"/>
 								</group>
 								<field name="price_unit"/>
 								<field domain="[('company_id', '=', parent.company_id), ('journal_id', '=', parent.journal_id), ('type', '&lt;&gt;', 'view')]" name="account_id" on_change="onchange_account_id(product_id, parent.partner_id, parent.type, parent.fiscal_position,account_id)"/>
-								<field name="discount" groups="base.group_extended"/>
+								<field name="discount" />
 								<field domain="[('type','&lt;&gt;','view'), ('company_id', '=', parent.company_id), ('parent_id', '!=', False)]" name="account_analytic_id" groups="analytic.group_analytic_accounting"/>
 								<field name="company_id" groups="base.group_multi_company" readonly="1"/>
 								<field name="fiscal_operation_category_id" />
 								<field name="fiscal_operation_id" />
 								<field colspan="4" name="cfop_id" />
 								<field name="price_total"/>								
-								<separator string="Notes" colspan="4"/>
-								<field colspan="4" name="note" nolabel="1"/>
 								<separator colspan="4" string="Taxes"/>
 								<field colspan="4" name="invoice_line_tax_id" context="{'type':parent.type}" domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]" nolabel="1"/>
    							</page>
@@ -492,7 +481,7 @@
 			<field name="priority">26</field>
 			<field name="arch" type="xml">
 				<field name="product_id" position="replace">
-					<field name="product_id" domain="[('fiscal_type','=','product')]" on_change="product_id_change(product_id, uos_id, quantity, name, parent.type, parent.partner_id, parent.fiscal_position, price_unit, parent.address_invoice_id, parent.currency_id, {'company_id': parent.company_id},parent.company_id, parent.fiscal_operation_category_id, parent.fiscal_operation_id)" select="1"/>
+					<field name="product_id" domain="[('fiscal_type','=','product')]" on_change="product_id_change(product_id, uos_id, quantity, name, parent.type, parent.partner_id, parent.fiscal_position, price_unit, parent.currency_id, {'company_id': parent.company_id},parent.company_id, parent.fiscal_operation_category_id, parent.fiscal_operation_id)" select="1"/>
 				</field>
 			</field>
 		</record>

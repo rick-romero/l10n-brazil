@@ -21,12 +21,11 @@ from osv import osv, fields
 import base64
 
 
-class l10n_br_account_nfe_export(osv.osv_memory):
+class l10n_br_account_nfe_export(osv.TransientModel):
     """ Exportar Nota Fiscal Eletrônica """
 
     _name = "l10n_br_account.nfe_export"
     _description = "Exportação de Nota Fiscal Eletrônica"
-    _inherit = "ir.wizard.screen"
 
     _columns = {
         'file': fields.binary('Arquivo', readonly=True),

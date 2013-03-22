@@ -10,18 +10,15 @@
                 <form string="Exportar Nota Fiscal">
                     <group col="8">
                         <group colspan="3">
-                            <field name="config_logo" widget="image" width="130" height="130" nolabel="1" colspan="1"/>
-                            <newline/>
-                            <label colspan="4" width="130" string="Este assistente vai exportar todas as notas fiscais com status exportada para sefaz."/>
-                            <label colspan="4" width="130"/>
-                            <label colspan="4" width="130" string="Esta operação pode durar alguns segundos..."/>
+                            <label for="" string="Este assistente vai exportar todas as notas fiscais com status exportada para sefaz." />
+                            <label for="" string="Esta operação pode durar alguns segundos..." />
                             <field name="state" invisible="1"/>
                         </group>
                         <separator orientation="vertical" rowspan="15"/>
                         <group colspan="4">
                             <separator string="Exportar Nota Fiscal" colspan="4"/>
                             <group states="init" colspan="4">
-                                <label string="Click em exportar para iniciar a exportação..." colspan="4"/>
+                                <label for="" string="Clique em exportar para iniciar a exportação..." />
                                 <field colspan="4" name="company_id" widget="selection" />
                                 <field colspan="4" name="file_type" />
                                 <field colspan="4" name="nfe_environment" />
@@ -32,13 +29,11 @@
                         </group>
                         <group colspan="8" col="8" states="init">
                             <separator string="" colspan="8"/>
-                            <label colspan="6" width="220"/>
                             <button special="cancel" string="Cancelar" icon="gtk-cancel"/>
                             <button name="nfe_export" string="Exportar" type="object" icon="gtk-ok"/>
                         </group>
                         <group colspan="8" col="8" states="done">
                             <separator string="" colspan="8"/>
-                            <label colspan="6" width="220"/>
                             <button special="cancel" string="Fechar" icon="gtk-go-forward"/>
                         </group>
                     </group>

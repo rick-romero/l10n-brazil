@@ -71,35 +71,28 @@ class account_fiscal_position_rule(osv.osv):
                 'revenue_end': 0.00,
                 }
 
-    def fiscal_position_map(self, cr, uid, partner_id=False, partner_invoice_id=False, company_id=False, fiscal_operation_category_id=False, context=None):
+    def fiscal_position_map(self, cr, uid, partner_id=False, company_id=False, fiscal_operation_category_id=False, context=None):
 
         #Initiate variable result
         result = {'fiscal_position': False, 'fiscal_operation_id': False}
 
-        if partner_id == False or not partner_invoice_id or company_id == False or fiscal_operation_category_id == False:
-             return result
+        if partner_id == False or company_id == False or fiscal_operation_category_id == False:
+            return result
 
         obj_partner = self.pool.get("res.partner").browse(cr, uid, partner_id)
         obj_company = self.pool.get("res.company").browse(cr, uid, company_id)
-		
-        #Case 1: If Partner has Specific Fiscal Posigion
+
+        # Case 1: If Partner has Specific Fiscal Posigion
         if obj_partner.property_account_position.id:
             result['fiscal_position'] = obj_partner.property_account_position.id
             result['fiscal_operation_id'] = obj_partner.property_account_position.fiscal_operation_id.id
             return result
-		
-		#Case 2: Search fiscal position using Account Fiscal Position Rule
-        company_addr = self.pool.get('res.partner').address_get(cr, uid, [obj_company.partner_id.id], ['default'])
-        company_addr_default = self.pool.get('res.partner.address').browse(cr, uid, [company_addr['default']])[0]
-        
-        from_country = company_addr_default.country_id.id
-        from_state = company_addr_default.state_id.id
 
-        if not partner_invoice_id:
-            partner_addr = self.pool.get('res.partner').address_get(cr, uid, [obj_partner.id], ['invoice'])
-            partner_addr_default = self.pool.get('res.partner.address').browse(cr, uid, [partner_addr['invoice']])[0]
-        else:
-            partner_addr_default = self.pool.get('res.partner.address').browse(cr, uid, partner_invoice_id)
+        # Case 2: Search fiscal position using Account Fiscal Position Rule
+        from_country = obj_company.partner_id.country_id.id
+        from_state = obj_company.partner_id.state_id.id
+
+        partner_addr_default = obj_partner
 
         to_country = partner_addr_default.country_id.id
         to_state = partner_addr_default.state_id.id
@@ -133,7 +126,7 @@ class account_fiscal_position_rule(osv.osv):
 account_fiscal_position_rule()
 
 
-class wizard_account_fiscal_position_rule(osv.osv_memory):
+class wizard_account_fiscal_position_rule(osv.TransientModel):
     _inherit = 'wizard.account.fiscal.position.rule'
     
     def action_create(self, cr, uid, ids, context=None):
@@ -144,12 +137,10 @@ class wizard_account_fiscal_position_rule(osv.osv_memory):
         obj_fiscal_position = self.pool.get('account.fiscal.position')
         obj_fiscal_position_rule = self.pool.get('account.fiscal.position.rule')
         obj_fiscal_position_rule_template = self.pool.get('account.fiscal.position.rule.template')
-        obj_res_partner = self.pool.get('res.partner')
         obj_res_country_state = self.pool.get('res.country.state')
 
         company_id = obj_wizard.company_id.id
-        company_addr = obj_res_partner.address_get(cr, uid, [company_id], ['default'])
-        company_addr_default = self.pool.get('res.partner.address').browse(cr, uid, [company_addr['default']])[0]
+        company_addr_default = obj_wizard.company_id.partner_id
 
         pfr_ids = obj_fiscal_position_rule_template.search(cr, uid, [])
 

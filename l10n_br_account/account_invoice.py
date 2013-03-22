@@ -225,7 +225,6 @@ class account_invoice(osv.osv):
             \n* The \'sefaz_out\' Gerado aquivo de exportação para sistema daReceita.\
             \n* The \'sefaz_aut\' Recebido arquivo de autolização da Receita.\
             \n* The \'Cancelled\' state is used when user cancel invoice.'),
-        'partner_shipping_id': fields.many2one('res.partner.address', 'Endereço de Entrega', readonly=True, states={'draft': [('readonly', False)]}, help="Shipping address for current sales order."),
         'own_invoice': fields.boolean('Nota Fiscal Própria',readonly=True, states={'draft':[('readonly',False)]}),
         'internal_number': fields.char('Invoice Number', size=32, readonly=True , states={'draft':[('readonly',False)]}, help="Unique number of the invoice, computed automatically when the invoice is created."),
         'vendor_serie': fields.char('Série NF Entrada', size=12, readonly=True, states={'draft':[('readonly',False)]}, help="Série do número da Nota Fiscal do Fornecedor"),
@@ -340,16 +339,6 @@ class account_invoice(osv.osv):
                  'own_invoice': True,
                  'fiscal_type': _get_fiscal_type,
                  }
-
-    def _refund_cleanup_lines(self, cr, uid, lines):
-        # more _id fields added to invoce_line by the localization have to be filtered
-        for line in lines:
-            for field in ('fiscal_operation_category_id', 'fiscal_operation_id',
-                          'fiscal_position', 'cfop_id'):
-                if line.get(field):
-                    line[field] = line[field][0]
-
-        return super(account_invoice, self)._refund_cleanup_lines(cr, uid, lines)
     
     def _check_invoice_number(self, cr, uid, ids, context=None):
         if context is None:
@@ -470,7 +459,7 @@ class account_invoice(osv.osv):
                     i -= 1
         return result
 
-    def compute_invoice_totals(self, cr, uid, inv, company_currency, ref, invoice_move_lines):
+    def compute_invoice_totals(self, cr, uid, inv, company_currency, ref, invoice_move_lines, context=None):
         total = 0
         total_currency = 0
         sum_debit = 0
@@ -678,8 +667,7 @@ class account_invoice(osv.osv):
             if not inv.own_invoice or inv.fiscal_type == 'service' or not inv.fiscal_document_nfe:
                 continue
             
-            company_addr = self.pool.get('res.partner').address_get(cr, uid, [inv.company_id.partner_id.id], ['default'])
-            company_addr_default = self.pool.get('res.partner.address').browse(cr, uid, [company_addr['default']], context={'lang': 'pt_BR'})[0]
+            company_addr_default = inv.company_id.partner_id
             
             if not inv.document_serie_id:
                 strErro = u'Nota Fiscal - Série da nota fiscal\n'
@@ -749,77 +737,39 @@ class account_invoice(osv.osv):
             if not inv.partner_id.cnpj_cpf:
                 strErro += u'Destinatário - CNPJ/CPF\n'
             
-            if not inv.address_invoice_id.street:
+            if not inv.partner_id.street:
                 strErro += u'Destinatário / Endereço - Logradouro\n'
             
-            if not inv.address_invoice_id.number:
+            if not inv.partner_id.number:
                 strErro += u'Destinatário / Endereço - Número\n'
                 
-            if not inv.address_invoice_id.zip:
+            if not inv.partner_id.zip:
                 strErro += u'Destinatário / Endereço - CEP\n'
 
-            if not inv.address_invoice_id.state_id:
+            if not inv.partner_id.state_id:
                 strErro += u'Destinatário / Endereço - Estado\n'
             else:
-                if not inv.address_invoice_id.state_id.ibge_code:
+                if not inv.partner_id.state_id.ibge_code:
                     strErro += u'Destinatário / Endereço - Código do IBGE do estado\n'
-                if not inv.address_invoice_id.state_id.name:
+                if not inv.partner_id.state_id.name:
                     strErro += u'Destinatário / Endereço - Nome do estado\n'
                       
-            if not inv.address_invoice_id.l10n_br_city_id:
+            if not inv.partner_id.l10n_br_city_id:
                 strErro += u'Destinatário / Endereço - Município\n'
             else:
-                if not inv.address_invoice_id.l10n_br_city_id.name:
+                if not inv.partner_id.l10n_br_city_id.name:
                     strErro += u'Destinatário / Endereço - Nome do município\n'
-                if not inv.address_invoice_id.l10n_br_city_id.ibge_code:
+                if not inv.partner_id.l10n_br_city_id.ibge_code:
                     strErro += u'Destinatário / Endereço - Código do IBGE do município\n'
 
-            if not inv.address_invoice_id.country_id:
+            if not inv.partner_id.country_id:
                 strErro += u'Destinatário / Endereço - País\n'
             else:
-                if not inv.address_invoice_id.country_id.name:
+                if not inv.partner_id.country_id.name:
                     strErro += u'Destinatário / Endereço - Nome do país\n'
-                if not inv.address_invoice_id.country_id.bc_code:
+                if not inv.partner_id.country_id.bc_code:
                     strErro += u'Destinatário / Endereço - Código do BC do país\n'
 
-            #endereco de entrega
-            if inv.partner_shipping_id:
-                
-                if inv.address_invoice_id != inv.partner_shipping_id: 
-                    
-                    if not inv.partner_shipping_id.street:
-                        strErro += u'Destinatário / Endereço de Entrega - Logradouro\n'
-                    
-                    if not inv.partner_shipping_id.number:
-                        strErro += u'Destinatário / Endereço de Entrega - Número\n'
-                        
-                    if not inv.address_invoice_id.zip:
-                        strErro += u'Destinatário / Endereço de Entrega - CEP\n'
-        
-                    if not inv.partner_shipping_id.state_id:
-                        strErro += u'Destinatário / Endereço de Entrega - Estado\n'
-                    else:
-                        if not inv.partner_shipping_id.state_id.ibge_code:
-                            strErro += u'Destinatário / Endereço de Entrega - Código do IBGE do estado\n'
-                        if not inv.partner_shipping_id.state_id.name:
-                            strErro += u'Destinatário / Endereço de Entrega - Nome do estado\n'
-                              
-                    if not inv.partner_shipping_id.l10n_br_city_id:
-                        strErro += u'Destinatário / Endereço - Município\n'
-                    else:
-                        if not inv.partner_shipping_id.l10n_br_city_id.name:
-                            strErro += u'Destinatário / Endereço de Entrega - Nome do município\n'
-                        if not inv.partner_shipping_id.l10n_br_city_id.ibge_code:
-                            strErro += u'Destinatário / Endereço de Entrega - Código do IBGE do município\n'
-                            
-                    if not inv.partner_shipping_id.country_id:
-                        strErro += u'Destinatário / Endereço de Entrega - País\n'
-                    else:
-                        if not inv.partner_shipping_id.country_id.name:
-                            strErro += u'Destinatário / Endereço de Entrega - Nome do país\n'
-                        if not inv.partner_shipping_id.country_id.bc_code:
-                            strErro += u'Destinatário / Endereço de Entrega - Código do BC do país\n'
-                    
             #produtos
             for inv_line in inv.invoice_line:
                 if inv_line.product_id:
@@ -868,8 +818,7 @@ class account_invoice(osv.osv):
         
         for inv in self.browse(cr, uid, ids, context={'lang': 'pt_BR'}):
             #Endereço do company
-            company_addr = self.pool.get('res.partner').address_get(cr, uid, [inv.company_id.partner_id.id], ['default'])
-            company_addr_default = self.pool.get('res.partner.address').browse(cr, uid, [company_addr['default']], context={'lang': 'pt_BR'})[0]
+            company_addr_default = inv.company_id.partner_id
             #nfe_key = unicode(company_addr_default.state_id.ibge_code).strip().rjust(2, u'0')
             #nfe_key += unicode(datetime.strptime(inv.date_invoice, '%Y-%m-%d').strftime(u'%y%m')).strip().rjust(4, u'0')
             #nfe_key +=  re.sub('[%s]' % re.escape(string.punctuation), '', inv.company_id.partner_id.cnpj_cpf or '')
@@ -995,21 +944,21 @@ class account_invoice(osv.osv):
             StrFile += StrE0
             
             address_invoice_bc_code = ''
-            if inv.address_invoice_id.country_id.bc_code:
-                address_invoice_bc_code = inv.address_invoice_id.country_id.bc_code[1:]
+            if inv.partner_id.country_id.bc_code:
+                address_invoice_bc_code = inv.partner_id.country_id.bc_code[1:]
 
             StrRegE05 = {
-                       'xLgr': normalize('NFKD',unicode(inv.address_invoice_id.street or '')).encode('ASCII','ignore'),
-                       'nro': normalize('NFKD',unicode(inv.address_invoice_id.number or '')).encode('ASCII','ignore'),
-                       'xCpl': re.sub('[%s]' % re.escape(string.punctuation), '', normalize('NFKD',unicode(inv.address_invoice_id.street2 or '' )).encode('ASCII','ignore')),
-                       'xBairro': normalize('NFKD',unicode(inv.address_invoice_id.district or 'Sem Bairro')).encode('ASCII','ignore'),
-                       'cMun': ('%s%s') % (inv.address_invoice_id.state_id.ibge_code, inv.address_invoice_id.l10n_br_city_id.ibge_code),
-                       'xMun': normalize('NFKD',unicode(inv.address_invoice_id.l10n_br_city_id.name or '')).encode('ASCII','ignore'),
-                       'UF': inv.address_invoice_id.state_id.code,
-                       'CEP': re.sub('[%s]' % re.escape(string.punctuation), '', str(inv.address_invoice_id.zip or '').replace(' ','')),
+                       'xLgr': normalize('NFKD',unicode(inv.partner_id.street or '')).encode('ASCII','ignore'),
+                       'nro': normalize('NFKD',unicode(inv.partner_id.number or '')).encode('ASCII','ignore'),
+                       'xCpl': re.sub('[%s]' % re.escape(string.punctuation), '', normalize('NFKD',unicode(inv.partner_id.street2 or '' )).encode('ASCII','ignore')),
+                       'xBairro': normalize('NFKD',unicode(inv.partner_id.district or 'Sem Bairro')).encode('ASCII','ignore'),
+                       'cMun': ('%s%s') % (inv.partner_id.state_id.ibge_code, inv.partner_id.l10n_br_city_id.ibge_code),
+                       'xMun': normalize('NFKD',unicode(inv.partner_id.l10n_br_city_id.name or '')).encode('ASCII','ignore'),
+                       'UF': inv.partner_id.state_id.code,
+                       'CEP': re.sub('[%s]' % re.escape(string.punctuation), '', str(inv.partner_id.zip or '').replace(' ','')),
                        'cPais': address_invoice_bc_code,
-                       'xPais': normalize('NFKD',unicode(inv.address_invoice_id.country_id.name or '')).encode('ASCII','ignore'),
-                       'fone': re.sub('[%s]' % re.escape(string.punctuation), '', str(inv.address_invoice_id.phone or '').replace(' ','')),
+                       'xPais': normalize('NFKD',unicode(inv.partner_id.country_id.name or '')).encode('ASCII','ignore'),
+                       'fone': re.sub('[%s]' % re.escape(string.punctuation), '', str(inv.partner_id.phone or '').replace(' ','')),
                        }
             
             StrE05 = 'E05|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|\n' % (StrRegE05['xLgr'], StrRegE05['nro'], StrRegE05['xCpl'], StrRegE05['xBairro'],
@@ -1017,30 +966,6 @@ class account_invoice(osv.osv):
                                                            StrRegE05['cPais'],StrRegE05['xPais'], StrRegE05['fone'],)
             
             StrFile += StrE05
-            
-            if inv.partner_shipping_id:
-                
-                if inv.address_invoice_id != inv.partner_shipping_id: 
-            
-                    StrRegG = {
-                               'XLgr': normalize('NFKD',unicode(inv.partner_shipping_id.street or '',)).encode('ASCII','ignore'),
-                               'Nro': normalize('NFKD',unicode(inv.partner_shipping_id.number or '')).encode('ASCII','ignore'),
-                               'XCpl': re.sub('[%s]' % re.escape(string.punctuation), '', normalize('NFKD',unicode(inv.partner_shipping_id.street2 or '' )).encode('ASCII','ignore')),
-                               'XBairro': re.sub('[%s]' % re.escape(string.punctuation), '', normalize('NFKD',unicode(inv.partner_shipping_id.district or 'Sem Bairro' )).encode('ASCII','ignore')),
-                               'CMun': ('%s%s') % (inv.partner_shipping_id.state_id.ibge_code, inv.partner_shipping_id.l10n_br_city_id.ibge_code),
-                               'XMun': normalize('NFKD',unicode(inv.partner_shipping_id.l10n_br_city_id.name or '')).encode('ASCII','ignore'),
-                               'UF': inv.address_invoice_id.state_id.code,
-                             }
-          
-                    StrG = 'G|%s|%s|%s|%s|%s|%s|%s|\n' % (StrRegG['XLgr'],StrRegG['Nro'],StrRegG['XCpl'],StrRegG['XBairro'],StrRegG['CMun'],StrRegG['XMun'],StrRegG['UF'])
-                    StrFile += StrG
-                    
-                    if inv.partner_id.tipo_pessoa == 'J':
-                        StrG0 = 'G02|%s|\n' % (re.sub('[%s]' % re.escape(string.punctuation), '', inv.partner_id.cnpj_cpf or ''))
-                    else:
-                        StrG0 = 'G02a|%s|\n' % (re.sub('[%s]' % re.escape(string.punctuation), '', inv.partner_id.cnpj_cpf or ''))
-        
-                    StrFile += StrG0
             
             i = 0
             for inv_line in inv.invoice_line:
@@ -1424,8 +1349,7 @@ class account_invoice(osv.osv):
             if inv.carrier_id:            
             
                 #Endereço da transportadora
-                carrier_addr = self.pool.get('res.partner').address_get(cr, uid, [inv.carrier_id.partner_id.id], ['default'])
-                carrier_addr_default = self.pool.get('res.partner.address').browse(cr, uid, [carrier_addr['default']])[0]
+                carrier_addr_default = inv.carrier_id.partner_id
                 
                 if inv.carrier_id.partner_id.legal_name:
                     StrRegX03['XNome'] = normalize('NFKD', unicode(inv.carrier_id.partner_id.legal_name or '')).encode('ASCII', 'ignore')
@@ -1523,8 +1447,7 @@ class account_invoice(osv.osv):
         for inv in self.browse(cr, uid, ids, context={'lang': 'pt_BR'}):
             
             #Endereço do company
-            company_addr = self.pool.get('res.partner').address_get(cr, uid, [inv.company_id.partner_id.id], ['default'])
-            company_addr_default = self.pool.get('res.partner.address').browse(cr, uid, [company_addr['default']], context={'lang': 'pt_BR'})[0]
+            company_addr_default = inv.company_id.partner_id
             
             #MontaChave da Nota Fiscal Eletronica
             nfe_key = unicode(company_addr_default.state_id.ibge_code).strip().rjust(2, u'0')
@@ -1672,34 +1595,34 @@ class account_invoice(osv.osv):
             enderDest = SubElement(dest, 'enderDest')
             
             enderDest_xLgr = SubElement(enderDest, 'xLgr')
-            enderDest_xLgr.text = inv.address_invoice_id.street
+            enderDest_xLgr.text = inv.partner_id.street
             
             enderDest_nro = SubElement(enderDest, 'nro')
-            enderDest_nro.text = inv.address_invoice_id.number
+            enderDest_nro.text = inv.partner_id.number
             
             enderDest_xBairro = SubElement(enderDest, 'xBairro')
-            enderDest_xBairro.text = inv.address_invoice_id.district
+            enderDest_xBairro.text = inv.partner_id.district
             
             enderDest_cMun = SubElement(enderDest, 'cMun')
-            enderDest_cMun.text = ('%s%s') % (inv.address_invoice_id.state_id.ibge_code, inv.address_invoice_id.l10n_br_city_id.ibge_code)
+            enderDest_cMun.text = ('%s%s') % (inv.partner_id.state_id.ibge_code, inv.partner_id.l10n_br_city_id.ibge_code)
             
             enderDest_xMun = SubElement(enderDest, 'xMun')
-            enderDest_xMun.text = inv.address_invoice_id.l10n_br_city_id.name
+            enderDest_xMun.text = inv.partner_id.l10n_br_city_id.name
             
             enderDest_UF = SubElement(enderDest, 'UF')
-            enderDest_UF.text = inv.address_invoice_id.state_id.code
+            enderDest_UF.text = inv.partner_id.state_id.code
             
             enderDest_CEP = SubElement(enderDest, 'CEP')
-            enderDest_CEP.text = inv.address_invoice_id.zip
+            enderDest_CEP.text = inv.partner_id.zip
             
             enderDest_cPais = SubElement(enderDest, 'cPais')
-            enderDest_cPais.text = inv.address_invoice_id.country_id.bc_code
+            enderDest_cPais.text = inv.partner_id.country_id.bc_code
             
             enderDest_xPais = SubElement(enderDest, 'xPais')
-            enderDest_xPais.text = inv.address_invoice_id.country_id.name
+            enderDest_xPais.text = inv.partner_id.country_id.name
             
             enderDest_fone = SubElement(enderDest, 'fone')
-            enderDest_fone.text = inv.address_invoice_id.phone
+            enderDest_fone.text = inv.partner_id.phone
             
             dest_IE = SubElement(dest, 'IE')
             dest_IE.text = inv.partner_id.inscr_est
@@ -1890,8 +1813,7 @@ class account_invoice(osv.osv):
             if inv.carrier_id:
                 
                 #Endereço do company
-                carrier_addr = self.pool.get('res.partner').address_get(cr, uid, [inv.carrier_id.partner_id.id], ['default'])
-                carrier_addr_default = self.pool.get('res.partner.address').browse(cr, uid, [carrier_addr['default']])[0]
+                carrier_addr_default = inv.carrier_id.partner_id
                 
                 transp_transporta = SubElement(transp, 'transporta')
                 
@@ -1939,10 +1861,10 @@ class account_invoice(osv.osv):
         xml_string = ElementTree.tostring(nfeProc, 'utf-8')
         return xml_string
 
-    def _fiscal_position_map(self, cr, uid, ids, partner_id, partner_invoice_id, company_id, fiscal_operation_category_id):
+    def _fiscal_position_map(self, cr, uid, ids, partner_id, company_id, fiscal_operation_category_id):
         result = {'fiscal_operation_id': False, 'fiscal_document_id': False, 'document_serie_id': False}
         obj_rule = self.pool.get('account.fiscal.position.rule')
-        fiscal_result = obj_rule.fiscal_position_map(cr, uid, partner_id, partner_invoice_id, company_id, fiscal_operation_category_id, context={'use_domain': ('use_invoice', '=', True)})   
+        fiscal_result = obj_rule.fiscal_position_map(cr, uid, partner_id, company_id, fiscal_operation_category_id, context={'use_domain': ('use_invoice', '=', True)})   
 
         result.update(fiscal_result)
 
@@ -1965,35 +1887,28 @@ class account_invoice(osv.osv):
                             payment_term=False, partner_bank_id=False, company_id=False, 
                             fiscal_operation_category_id=False):
         result = super(account_invoice, self).onchange_partner_id(cr, uid, ids, type, partner_id, date_invoice, payment_term, partner_bank_id, company_id)
-        partner_invoice_id = result['value'].get('address_invoice_id', False)
-        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, partner_invoice_id, company_id, fiscal_operation_category_id)
+        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, company_id, fiscal_operation_category_id)
         result['value'].update(fiscal_data)
         return result
     
-    def onchange_company_id(self, cr, uid, ids, company_id, partner_id, type, invoice_line, currency_id, address_invoice_id, fiscal_operation_category_id=False):
+    def onchange_company_id(self, cr, uid, ids, company_id, partner_id, type, invoice_line, currency_id, fiscal_operation_category_id=False):
         
-        result = super(account_invoice, self).onchange_company_id(cr, uid, ids, company_id, partner_id, type, invoice_line, currency_id, address_invoice_id)
-        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, address_invoice_id, company_id, fiscal_operation_category_id)
+        result = super(account_invoice, self).onchange_company_id(cr, uid, ids, company_id, partner_id, type, invoice_line, currency_id)
+        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, company_id, fiscal_operation_category_id)
         result['value'].update(fiscal_data)
         return result
 
-    def onchange_address_invoice_id(self, cr, uid, ids, company_id, partner_id, address_invoice_id, fiscal_operation_category_id=False):
-        result = super(account_invoice, self).onchange_address_invoice_id(cr,uid,ids,company_id,partner_id,address_invoice_id)
-        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, address_invoice_id, company_id, fiscal_operation_category_id)
-        result['value'].update(fiscal_data)
-        return result  
-
-    def onchange_fiscal_operation_category_id(self, cr, uid, ids, partner_address_id=False, partner_id=False, company_id=False, fiscal_operation_category_id=False):
+    def onchange_fiscal_operation_category_id(self, cr, uid, ids, partner_id=False, company_id=False, fiscal_operation_category_id=False):
         result = {'value': {} }
-        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, partner_address_id, company_id, fiscal_operation_category_id)
+        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, company_id, fiscal_operation_category_id)
         result['value'].update(fiscal_data)
         return result
 
-    def onchange_fiscal_operation_id(self, cr, uid, ids, partner_address_id=False, partner_id=False, company_id=False, fiscal_operation_category_id=False, fiscal_operation_id=False):
+    def onchange_fiscal_operation_id(self, cr, uid, ids, partner_id=False, company_id=False, fiscal_operation_category_id=False, fiscal_operation_id=False):
         result = {'value': {} }
         if not company_id or not fiscal_operation_category_id:
             return result
-        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, partner_address_id, company_id, fiscal_operation_category_id)
+        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, company_id, fiscal_operation_category_id)
         result['value'].update(fiscal_data)
        
         if fiscal_operation_id:
@@ -2134,7 +2049,7 @@ class account_invoice_line(osv.osv):
                 'cofins_cst': '99', #Coloca como isento caso não tenha COFINS
             }
             price = line.price_unit * (1-(line.discount or 0.0)/100.0)
-            taxes = tax_obj.compute_all(cr, uid, line.invoice_line_tax_id, price, line.quantity, product=line.product_id, address_id=line.invoice_id.address_invoice_id, partner=line.invoice_id.partner_id, fiscal_operation=line.fiscal_operation_id)
+            taxes = tax_obj.compute_all(cr, uid, line.invoice_line_tax_id, price, line.quantity, product=line.product_id, partner=line.invoice_id.partner_id, fiscal_operation=line.fiscal_operation_id)
             
             icms_base = 0.0
             icms_base_other = 0.0
@@ -2360,10 +2275,10 @@ class account_invoice_line(osv.osv):
                                               store=True, multi='all'),
                 }
 
-    def _fiscal_position_map(self, cr, uid, ids, partner_id, partner_invoice_id, company_id, fiscal_operation_category_id):
+    def _fiscal_position_map(self, cr, uid, ids, partner_id, company_id, fiscal_operation_category_id):
         result = {'fiscal_operation_id': False, 'cfop_id': False}
         obj_rule = self.pool.get('account.fiscal.position.rule')
-        fiscal_result = obj_rule.fiscal_position_map(cr, uid, partner_id, partner_invoice_id, company_id, fiscal_operation_category_id, context={'use_domain': ('use_invoice','=',True)})
+        fiscal_result = obj_rule.fiscal_position_map(cr, uid, partner_id, company_id, fiscal_operation_category_id, context={'use_domain': ('use_invoice','=',True)})
         result.update(fiscal_result)
         if result.get('fiscal_operation_id', False):
             obj_foperation = self.pool.get('l10n_br_account.fiscal.operation').browse(cr, uid, result['fiscal_operation_id'])
@@ -2372,12 +2287,12 @@ class account_invoice_line(osv.osv):
 
     def product_id_change(self, cr, uid, ids, product, uom, qty=0, name='', 
                           type='out_invoice', partner_id=False, fposition_id=False, 
-                          price_unit=False, address_invoice_id=False, currency_id=False, 
+                          price_unit=False, currency_id=False, 
                           context=None, company_id=False, fiscal_operation_category_id=False, 
                           fiscal_operation_id=False):
         result = super(account_invoice_line, self).product_id_change(cr, uid, ids, product, uom, qty, name, 
                                                                      type, partner_id, fposition_id, price_unit, 
-                                                                     address_invoice_id, currency_id, context, company_id)
+                                                                     currency_id, context, company_id)
         if not fiscal_operation_category_id and not product:
             return result
 
@@ -2392,7 +2307,7 @@ class account_invoice_line(osv.osv):
             result['value']['fiscal_operation_id'] = fiscal_operation_id
             result['value']['cfop_id'] = self.pool.get('l10n_br_account.fiscal.operation').read(cr, uid, [fiscal_operation_id], ['cfop_id'])[0]['cfop_id']
             return result
-        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, address_invoice_id, company_id, fiscal_operation_category_id)
+        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, company_id, fiscal_operation_category_id)
         result['value'].update(fiscal_data)
         return result
 
@@ -2412,7 +2327,7 @@ class account_invoice_tax(osv.osv):
         company_currency = inv.company_id.currency_id.id
 
         for line in inv.invoice_line:
-            taxes = tax_obj.compute_all(cr, uid, line.invoice_line_tax_id, (line.price_unit* (1-(line.discount or 0.0)/100.0)), line.quantity, inv.address_invoice_id.id, line.product_id, inv.partner_id, fiscal_operation=line.fiscal_operation_id)
+            taxes = tax_obj.compute_all(cr, uid, line.invoice_line_tax_id, (line.price_unit* (1-(line.discount or 0.0)/100.0)), line.quantity, line.product_id, inv.partner_id, fiscal_operation=line.fiscal_operation_id)
             for tax in taxes['taxes']:
                 val = {}
                 val['invoice_id'] = inv.id

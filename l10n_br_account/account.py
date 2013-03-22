@@ -36,7 +36,7 @@ class account_tax(osv.osv):
         'account_result_id':fields.many2one('account.account', 'Conta de resultado do imposto'),
    }
     
-    def compute_all(self, cr, uid, taxes, price_unit, quantity, address_id=None, product=None, partner=None, force_excluded=False, fiscal_operation=False):
+    def compute_all(self, cr, uid, taxes, price_unit, quantity, product=None, partner=None, force_excluded=False, fiscal_operation=False):
         """
         RETURN: {
                 'total': 0.0,                 # Total without taxes
@@ -74,7 +74,7 @@ class account_tax(osv.osv):
                 pin.append(tax)
             else:
                 ntax.append(tax)
-        pin = super(account_tax, self).compute_inv(cr, uid, pin, price_unit, quantity, address_id=address_id, product=product, partner=partner)
+        pin = super(account_tax, self).compute_inv(cr, uid, pin, price_unit, quantity, product=product, partner=partner)
         for r in pin:
                 totalex -= r.get('amount', 0.0)
         totlex_qty = 0.0
@@ -83,10 +83,10 @@ class account_tax(osv.osv):
         except:
             pass
 
-        tin = self.l10n_br_compute_inv(cr, uid, tin, price_unit, quantity, address_id=address_id, product=product, partner=partner)
+        tin = self.l10n_br_compute_inv(cr, uid, tin, price_unit, quantity, product=product, partner=partner)
 
         all_tad = tad + ntax + tre
-        all_tad = super(account_tax, self)._compute(cr, uid, all_tad, totlex_qty, quantity, address_id=address_id, product=product, partner=partner)
+        all_tad = super(account_tax, self)._compute(cr, uid, all_tad, totlex_qty, quantity, product=product, partner=partner)
 
         for r_tax in all_tad:
             totalin += r_tax.get('amount', 0.0)
@@ -166,9 +166,9 @@ class account_tax(osv.osv):
             'taxes': res_taxes,
             }
 
-    def l10n_br_compute_inv(self, cr, uid, taxes, price_unit, quantity, address_id=None, product=None, partner=None):
+    def l10n_br_compute_inv(self, cr, uid, taxes, price_unit, quantity, product=None, partner=None):
         """
-        Compute tax values for given PRICE_UNIT, QUANTITY and a buyer/seller ADDRESS_ID.
+        Compute tax values for given PRICE_UNIT and QUANTITY.
         Price Unit is a VAT included price
 
         RETURN:
@@ -177,7 +177,7 @@ class account_tax(osv.osv):
             one tax for each tax id in IDS and their children
         """
 
-        res = self._l10n_br_unit_compute_inv(cr, uid, taxes, price_unit, address_id, product, partner=None)
+        res = self._l10n_br_unit_compute_inv(cr, uid, taxes, price_unit, product, partner=None)
         total = 0.0
         obj_precision = self.pool.get('decimal.precision')
         for r in res:
@@ -189,8 +189,8 @@ class account_tax(osv.osv):
                 total += r['amount']
         return res
 
-    def _l10n_br_unit_compute_inv(self, cr, uid, taxes, price_unit, address_id=None, product=None, partner=None):
-        taxes = self._applicable(cr, uid, taxes, price_unit, address_id, product, partner)
+    def _l10n_br_unit_compute_inv(self, cr, uid, taxes, price_unit, product=None, partner=None):
+        taxes = self._applicable(cr, uid, taxes, price_unit, product, partner)
         obj_partener_address = self.pool.get('res.partner.address')
         res = []
         taxes.reverse()
@@ -220,8 +220,7 @@ class account_tax(osv.osv):
                 amount = tax.amount
 
             elif tax.type == 'code':
-                address = address_id and obj_partener_address.browse(cr, uid, address_id) or None
-                localdict = {'price_unit': cur_price_unit, 'address': address, 'product': product, 'partner': partner}
+                localdict = {'price_unit': cur_price_unit, 'product': product, 'partner': partner}
                 exec tax.python_compute_inv in localdict
                 amount = localdict['result']
             elif tax.type == 'balance':
@@ -259,7 +258,7 @@ class account_tax(osv.osv):
                     del res[-1]
                     amount = price_unit
 
-            parent_tax = self._unit_compute_inv(cr, uid, tax.child_ids, amount, address_id, product, partner)
+            parent_tax = self._unit_compute_inv(cr, uid, tax.child_ids, amount, product, partner)
             res.extend(parent_tax)
         #total = 0.0
         #for r in res:
@@ -273,7 +272,7 @@ class account_tax(osv.osv):
 account_tax()
 
 
-class wizard_multi_charts_accounts(osv.osv_memory):
+class wizard_multi_charts_accounts(osv.TransientModel):
     _inherit = 'wizard.multi.charts.accounts'
     
     def execute(self, cr, uid, ids, context=None):

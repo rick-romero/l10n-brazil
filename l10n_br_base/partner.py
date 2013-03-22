@@ -83,10 +83,10 @@ class res_partner(osv.osv):
             if not partner.cnpj_cpf:
                 continue
     
-            if partner.tipo_pessoa == 'J':
+            if partner.is_company:
                 if not self._validate_cnpj(partner.cnpj_cpf):
                     return False
-            elif partner.tipo_pessoa == 'F':
+            else:
                 if not self._validate_cpf(partner.cnpj_cpf):
                     return False
 

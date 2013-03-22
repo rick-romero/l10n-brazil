@@ -27,7 +27,7 @@ class l10n_br_base_city(osv.osv):
     _columns = {
                 'name': fields.char('Nome', size=64, required=True),
                 'state_id': fields.many2one('res.country.state', 'Estado', required=True),
-                'ibge_code': fields.char('Codigo IBGE', size=7),
+                'ibge_code': fields.char(u'Código IBGE', size=7),
                }
 
 l10n_br_base_city()
@@ -42,7 +42,7 @@ class l10n_br_base_zip(osv.osv):
                 'street_type': fields.char('Tipo', size=26),
                 'street': fields.char('Logradouro', size=72),
                 'district': fields.char('Bairro', size=72),
-                'country_id': fields.many2one('res.country', 'Country'),
+                'country_id': fields.many2one('res.country', u'País'),
                 'state_id': fields.many2one("res.country.state", 'Estado', 
                                             domain="[('country_id','=',country_id)]"),
                 'l10n_br_city_id': fields.many2one('l10n_br_base.city', 'Cidade', 

@@ -13,8 +13,8 @@
           <field name="is_on_service_invoice" attrs="{'invisible':[('fiscal_type','=','service')]}"/>
         </field>
         <notebook position="inside">
-          <page string="l10n br">
-            <field colspan="4" nolabel="1" mode="tree,form" name="fiscal_category_operation_default_ids" widget="one2many_list">
+          <page string="Localização">
+            <field colspan="4" mode="tree" name="fiscal_category_operation_default_ids" widget="one2many_list">
               <form string="Operações Padrões">
                 <field name="fiscal_operation_category_source_id" required="1" />
                 <field name="fiscal_operation_category_destination_id" required="1" />
@@ -37,11 +37,11 @@
       <field name="arch" type="xml">
 
         <field name="taxes_id" position="replace">
-          <field name="taxes_id" nolabel="1" colspan="2"
+          <field name="taxes_id" colspan="2"
           attrs="{'readonly':[('sale_ok','=',0)]}" domain="[('company_id','=',company_id)]"/>
         </field>
         <field name="supplier_taxes_id" position="replace">
-          <field name="supplier_taxes_id" nolabel="1" colspan="2"
+          <field name="supplier_taxes_id" colspan="2"
           attrs="{'readonly':[('purchase_ok','=',0)]}" domain="[('company_id','=',company_id)]"/>
         </field>
 
@@ -74,8 +74,8 @@
       <field name="inherit_id" ref="product.product_template_form_view"/>
       <field name="arch" type="xml">
         <notebook>
-          <page position="inside" string="l10n br">
-            <field colspan="4" nolabel="1" mode="tree,form" name="fiscal_category_operation_default_ids" widget="one2many_list">
+          <page position="inside" string="Localização">
+            <field colspan="4" mode="tree" name="fiscal_category_operation_default_ids" widget="one2many_list">
               <form string="Operações Padrões">
                 <field name="fiscal_operation_category_source_id" required="1" />
                 <field name="fiscal_operation_category_destination_id" required="1" />

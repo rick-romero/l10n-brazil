@@ -10,7 +10,7 @@
             <field name="arch" type="xml">
                 <field name="account_collected_id" position="before">
                     <field name="account_result_id" domain="[('type','&lt;&gt;','view'),('type','&lt;&gt;','consolidation')]"/>
-                    <label colspan="2" nolabel="1" string="Deixe vazio para nao contabilizar nas contas de resultado."/>
+                    <label colspan="2" string="Deixe vazio para nao contabilizar nas contas de resultado."/>
                 </field>
             </field>
         </record>

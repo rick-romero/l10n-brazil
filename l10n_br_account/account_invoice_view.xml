@@ -10,7 +10,7 @@
 			<field name="arch" type="xml">
 				 <page string="Payments" position="before">
 				 	<page string="Vencimentos">
-				 		<field colspan="4" nolabel="1" name="move_line_receivable_id"/>
+				 		<field colspan="4" name="move_line_receivable_id"/>
 				 	</page>
 				</page>
 			</field>
@@ -140,7 +140,7 @@
 								</page>
 								<page string="CFOP">
 									<separator colspan="4" string="CFOP"/>
-									<field colspan="4" nolabel="1" name="cfop_ids" />
+									<field colspan="4" name="cfop_ids" />
 								</page>
 							</notebook>
 					</page>
@@ -260,7 +260,7 @@
 								</page>
 								<page string="CFOP">
 									<separator colspan="4" string="CFOP"/>
-									<field colspan="4" nolabel="1" name="cfop_ids" />
+									<field colspan="4" name="cfop_ids" />
 								</page>
 							</notebook>
 					</page>
@@ -355,7 +355,7 @@
 			<field name="arch" type="xml">
 				 <page string="Payments" position="before">
 				 	<page string="Vencimentos">
-				 		<field colspan="4" nolabel="1" name="move_line_receivable_id"/>
+				 		<field colspan="4" name="move_line_receivable_id"/>
 				 	</page>
 				</page>
 			</field>
@@ -395,8 +395,8 @@
 								<field colspan="2" name="name"/>
 								<label string="Quantity :" align="1.0"/>
 								<group colspan="1" col="2">
-									<field name="quantity" nolabel="1"/>
-									<field name="uos_id" on_change="uos_id_change(product_id, uos_id, quantity, name, parent.type, parent.partner_id, parent.fiscal_position, price_unit, parent.currency_id, context, parent.company_id)" nolabel="1"/>
+									<field name="quantity" />
+									<field name="uos_id" on_change="uos_id_change(product_id, uos_id, quantity, name, parent.type, parent.partner_id, parent.fiscal_position, price_unit, parent.currency_id, context, parent.company_id)" />
 								</group>
 								<field name="price_unit"/>
 								<field domain="[('company_id', '=', parent.company_id), ('journal_id', '=', parent.journal_id), ('type', '&lt;&gt;', 'view')]" name="account_id" on_change="onchange_account_id(product_id, parent.partner_id, parent.type, parent.fiscal_position,account_id)"/>
@@ -408,7 +408,7 @@
 								<field colspan="4" name="cfop_id" />
 								<field name="price_total"/>								
 								<separator colspan="4" string="Taxes"/>
-								<field colspan="4" name="invoice_line_tax_id" context="{'type':parent.type}" domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]" nolabel="1"/>
+								<field colspan="4" name="invoice_line_tax_id" context="{'type':parent.type}" domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]" />
    							</page>
 							<page position="inside" string="Impostos">
 								<notebook>

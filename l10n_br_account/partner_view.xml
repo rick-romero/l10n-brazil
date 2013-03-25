@@ -46,7 +46,6 @@
         <field name="acc_number" position="replace">
           <field name="bra_number" />
           <field name="bra_number_dig" />
-          <newline/>
           <field name="acc_number" />
           <field name="acc_number_dig" />
         </field>

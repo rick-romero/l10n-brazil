@@ -23,6 +23,7 @@
 
 from osv import osv, fields
 from tools.translate import _
+import re
 
 
 class res_company(osv.osv):
@@ -87,5 +88,19 @@ class res_company(osv.osv):
             result['value']['l10n_br_city_id'] = obj_city['id']
 
         return result
+
+    def onchange_mask_zip(self, cr, uid, ids, zip):
+        result = {'value': {'zip': False}}
+
+        if not zip:
+            return result
+
+        val = re.sub('[^0-9]', '', zip)
+
+        if len(val) == 8:
+            zip = "%s-%s" % (val[0:5], val[5:8])
+            result['value']['zip'] = zip
+        return result
+
 
 res_company()

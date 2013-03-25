@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #################################################################################
 #                                                                               #
 # Copyright (C) 2009  Renato Lima - Akretion                                    #
@@ -25,12 +25,19 @@ class stock_incoterms(osv.osv):
     _inherit = "stock.incoterms"
 
     _columns = {
-                'freight_responsibility': fields.selection([('0', 'Emitente'), ('1', 'Destinatário'), ('2', 'Terceiros'), ('9', 'Sem Frete')], 'Frete por Conta', required=True),
-                }
+        'freight_responsibility': fields.selection(
+            [('0', u'Emitente'),
+             ('1', u'Destinatário'),
+             ('2', u'Terceiros'),
+             ('9', u'Sem Frete')],
+            u'Frete por Conta',
+            required=True,
+            ),
+        }
 
     _defaults = {
-                 'freight_responsibility': 0,
-                 }
+        'freight_responsibility': '0',
+        }
 
 stock_incoterms()
 
@@ -54,32 +61,28 @@ class stock_picking(osv.osv):
                 'fiscal_operation_category_id': _default_fiscal_operation_category,
                 }
 
-    def _fiscal_position_map(self, cr, uid, partner_id, partner_invoice_id=False,
-                             company_id=False, fiscal_operation_category_id=False):
+    def _fiscal_position_map(self, cr, uid, partner_id, company_id=False,
+                             fiscal_operation_category_id=False):
         obj_fiscal_position_rule = self.pool.get('account.fiscal.position.rule')
-        result = obj_fiscal_position_rule.fiscal_position_map(cr, uid, partner_id, partner_invoice_id,
-                                                              company_id, fiscal_operation_category_id,
-                                                              context={'use_domain': ('use_picking', '=', True)})
+        result = obj_fiscal_position_rule.fiscal_position_map(
+            cr, uid, partner_id, company_id, fiscal_operation_category_id,
+            context={'use_domain': ('use_picking', '=', True)}
+            )
         return result
 
-    def onchange_partner_in(self, cr, uid, context=None, partner_address_id=None,
+    def onchange_partner_in(self, cr, uid, context=None, partner_id=None,
                             company_id=False, fiscal_operation_category_id=False):
-        result = super(stock_picking, self).onchange_partner_in(cr, uid, context, partner_address_id)
-        if result and partner_address_id:
-            partner_addr = self.pool.get('res.partner.address').browse(cr, uid, partner_address_id)
-            partner_id = partner_addr.partner_id and partner_addr.partner_id.id
-            fiscal_data = self._fiscal_position_map(cr, uid, partner_id, partner_address_id, company_id, fiscal_operation_category_id)
+        result = super(stock_picking, self).onchange_partner_in(cr, uid, context, partner_id)
+        if result and partner_id:
+            fiscal_data = self._fiscal_position_map(cr, uid, partner_id.id, company_id, fiscal_operation_category_id)
             result['value'].update(fiscal_data)
         return result
 
-    def onchange_fiscal_operation_category_id(self, cr, uid, ids, partner_address_id,
+    def onchange_fiscal_operation_category_id(self, cr, uid, ids, partner_id,
                                               company_id=False, fiscal_operation_category_id=False):
         result = {'value': {}}
-        if partner_address_id:
-            partner_addr = self.pool.get('res.partner.address').browse(cr, uid, partner_address_id)
-            partner_id = partner_addr.partner_id and partner_addr.partner_id.id
-            fiscal_data = self._fiscal_position_map(cr, uid, partner_id, partner_address_id, company_id, fiscal_operation_category_id)
-            result['value'].update(fiscal_data)
+        fiscal_data = self._fiscal_position_map(cr, uid, partner_id.id, company_id, fiscal_operation_category_id)
+        result['value'].update(fiscal_data)
         return result
 
     def _prepare_invoice_line(self, cr, uid, group, picking, move_line, invoice_id,
@@ -109,5 +112,3 @@ class stock_picking(osv.osv):
         return res
 
 stock_picking()
-
-# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

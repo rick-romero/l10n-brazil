@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #################################################################################
 #                                                                               #
 # Copyright (C) 2009  Renato Lima - Akretion                                    #
@@ -22,7 +22,7 @@ from osv import osv, fields
 
 class l10n_br_account_cfop(osv.osv):
     _name = 'l10n_br_account.cfop'
-    _description = 'CFOP - Código Fiscal de Operações e Prestações'
+    _description = u'CFOP - Código Fiscal de Operações e Prestações'
     
     def name_search(self, cr, user, name, args=None, operator='ilike', context=None, limit=80):
         if not args:
@@ -61,7 +61,7 @@ l10n_br_account_cfop()
 
 class l10n_br_account_service_type(osv.osv):
     _name = 'l10n_br_account.service.type'
-    _description = 'Cadastro de Operações Fiscais de Serviço'
+    _description = u'Cadastro de Operações Fiscais de Serviço'
 
     _columns = {
                 'code': fields.char('Código', size=16, required=True),
@@ -95,7 +95,7 @@ l10n_br_account_service_type()
 
 class l10n_br_account_fiscal_document(osv.osv):
     _name = 'l10n_br_account.fiscal.document'
-    _description = 'Tipo de Documento Fiscal'
+    _description = u'Tipo de Documento Fiscal'
 
     _columns = {
         'code': fields.char('Codigo', size=8,required=True),
@@ -108,7 +108,7 @@ l10n_br_account_fiscal_document()
 
 class l10n_br_account_fiscal_operation_category(osv.osv):
     _name = 'l10n_br_account.fiscal.operation.category'
-    _description = 'Categoria de Operações Fiscais'
+    _description = u'Categoria de Operações Fiscais'
 
     _columns = {
         'code': fields.char('Código', size=24, required=True),
@@ -133,11 +133,11 @@ l10n_br_account_fiscal_operation_category()
 
 class l10n_br_account_fiscal_operation(osv.osv):
     _name = 'l10n_br_account.fiscal.operation'
-    _description = 'Operações fiscais'
+    _description = u'Operações Fiscais'
 
     _columns = {
-        'code': fields.char('Código', size=16, required=True),
-        'name': fields.char('Descrição', size=64),
+        'code': fields.char(u'Código', size=16, required=True),
+        'name': fields.char(u'Descrição', size=64),
         'type': fields.selection([('input', 'Entrada'), ('output', 'Saida')], 'Tipo', requeried=True),
         'fiscal_operation_category_id': fields.many2one('l10n_br_account.fiscal.operation.category', 'Categoria',
                                                         domain="[('type','=',type)]", requeried=True),
@@ -188,7 +188,7 @@ l10n_br_account_fiscal_operation()
 
 class l10n_br_account_fiscal_operation_line(osv.osv):
     _name = 'l10n_br_account.fiscal.operation.line'
-    _description = 'Linhas das operações ficais'
+    _description = u'Linhas das Operações Fiscais'
 
     _columns = {
         'company_id': fields.many2one('res.company', 'Empresa', requeried=True),
@@ -206,7 +206,7 @@ l10n_br_account_fiscal_operation_line()
 
 class l10n_br_account_document_serie(osv.osv):
     _name = 'l10n_br_account.document.serie'
-    _description = 'Serie de documentos fiscais'
+    _description = u'Série de Documentos Fiscais'
     
     _columns = {
                 'code': fields.char('Código', size=3, required=True),
@@ -248,7 +248,7 @@ l10n_br_account_document_serie()
 
 class l10n_br_account_partner_fiscal_type(osv.osv):
     _name = 'l10n_br_account.partner.fiscal.type'
-    _description = 'Tipo Fiscal de Parceiros'
+    _description = u'Tipo Fiscal de Parceiros'
 
     _columns = {
              'code': fields.char('Código', size=16, required=True),
@@ -263,7 +263,7 @@ l10n_br_account_partner_fiscal_type()
 
 class l10n_br_account_cnae(osv.osv):
     _name = 'l10n_br_account.cnae'
-    _description = 'Cadastro de CNAE'
+    _description = u'Cadastro de CNAE'
     
     def name_get(self, cr, uid, ids, context=None):
         if not ids:

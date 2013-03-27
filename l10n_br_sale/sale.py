@@ -94,7 +94,7 @@ class sale_order(osv.osv):
             ),
        }
 
-    def onchange_partner_id(self, cr, uid, ids, partner_id=False, partner_invoice_id=False,
+    def onchange_partner_id(self, cr, uid, ids, partner_id=False,
                             shop_id=False, fiscal_operation_category_id=False):
 
         result = super(sale_order, self).onchange_partner_id(cr, uid, ids, partner_id)
@@ -109,43 +109,20 @@ class sale_order(osv.osv):
             fiscal_operation_category_id = obj_shop.default_fo_category_id.id
             result['fiscal_operation_category_id'] = fiscal_operation_category_id
 
-        partner_invoice_id = result['value'].get('partner_invoice_id', False)
         obj_fiscal_position_rule = self.pool.get('account.fiscal.position.rule')
-        fiscal_result = obj_fiscal_position_rule.fiscal_position_map(cr, uid, partner_id, partner_invoice_id,
-                                                                     company_id, fiscal_operation_category_id,
-                                                                     context={'use_domain': ('use_sale', '=', True)})
+        fiscal_result = obj_fiscal_position_rule.fiscal_position_map(
+            cr, uid, partner_id, company_id, fiscal_operation_category_id,
+            context={'use_domain': ('use_sale', '=', True)}
+            )
 
         result['value'].update(fiscal_result)
 
         return result
 
-    def onchange_partner_invoice_id(self, cr, uid, ids, partner_invoice_id=False, partner_id=False,
-                                    shop_id=False, fiscal_operation_category_id=False):
-
-        result = {'value': {}}
-
-        if not shop_id or not partner_id:
-            return result
-
-        obj_shop = self.pool.get('sale.shop').browse(cr, uid, shop_id)
-        company_id = obj_shop.company_id.id
-
-        if not fiscal_operation_category_id:
-            fiscal_operation_category_id = obj_shop.default_fo_category_id.id
-            result['fiscal_operation_category_id'] = fiscal_operation_category_id
-
-        result = super(sale_order, self).onchange_partner_invoice_id(cr, uid, ids, partner_invoice_id, partner_id, shop_id)
-        obj_fiscal_position_rule = self.pool.get('account.fiscal.position.rule')
-        fiscal_result = obj_fiscal_position_rule.fiscal_position_map(cr, uid, partner_id, partner_invoice_id, company_id, fiscal_operation_category_id, context={'use_domain': ('use_sale', '=', True)})
-
-        result['value'].update(fiscal_result)
-
-        return result
-
-    def onchange_shop_id(self, cr, uid, ids, shop_id=False, partner_id=False, partner_invoice_id=False,
+    def onchange_shop_id(self, cr, uid, ids, shop_id=False, partner_id=False,
                          fiscal_operation_category_id=False):
 
-        result = super(sale_order, self).onchange_shop_id(cr, uid, ids, shop_id, partner_id, partner_invoice_id)
+        result = super(sale_order, self).onchange_shop_id(cr, uid, ids, shop_id, partner_id)
 
         if not shop_id:
             return result
@@ -159,13 +136,16 @@ class sale_order(osv.osv):
             return result
 
         obj_fiscal_position_rule = self.pool.get('account.fiscal.position.rule')
-        fiscal_result = obj_fiscal_position_rule.fiscal_position_map(cr, uid, partner_id, partner_invoice_id, company_id, fiscal_operation_category_id, context={'use_domain': ('use_sale', '=', True)})
+        fiscal_result = obj_fiscal_position_rule.fiscal_position_map(
+            cr, uid, partner_id, company_id, fiscal_operation_category_id,
+            context={'use_domain': ('use_sale', '=', True)}
+            )
 
         result['value'].update(fiscal_result)
 
         return result
 
-    def onchange_fiscal_operation_category_id(self, cr, uid, ids, partner_id, partner_invoice_id=False,
+    def onchange_fiscal_operation_category_id(self, cr, uid, ids, partner_id, 
                                               shop_id=False, fiscal_operation_category_id=False):
 
         result = {'value': {'fiscal_operation_id': False, 'fiscal_position': False}}
@@ -180,9 +160,11 @@ class sale_order(osv.osv):
 
         obj_fiscal_position_rule = self.pool.get('account.fiscal.position.rule')
 
-        fiscal_result = obj_fiscal_position_rule.fiscal_position_map(cr, uid, partner_id, partner_invoice_id,
-                                                                     company_id, fiscal_operation_category_id,
-                                                                     context={'use_domain': ('use_sale', '=', True)})
+        fiscal_result = obj_fiscal_position_rule.fiscal_position_map(
+            cr, uid, partner_id, company_id,
+            fiscal_operation_category_id,
+            context={'use_domain': ('use_sale', '=', True)}
+            )
 
         result['value'].update(fiscal_result)
         del result['value']['fiscal_operation_category_id']
@@ -299,17 +281,6 @@ class sale_order(osv.osv):
                 val += c_tax.get('amount', 0.0)
         return val
 
-    def manual_invoice(self, cr, uid, ids, context=None):
-        for order in self.pool.get('sale.order').browse(cr, uid, ids):
-            for line in order.order_line:
-                if not line.fiscal_operation_id or \
-                    not line.fiscal_operation_category_id:
-                    raise osv.except_osv(
-                        _('Error !'),
-                        u'Faltam dados na(s) linha(s) do pedido.'
-                        )
-        return super(sale_order, self).manual_invoice(cr, uid, ids, context=context)
-
 
 sale_order()
 
@@ -391,11 +362,6 @@ class sale_order_line(osv.osv):
             change_default=True,
             states={'confirmed': [('readonly', True)]}
             ),
-        'address_allotment_id': fields.many2one(
-            'res.partner.address',
-            'Allotment Partner',
-            states={'confirmed': [('readonly', True)]}
-            ),
         'product_uos': fields.many2one(
             'product.uom',
             'Product UoS',
@@ -454,18 +420,14 @@ class sale_order_line(osv.osv):
 
         #res.parnter address information
         obj_partner = self.pool.get('res.partner').browse(cr, uid, partner_id)
-        partner_addr = self.pool.get('res.partner').address_get(cr, uid, [obj_partner.id], ['default'])
         partner_fiscal_type = obj_partner.partner_fiscal_type_id.id
-        partner_addr_default = self.pool.get('res.partner.address').browse(cr, uid, [partner_addr['default']])[0]
-        to_country = partner_addr_default.country_id.id
-        to_state = partner_addr_default.state_id.id
+        to_country = obj_partner.country_id.id
+        to_state = obj_partner.state_id.id
 
         #res.company address information
         obj_shop = self.pool.get('sale.shop').browse(cr, uid, shop_id)
-        company_addr = self.pool.get('res.partner').address_get(cr, uid, [obj_shop.company_id.partner_id.id], ['default'])
-        company_addr_default = self.pool.get('res.partner.address').browse(cr, uid, [company_addr['default']])[0]
-        from_country = company_addr_default.country_id.id
-        from_state = company_addr_default.state_id.id
+        from_country = obj_shop.company_id.partner_id.country_id.id
+        from_state = obj_shop.company_id.partner_id.state_id.id
 
         fsc_pos_id = self.pool.get('account.fiscal.position.rule').search(cr, uid, ['&', ('company_id', '=', obj_shop.company_id.id), ('fiscal_operation_category_id', '=', obj_default_prod_categ.fiscal_operation_category_destination_id.id), ('use_sale', '=', True), ('fiscal_type', '=', obj_shop.company_id.fiscal_type),
                                                                                     '|', ('from_country', '=', from_country), ('from_country', '=', False),

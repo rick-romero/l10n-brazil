@@ -17,7 +17,7 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.          #
 #################################################################################
 
-import tools
+from openerp import tools
 from osv import fields, osv
 
 

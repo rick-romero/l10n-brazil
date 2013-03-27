@@ -49,5 +49,3 @@ class stock_picking(osv.osv):
         return super(stock_picking, self)._invoice_hook(cr, uid, picking, invoice_id)
 
 stock_picking()
-
-# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

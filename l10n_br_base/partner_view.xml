@@ -1,108 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
-	<data>
+  <data>
 
-		<!-- Parceiro Personalizado -->
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_filter">
-			<field name="name">l10n_br_base.partner.filter</field>
-			<field name="model">res.partner</field>
-			<field name="inherit_id" ref="base.view_res_partner_filter"/>
-			<field name="arch" type="xml">
-				<field name="name" position="after">
-					<field name="cnpj_cpf" />
-				</field>
-			</field>
-		</record>
-
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_tree">
-			<field name="name">l10n_br_base.partner.tree</field>
-			<field name="model">res.partner</field>
-			<field name="inherit_id" ref="base.view_partner_tree"/>
-			<field name="arch" type="xml">
-				<field name="name" position="after">
-					<field name="cnpj_cpf" />
-					<field name="inscr_est" />
-				</field>
-			</field>
-		</record>
-		
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_form">
-			<field name="name">l10n_br_base.partner.form</field>
-			<field name="model">res.partner</field>
-			<field name="inherit_id" ref="base.view_partner_form"/>
-			<field name="arch" type="xml">
-			  <field name="parent_id" position="before">
-			    <field name="cnpj_cpf" placeholder="CNPJ/CPF"
-            on_change="onchange_mask_cnpj_cpf(tipo_pessoa,cnpj_cpf)"
-            attrs="{'required':['|',('customer','=',True),('supplier','=',True)]}"/>
-			  </field>
-				<field name="parent_id" position="after">
-					<field name="legal_name" placeholder="Razão Social"
-					  attrs="{'invisible':[('is_company','=',False)]}" />
-					<field name="tipo_pessoa" invisible="1"
-					  on_change="onchange_mask_cnpj_cpf(tipo_pessoa,cnpj_cpf)"/>
-        </field>
-        <field name="title" position="after">
-          <field name="birthday"
-            attrs="{'invisible':[('is_company','=',True)]}" />
-				</field>
-			</field>
-		</record>
-		
-    <record model="ir.ui.view" id="l10n_br_base_view_partner_form1" >
-      <field name="name">l10n_br_base.partner.form1</field>
+    <!-- Parceiro Personalizado -->
+    <record model="ir.ui.view" id="view_l10n_br_base_partner_filter">
+      <field name="name">l10n_br_base.partner.filter</field>
       <field name="model">res.partner</field>
-      <field name="inherit_id" ref="base.view_partner_form"/>
-      <field name="priority">32</field>
+      <field name="inherit_id" ref="base.view_res_partner_filter"/>
       <field name="arch" type="xml">
-        <field name="street" position="replace">
-          <field name="street" placeholder="Logradouro" />
-          <field name="number" placeholder="Número" />
-          <field name="district" placeholder="Bairro" />
-        </field>
-        <field name="street2" position="replace">
-          <field name="street2" placeholder="Complemento" />
-        </field>
-        <field name="zip" position="replace">
-        </field>
-        <field name="country_id" position="replace">
-          <field name="l10n_br_city_id" placeholder="City"
-            on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
-            options='{"no_open": True}' />
-          <field name="zip" placeholder="CEP"
-            on_change="onchange_mask_zip(zip)" />
-        </field>
-        <field name="state_id" position="replace">
-          <field name="country_id" placeholder="Country"
-            options='{"no_open": True}'/>
-          <field name="state_id" placeholder="State"
-            options='{"no_open": True}'/>
-        </field>
-        <field name="city" position="replace">
-          <field name="city" invisible="1" />
+        <field name="name" position="after">
+          <field name="cnpj_cpf" />
         </field>
       </field>
     </record>
-		
-    <record model="ir.ui.view" id="l10n_br_base_view_partner_form5">
-      <field name="name">l10n_br_base.partner.form5</field>
+    <record model="ir.ui.view" id="view_l10n_br_base_partner_tree">
+      <field name="name">l10n_br_base.partner.tree</field>
+      <field name="model">res.partner</field>
+      <field name="inherit_id" ref="base.view_partner_tree"/>
+      <field name="arch" type="xml">
+        <field name="name" position="after">
+          <field name="cnpj_cpf" />
+          <field name="inscr_est" />
+        </field>
+      </field>
+    </record>
+
+    <record model="ir.ui.view" id="view_l10n_br_base_partner_form">
+      <field name="name">l10n_br_base.partner.form</field>
       <field name="model">res.partner</field>
       <field name="inherit_id" ref="base.view_partner_form"/>
       <field name="arch" type="xml">
-        <notebook>
-          <page position="inside" string="Outras Informações">
+        <data>
+          
+          <xpath expr="/form/sheet/group" position="replace">
             <group>
-              <field name="inscr_est" />
-              <field name="inscr_mun" />
-              <field name="suframa" />
-              <field name="codigo_pagamento_gps" />
+              <group>
+                  <label for="type" attrs="{'invisible': [('parent_id','=', False)]}"/>
+                  <div attrs="{'invisible': [('parent_id','=', False)]}" name="div_type">
+                      <field class="oe_inline" name="type"/>
+                      <label for="use_parent_address" class="oe_edit_only"/>
+                      <field name="use_parent_address" class="oe_edit_only oe_inline" on_change="onchange_address(use_parent_address, parent_id)"/>
+                  </div>
+  
+                  <label for="street" string="Address"/>
+                  <div>
+                    <field name="city" invisible="1" />
+                    <field name="street" placeholder="Logradouro" />
+                    <field name="number" placeholder="Número" />
+                    <field name="district" placeholder="Bairro" />
+                    <field name="street2" placeholder="Complemento" />
+                    <field name="country_id" placeholder="País"
+                      options='{"no_open": True}'/>
+                    <field name="state_id" placeholder="Estado"
+                      options='{"no_open": True}'/>
+                    <field name="l10n_br_city_id" placeholder="Cidade"
+                      on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
+                      options='{"no_open": True}' />
+                    <field name="zip" placeholder="CEP"
+                      on_change="onchange_mask_zip(zip)" />
+                  </div>
+                  <field name="website" widget="url" placeholder="e.g. www.openerp.com"/>
+              </group>
+              <group>
+                  <field name="function" placeholder="e.g. Sales Director" attrs="{'invisible': [('is_company','=', True)]}"/>
+                  <field name="phone" placeholder="e.g. +32.81.81.37.00"/>
+                  <field name="mobile"/>
+                  <field name="fax"/>
+                  <field name="email" widget="email"/>
+                  <field name="title" domain="[('domain', '=', 'contact')]" options="{&quot;no_open&quot;: True}" attrs="{'invisible': [('is_company','=', True)]}"/>
+              </group>
             </group>
-          </page>
-        </notebook>
+          </xpath>
+
+          <field name="parent_id" position="before">
+            <field name="cnpj_cpf" placeholder="CNPJ/CPF"
+              on_change="onchange_mask_cnpj_cpf(tipo_pessoa,cnpj_cpf)"
+              attrs="{'required':['|',('customer','=',True),('supplier','=',True)]}"/>
+          </field>
+          <field name="parent_id" position="after">
+            <field name="legal_name" placeholder="Razão Social"
+              attrs="{'invisible':[('is_company','=',False)]}" />
+            <field name="tipo_pessoa" invisible="1"
+              on_change="onchange_mask_cnpj_cpf(tipo_pessoa,cnpj_cpf)"/>
+          </field>
+          <field name="title" position="after">
+            <field name="birthday"
+              attrs="{'invisible':[('is_company','=',True)]}" />
+          </field>
+  
+          <notebook>
+            <page position="inside" string="Outras Informações">
+              <group>
+                <field name="inscr_est" />
+                <field name="inscr_mun" />
+                <field name="suframa" />
+                <field name="codigo_pagamento_gps" />
+              </group>
+            </page>
+          </notebook>
+        </data>
       </field>
     </record>
-		
-		<!-- res.partner.bank -->
+
+    <!-- res.partner.bank -->
     <record model="ir.ui.view" id="view_l10n_br_base_partner_bank_form">
       <field name="name">view_l10n_br_base.partner.bank.form</field>
       <field name="model">res.partner.bank</field>
@@ -121,41 +121,38 @@
           <field name="district" placeholder="Bairro" />
           <field name="street2" placeholder="Complemento" />
         </field>
-        <field name="zip" position="replace">
-        </field>
+        <field name="zip" position="replace"></field>
         <field name="country_id" position="replace">
           <field name="l10n_br_city_id" placeholder="City"
-            on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
-            options='{"no_open": True}' />
+          on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
+          options='{"no_open": True}' />
           <field name="zip" placeholder="CEP"
-            on_change="onchange_mask_zip(zip)" />
+          on_change="onchange_mask_zip(zip)" />
         </field>
         <field name="state_id" position="replace">
           <field name="country_id" placeholder="Country"
-            options='{"no_open": True}'/>
+          options='{"no_open": True}'/>
           <field name="state_id" placeholder="State"
-            options='{"no_open": True}'/>
+          options='{"no_open": True}'/>
         </field>
         <field name="city" position="replace">
           <field name="city" invisible="1" />
         </field>
       </field>
     </record>
-
-		<record model="ir.ui.view" id="view_l10n_br_base_partner_bank_tree">
-			<field name="name">view_l10n_br_base.partner.bank.tree</field>
-			<field name="model">res.partner.bank</field>
-			<field name="inherit_id" ref="base.view_partner_bank_tree"/>
-			<field name="arch" type="xml">
-				<field name="acc_number" position="replace">
-					<field name="acc_number"/>
-					<field name="acc_number_dig"/>
-					<field name="bra_number"/>
-					<field name="bra_number_dig"/>		
-				</field>
-			</field>
-		</record>
-
+    <record model="ir.ui.view" id="view_l10n_br_base_partner_bank_tree">
+      <field name="name">view_l10n_br_base.partner.bank.tree</field>
+      <field name="model">res.partner.bank</field>
+      <field name="inherit_id" ref="base.view_partner_bank_tree"/>
+      <field name="arch" type="xml">
+        <field name="acc_number" position="replace">
+          <field name="acc_number"/>
+          <field name="acc_number_dig"/>
+          <field name="bra_number"/>
+          <field name="bra_number_dig"/>
+        </field>
+      </field>
+    </record>
     <record model="ir.ui.view" id="l10n_br_base_view_company_form">
       <field name="name">l10n_br_base.company.form</field>
       <field name="model">res.company</field>
@@ -170,20 +167,19 @@
         <field name="street2" position="replace">
           <field name="street2" placeholder="Complemento" />
         </field>
-        <field name="zip" position="replace">
-        </field>
+        <field name="zip" position="replace"></field>
         <field name="country_id" position="replace">
           <field name="l10n_br_city_id" placeholder="City"
-            on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
-            options='{"no_open": True}' />
+          on_change="onchange_l10n_br_city_id(l10n_br_city_id)"
+          options='{"no_open": True}' />
           <field name="zip" placeholder="CEP"
-            on_change="onchange_mask_zip(zip)" />
+          on_change="onchange_mask_zip(zip)" />
         </field>
         <field name="state_id" position="replace">
           <field name="country_id" placeholder="Country"
-            options='{"no_open": True}'/>
+          options='{"no_open": True}'/>
           <field name="state_id" placeholder="State"
-            options='{"no_open": True}'/>
+          options='{"no_open": True}'/>
         </field>
         <field name="city" position="replace">
           <field name="city" invisible="1" />
@@ -191,5 +187,5 @@
       </field>
     </record>
 
-	</data>
+  </data>
 </openerp>

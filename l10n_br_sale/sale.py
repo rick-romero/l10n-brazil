@@ -95,7 +95,8 @@ class sale_order(osv.osv):
        }
 
     def onchange_partner_id(self, cr, uid, ids, partner_id=False,
-                            shop_id=False, fiscal_operation_category_id=False):
+                            shop_id=False, fiscal_operation_category_id=False,
+                            context=None):
 
         result = super(sale_order, self).onchange_partner_id(cr, uid, ids, partner_id)
 

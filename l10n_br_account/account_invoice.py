@@ -682,13 +682,13 @@ class account_invoice(osv.osv):
                 strErro += u'Nota Fiscal - Número da nota fiscal, a série deve ter uma sequencia interna\n'
 
             #Emitente
-            if not inv.company_id.partner_id.legal_name:
+            if not inv.company_id.legal_name:
                 strErro += u'Emitente - Razão Social\n'
 
-            if not inv.company_id.partner_id.name:
+            if not inv.company_id.name:
                 strErro += u'Emitente - Fantasia\n'
 
-            if not inv.company_id.partner_id.cnpj_cpf:
+            if not inv.company_id.cnpj:
                 strErro += u'Emitente - CNPJ/CPF\n'
 
             if not company_addr_default.street:
@@ -703,7 +703,7 @@ class account_invoice(osv.osv):
             if not inv.company_id.cnae_main_id:
                 strErro += u'Emitente / CNAE Principal\n'
                 
-            if not inv.company_id.partner_id.inscr_est:
+            if not inv.company_id.inscr_est:
                 strErro += u'Emitente / Inscrição Estadual\n'
 
             if not company_addr_default.state_id:
@@ -731,7 +731,7 @@ class account_invoice(osv.osv):
                     strErro += u'Emitente / Endereço - Código do BC do país\n'
         
             #Destinatário
-            if inv.partner_id.tipo_pessoa == 'J' and not inv.partner_id.legal_name:
+            if inv.partner_id.is_company and not inv.partner_id.legal_name:
                 strErro += u'Destinatário - Razão Social\n'
             
             if not inv.partner_id.cnpj_cpf:
@@ -806,7 +806,10 @@ class account_invoice(osv.osv):
                         strErro += u'Produtos e Serviços: %s, Qtde: %s - CST do COFINS\n' % (inv_line.product_id.name, inv_line.quantity)
                 
         if strErro:
-            raise osv.except_osv(_('Error !'), _("Error Validating NFE:\n '%s'") % (strErro, ))
+            raise osv.except_osv(
+                _('Error !'),
+                u"Erro validando NFe:\n '%s'" % (strErro, )
+                )
         
         return True
         
@@ -870,17 +873,17 @@ class account_invoice(osv.osv):
             StrFile += StrB
             
             StrRegC = {
-                       'XNome': normalize('NFKD',unicode(inv.company_id.partner_id.legal_name or '')).encode('ASCII','ignore'), 
-                       'XFant': normalize('NFKD',unicode(inv.company_id.partner_id.name or '')).encode('ASCII','ignore'),
-                       'IE': re.sub('[%s]' % re.escape(string.punctuation), '', inv.company_id.partner_id.inscr_est or ''),
+                       'XNome': normalize('NFKD',unicode(inv.company_id.legal_name or '')).encode('ASCII','ignore'), 
+                       'XFant': normalize('NFKD',unicode(inv.company_id.name or '')).encode('ASCII','ignore'),
+                       'IE': re.sub('[%s]' % re.escape(string.punctuation), '', inv.company_id.inscr_est or ''),
                        'IEST': '',
-                       'IM': re.sub('[%s]' % re.escape(string.punctuation), '', inv.company_id.partner_id.inscr_mun or ''),
+                       'IM': re.sub('[%s]' % re.escape(string.punctuation), '', inv.company_id.inscr_mun or ''),
                        'CNAE': re.sub('[%s]' % re.escape(string.punctuation), '', inv.company_id.cnae_main_id.code or ''),
                        'CRT': inv.company_id.fiscal_type or '',
                        }
             
             #TODO - Verificar, pois quando e informado do CNAE ele exige que a inscricao municipal, parece um bug do emissor da NFE
-            if not inv.company_id.partner_id.inscr_mun:
+            if not inv.company_id.inscr_mun:
                 StrRegC['CNAE'] = ''
             
             StrC = 'C|%s|%s|%s|%s|%s|%s|%s|\n' % (StrRegC['XNome'], StrRegC['XFant'], StrRegC['IE'], StrRegC['IEST'], 
@@ -888,10 +891,7 @@ class account_invoice(osv.osv):
 
             StrFile += StrC
 
-            if inv.company_id.partner_id.tipo_pessoa == 'J':
-                StrC02 = 'C02|%s|\n' % (re.sub('[%s]' % re.escape(string.punctuation), '', inv.company_id.partner_id.cnpj_cpf or ''))
-            else:
-                StrC02 = 'C02a|%s|\n' % (re.sub('[%s]' % re.escape(string.punctuation), '', inv.company_id.partner_id.cnpj_cpf or ''))
+            StrC02 = 'C02|%s|\n' % (re.sub('[%s]' % re.escape(string.punctuation), '', inv.company_id.cnpj or ''))
 
             StrFile += StrC02
 
@@ -1912,19 +1912,15 @@ class account_invoice(osv.osv):
         result['value'].update(fiscal_data)
        
         if fiscal_operation_id:
-        #    obj_fiscal_position = self.pool.get('account.fiscal.position').browse(cr, uid, fiscal_operation_id)
-        #    if not fiscal_operation_id == obj_fiscal_position.fiscal_operation_id.id:
-        #        obj_foperation = self.pool.get('l10n_br_account.fiscal.operation').browse(cr, uid, fiscal_operation_id)
-        #else:
             obj_foperation = self.pool.get('l10n_br_account.fiscal.operation').browse(cr, uid, fiscal_operation_id)
             result['value']['fiscal_position'] = False
             result['fiscal_document_id'] = obj_foperation.fiscal_document_id.id
             #result['document_serie_id'] = obj_foperation.document_serie_id.id
             del result['value']['fiscal_operation_id']
 
-        for inv in self.browse(cr, uid, ids):
-            for line in inv.invoice_line:
-                line.cfop_id = obj_foperation.cfop_id.id
+            for inv in self.browse(cr, uid, ids):
+                for line in inv.invoice_line:
+                    line.cfop_id = obj_foperation.cfop_id.id
 
         return result
 

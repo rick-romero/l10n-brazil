@@ -51,7 +51,7 @@ class purchase_order(osv.osv):
             cur = order.pricelist_id.currency_id
             for line in order.order_line:
                 val1 += line.price_subtotal
-                for c_tax in self.pool.get('account.tax').compute_all(cr, uid, line.taxes_id, line.price_unit, line.product_qty, order.partner_address_id.id, line.product_id.id, order.partner_id)['taxes']:
+                for c_tax in self.pool.get('account.tax').compute_all(cr, uid, line.taxes_id, line.price_unit, line.product_qty, line.product_id.id, order.partner_id)['taxes']:
                     tax_brw = self.pool.get('account.tax').browse(cr, uid, c_tax['id'])
                     if tax_brw.tax_add:
                         val += c_tax.get('amount', 0.0)
@@ -144,21 +144,9 @@ class purchase_order(osv.osv):
                 },
             change_default=True
             ),
-        'partner_address_id': fields.many2one(
-            'res.partner.address',
-            'Address',
-            required=True,
-            states={
-                'to_invoice': [('readonly', True)],
-                'confirmed': [('readonly', True)],
-                'approved': [('readonly', True)],
-                'done': [('readonly', True)]
-                },
-            domain="[('partner_id', '=', partner_id)]"
-            ),
-        'dest_address_id': fields.many2one(
-            'res.partner.address',
-            'Destination Address',
+        'dest_partner_id': fields.many2one(
+            'res.partner',
+            'Destination Partner',
             domain="[('partner_id', '!=', False)]",
             states={
                 'to_invoice': [('readonly', True)],
@@ -168,7 +156,7 @@ class purchase_order(osv.osv):
                 },
             help="Put an address if you want to deliver directly from the supplier to the customer." \
                 "In this case, it will remove the warehouse link and set the customer location."
-        ),
+            ),
         'warehouse_id': fields.many2one(
             'stock.warehouse',
             'Warehouse',
@@ -209,34 +197,25 @@ class purchase_order(osv.osv):
                 'fiscal_operation_category_id': _default_fiscal_operation_category,
                 }
 
-    def _fiscal_position_map(self, cr, uid, ids, partner_id, partner_invoice_id, company_id, fiscal_operation_category_id):
+    def _fiscal_position_map(self, cr, uid, ids, partner_id, company_id, fiscal_operation_category_id):
         obj_fiscal_position_rule = self.pool.get('account.fiscal.position.rule')
 
-        result = obj_fiscal_position_rule.fiscal_position_map(cr, uid, partner_id, partner_invoice_id, company_id,
+        result = obj_fiscal_position_rule.fiscal_position_map(cr, uid, partner_id, company_id,
                                                               fiscal_operation_category_id,
                                                               context={'use_domain': ('use_purchase', '=', True)})
         return result
 
-    def onchange_partner_id(self, cr, uid, ids, partner_id=False, partner_address_id=False,
+    def onchange_partner_id(self, cr, uid, ids, partner_id=False,
                             company_id=False, fiscal_operation_category_id=False):
         result = super(purchase_order, self).onchange_partner_id(cr, uid, ids, partner_id, company_id)
-        if result['value']['partner_address_id']:
-            partner_address_id = result['value']['partner_address_id']
-        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, partner_address_id, company_id, fiscal_operation_category_id)
+        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, company_id, fiscal_operation_category_id)
         result['value'].update(fiscal_data)
         return result
 
-    def onchange_partner_address_id(self, cr, uid, ids, partner_id=False, partner_address_id=False,
-                                    company_id=False, fiscal_operation_category_id=False):
-        result = super(purchase_order, self).onchange_partner_address_id(cr, uid, ids, partner_address_id, company_id)
-        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, partner_address_id, company_id, fiscal_operation_category_id)
-        result['value'].update(fiscal_data)
-        return result
-
-    def onchange_fiscal_operation_category_id(self, cr, uid, ids, partner_id=False, partner_address_id=False,
+    def onchange_fiscal_operation_category_id(self, cr, uid, ids, partner_id=False,
                                               company_id=False, fiscal_operation_category_id=False):
         result = {'value': {}}
-        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, partner_address_id, company_id, fiscal_operation_category_id)
+        fiscal_data = self._fiscal_position_map(cr, uid, ids, partner_id, company_id, fiscal_operation_category_id)
         result['value'].update(fiscal_data)
         return result
 

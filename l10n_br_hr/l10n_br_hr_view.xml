@@ -8,20 +8,19 @@
       <field name="type">form</field>
       <field name="inherit_id" ref="hr_contract.hr_contract_view_form" />
       <field name="arch" type="xml">
-        <xpath expr="/form/group/field[@name='type_id']" position="after">
+        <field name="type_id" position="after">
           <newline/>
           <field name="ocorrencia" />
           <field name="filiado_a_sindicato" />
           <field name="tomador" />
-        </xpath>
-        <xpath expr="/form/notebook/page[@name='information']/group[@name='left_column']/field[@name='date_end']"
-          position="after">
+        </field>
+        <field name="date_end" position="after">
           <field name="optante_fgts"
             attrs="{'invisible':[('date_start','>','1988-10-04')]}" />
           <field name="data_de_opcao"
             attrs="{'invisible':[('optante_fgts','!=',True)]}" />
-        </xpath>
-        <notebook colspan="4">
+        </field>
+        <notebook>
           <page string="Movimentação">
 
             <group col="2" colspan="2" name="left_column">

@@ -9,8 +9,8 @@
       <field name="inherit_id" ref="hr.view_employee_form" />
       <field name="arch" type="xml">
 
-        <xpath expr="/form/notebook/page[@string='Personal Information']/group"
-        position="before">
+        <xpath expr="/form/sheet/notebook/page[@string='Personal Information']/group"
+          position="before">
           <group col="2" colspan="2">
             <separator string="Informações Gerais" colspan="2" />
             <field name="matricula" />
@@ -30,8 +30,8 @@
           </group>
         </xpath>
         <xpath
-        expr="/form/notebook/page[@string='Personal Information']/group/field[@name='country_id']"
-        position="replace">
+          expr="/form/sheet/notebook/page[@string='Personal Information']/group/group/field[@name='country_id']"
+          position="replace">
           <field name="nationality_id" />
           <field name="country_id" string="País" />
           <field name="ano_de_chegada" attrs="{'readonly':[('nationality_id','=',1)]}" />
@@ -79,11 +79,12 @@
           </page>
         </notebook>
 
-        <field name="address_home_id" position="replace"></field>
-        <field name="address_id" position="replace"></field>
-        <field name="work_phone" position="replace"></field>
-        <field name="mobile_phone" position="replace"></field>
-        <field name="work_location" position="replace"></field>
+        <xpath position="replace"
+          expr="/form/sheet/notebook/page[@string='Public Information']/group/group[@string='Contact Information']"
+          ></xpath>
+        <xpath position="replace"
+          expr="/form/sheet/notebook/page[@string='Personal Information']/group/group[@string='Contact Information']"
+          ></xpath>
 
       </field>
     </record>

@@ -25,6 +25,6 @@ import account_invoice
 import hr_payslip
 import hr_employee
 import l10n_br_hr
-import res_partner_address
+import res_partner
 import res_company
 import wizard

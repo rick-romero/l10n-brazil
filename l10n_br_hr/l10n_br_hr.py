@@ -26,6 +26,7 @@ from tools.translate import _
 import re
 import datetime
 
+
 class l10n_br_hr_nationality(osv.osv):
     _name = 'l10n_br_hr.nationality'
     _description = u'Nacionalidade'
@@ -252,14 +253,9 @@ class hr_contract(osv.osv):
         company_obj = self.pool.get('res.company')
         company_id = company_obj._company_default_get(cr, uid, context=context)
         company = company_obj.browse(cr, uid, company_id, context=context)
-        part_obj = self.pool.get('res.partner')
-        address_obj = self.pool.get('res.partner.address')
-        address_data = part_obj.address_get(cr, uid, [company.partner_id.id],
-                                            adr_pref=['default'])
-        if address_data['default']:
-            address = address_obj.browse(cr, uid, address_data['default'],
-                                         context=context)
-            return address
+
+        if company.state_id and company.l10n_br_city_id:
+            return company
         return None
 
     def _get_default_company_state_id(self, cr, uid, context):

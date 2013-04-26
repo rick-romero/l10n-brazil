@@ -25,17 +25,17 @@
     "name": "Brazilian Localization for Human Resources",
     "version": "0.1",
     "author": "PROGE",
-    "category": "Localisation",
+    "category": "Localization",
     "website": "http://proge.com.br",
     "description": """
-    Brazilian Localization for Human Resources
-    Currently it doesn't support companies with CEI subscriptions.
+Brazilian Localization for Human Resources
+Currently it doesn't support companies with CEI subscriptions.
 
-    Generates the following files through wizards:
-    - RAIS
-    - SEFIP*
-    
-    * Currently does not support 650 and 660 "recolhimento" codes
+Generates the following files through wizards:
+- RAIS
+- SEFIP*
+
+* Currently does not support 650 and 660 "recolhimento" codes
     """,
     'depends': [
         'l10n_br_account',
@@ -43,8 +43,7 @@
         'hr_holidays',
         'hr_payroll',
         ],
-    'init_xml': [],
-    'update_xml': [
+    'data': [
         'data/hr.contract.type.csv',
         'data/hr.holidays.status.csv',
         'data/hr_payroll_data.xml',
@@ -59,7 +58,6 @@
         'data/l10n_br_hr.tipo_de_admissao.csv',
         'data/l10n_br_hr.vinculo.csv',
         'security/ir.model.access.csv',
-
         'account_invoice_view.xml',
         'hr_employee_sequence.xml',
         'hr_employee_view.xml',
@@ -68,8 +66,7 @@
         'wizard/rais_view.xml',
         'wizard/sefip_view.xml',
         ],
-    'demo_xml': [],
+    'demo': [],
     'test': [],
     'installable': True,
-    'active': False,
 }

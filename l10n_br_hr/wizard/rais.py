@@ -60,16 +60,15 @@ class line:
             self.content += data
 
 
-class rais(osv.osv_memory):
+class rais(osv.TransientModel):
     _name = 'l10n_br_hr.rais'
     _description = 'Generate RAIS File'
-    _inherit = "ir.wizard.screen"
     _columns = {
         'state': fields.selection([('init', 'init'),
                                    ('done', 'done'),
                                    ], 'state', readonly=True),
         'last_sync_date': fields.datetime('Last Sync Date'),
-        'message': fields.text('Message'),
+        'message': fields.text(u'Mensagem'),
         'file': fields.binary(u'Arquivo', readonly=True),
         'file_name': fields.char(u'Nome do Arquivo', 128, readonly=True),
         'company_id': fields.many2one('res.company', u'Empresa',
@@ -169,11 +168,10 @@ class rais(osv.osv_memory):
             u'Data de Encerramento das Atividades'
             ),
         'em_atividade_no_ano_base': fields.boolean(
-            u'Esteve em Atividade no Ano-Base', required=True
+            u'Esteve em Atividade no Ano-Base',
             ),
         'indicador_centralizacao_contribuicao': fields.boolean(
             u'Indicador de Centralização de Contribuição Sindical',
-            required=True
             ),
         'cnpj_centralizador_contribuicao': fields.char(
             u'CNPJ do Estabelecimento Centralizador da Contribuição Sindical',
@@ -181,38 +179,41 @@ class rais(osv.osv_memory):
             ),
         'filiada_a_sindicato': fields.boolean(
             u'Empresa Filiada a Sindicato',
-            required=True
             ),
+        # Contribuição Associativa (Patronal)
         'sindicato_contribuicao_associativa': fields.many2one(
             'res.partner',
-            u'Sindicato - Contribuição Associativa (Patronal)',
+            u'Contribuição Associativa (Patronal) - Sindicato',
             ),
         'valor_contribuicao_associativa': fields.float(
-            u'Valor - Contribuição Associativa (Patronal)',
+            u'Contribuição Associativa (Patronal) - Valor',
             size=9
             ),
+        # Contribuição (Tributo) Sindical (Patronal)
         'sindicato_contribuicao_sindical': fields.many2one(
             'res.partner',
-            u'Sindicato - Contribuição (Tributo) Sindical (Patronal)',
+            u'Contribuição (Tributo) Sindical (Patronal) - Sindicato',
             ),
         'valor_contribuicao_sindical': fields.float(
-            u'Valor - Contribuição (Tributo) Sindical (Patronal)',
+            u'Contribuição (Tributo) Sindical (Patronal) - Valor',
             size=9
             ),
+        # Contribuição Assistencial (Patronal)
         'sindicato_contribuicao_assistencial': fields.many2one(
             'res.partner',
-            u'Sindicato - Contribuição Assistencial (Patronal)',
+            u'Contribuição Assistencial (Patronal) - Sindicato',
             ),
         'valor_contribuicao_assistencial': fields.float(
-            u'Valor - Contribuição Assistencial (Patronal)',
+            u'Contribuição Assistencial (Patronal) - Valor',
             size=9
             ),
+        # Contribuição Confederativa (Patronal)
         'sindicato_contribuicao_confederativa': fields.many2one(
             'res.partner',
-            u'Sindicato - Contribuição Confederativa (Patronal)',
+            u'Contribuição Confederativa (Patronal) - Sindicato',
             ),
         'valor_contribuicao_confederativa': fields.float(
-            u'Valor - Contribuição Confederativa (Patronal)',
+            u'Contribuição Confederativa (Patronal) - Valor',
             size=9
             ),
         }
@@ -353,7 +354,6 @@ class rais(osv.osv_memory):
     def onchange_responsavel(self, cr, uid, ids, partner_id):
         partner_data = {}
         partner_obj = self.pool.get('res.partner')
-        partner_address_obj = self.pool.get('res.partner.address')
         partner = partner_obj.browse(cr, uid, partner_id)
         if partner:
             tipo_de_inscricao = partner.tipo_pessoa == 'J' and '1' or '4'
@@ -368,33 +368,25 @@ class rais(osv.osv_memory):
             else:
                 partner_data['responsavel_cpf'] = partner.cnpj_cpf
 
-            default_address = partner_obj.address_get(
-                cr, uid, [partner_id], ['default']
-                )
-
-            if default_address['default']:
-                partner_addr = partner_address_obj.browse(
-                    cr, uid, default_address['default']
+            partner_data['responsavel_name'] = partner.name
+            partner_data['responsavel_email'] = partner.email
+            if partner.phone:
+                phone_str = re.sub(
+                    '[^0-9]', '', str(partner.phone)
                     )
-                partner_data['responsavel_name'] = partner_addr.name
-                partner_data['responsavel_email'] = partner_addr.email
-                if partner_addr.phone:
-                    phone_str = re.sub(
-                        '[^0-9]', '', str(partner_addr.phone)
-                        )
-                    partner_data['responsavel_phone_ddd'] = int(phone_str[:2])
-                    partner_data['responsavel_phone'] = int(phone_str[2:])
+                partner_data['responsavel_phone_ddd'] = int(phone_str[:2])
+                partner_data['responsavel_phone'] = int(phone_str[2:])
 
-                partner_data['responsavel_street'] = partner_addr.street
-                partner_data['responsavel_number'] = partner_addr.number
-                partner_data['responsavel_street2'] = partner_addr.street2
-                partner_data['responsavel_district'] = partner_addr.district
-                if partner_addr.zip:
-                    partner_data['responsavel_zip'] = int(re.sub(
-                        '[^0-9]', '', str(partner_addr.zip)
-                        ))
-                partner_data['responsavel_l10n_br_city_id'] = \
-                    partner_addr.l10n_br_city_id.id
+            partner_data['responsavel_street'] = partner.street
+            partner_data['responsavel_number'] = partner.number
+            partner_data['responsavel_street2'] = partner.street2
+            partner_data['responsavel_district'] = partner.district
+            if partner.zip:
+                partner_data['responsavel_zip'] = int(re.sub(
+                    '[^0-9]', '', str(partner.zip)
+                    ))
+            partner_data['responsavel_l10n_br_city_id'] = \
+                partner.l10n_br_city_id.id
 
         return {'value': partner_data}
 
@@ -551,8 +543,8 @@ class rais(osv.osv_memory):
             # 024 a 075  52  Alfanum  Razão Social
             type1.write_str(company.legal_name, 52)
 
-            if company.partner_id.address:
-                company_address = company.partner_id.address[0]
+            if company.partner_id:
+                company_address = company.partner_id
 
                 # 076 a 115  40  Alfanum  Logradouro
                 type1.write_str(company_address.street, 40)
@@ -1320,13 +1312,22 @@ class rais(osv.osv_memory):
                 },
                 context=context)
 
-            return True
+        ir_model_data = self.pool.get('ir.model.data')
+        __, view_id = ir_model_data.get_object_reference(
+            cr, uid, 'l10n_br_hr', 'view_l10n_br_hr_rais_generate_form'
+            )
 
-        self.write(cr, uid, ids, {
-            'state': state,
-            'message': message,
-            })
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'l10n_br_hr.rais',
+            'res_id': ids[0],
+            'view_type': 'form',
+            'view_mode': 'form',
+            'views': [(view_id, 'form')],
+            'view_id': False,
+            'target': 'new',
+            'nodestroy': True,
+            }
 
-        return False
 
 rais()

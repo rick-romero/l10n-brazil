@@ -116,16 +116,15 @@ class line:
         return date_str
 
 
-class sefip(osv.osv_memory):
+class sefip(osv.TransientModel):
     _name = 'l10n_br_hr.sefip'
     _description = 'Generate SEFIP File'
-    _inherit = "ir.wizard.screen"
     _columns = {
         'state': fields.selection([('init', 'init'),
                                    ('done', 'done'),
                                    ], 'state', readonly=True),
         'last_sync_date': fields.datetime('Last Sync Date'),
-        'message': fields.text('Message'),
+        'message': fields.text(u'Mensagem'),
         'file': fields.binary(u'Arquivo', readonly=True),
         'file_name': fields.char(u'Nome do Arquivo', 128, readonly=True),
         'company': fields.many2one('res.company', u'Empresa',
@@ -502,7 +501,6 @@ class sefip(osv.osv_memory):
     def onchange_responsavel(self, cr, uid, ids, partner_id):
         partner_data = {}
         partner_obj = self.pool.get('res.partner')
-        partner_address_obj = self.pool.get('res.partner.address')
         partner = partner_obj.browse(cr, uid, partner_id)
         if partner:
             tipo_de_inscricao = partner.tipo_pessoa == 'J' and '1' or '3'
@@ -516,22 +514,14 @@ class sefip(osv.osv_memory):
             else:
                 partner_data['responsavel_cpf'] = partner.cnpj_cpf
 
-            default_address = partner_obj.address_get(
-                cr, uid, [partner_id], ['default']
-                )
-
-            if default_address['default']:
-                partner_addr = partner_address_obj.browse(
-                    cr, uid, default_address['default']
-                    )
-                partner_data['responsavel_contato'] = partner_addr.name
-                partner_data['responsavel_email'] = partner_addr.email
-                partner_data['responsavel_telefone'] = partner_addr.phone
-                partner_data['responsavel_endereco'] = partner_addr.street
-                partner_data['responsavel_bairro'] = partner_addr.district
-                partner_data['responsavel_cep'] = partner_addr.zip
-                partner_data['responsavel_pais'] = partner_addr.country_id.id
-                partner_data['responsavel_cidade'] = partner_addr.l10n_br_city_id.id
+            partner_data['responsavel_contato'] = partner.name
+            partner_data['responsavel_email'] = partner.email
+            partner_data['responsavel_telefone'] = partner.phone
+            partner_data['responsavel_endereco'] = partner.street
+            partner_data['responsavel_bairro'] = partner.district
+            partner_data['responsavel_cep'] = partner.zip
+            partner_data['responsavel_pais'] = partner.country_id.id
+            partner_data['responsavel_cidade'] = partner.l10n_br_city_id.id
 
         return {'value': partner_data}
 
@@ -674,7 +664,6 @@ class sefip(osv.osv_memory):
         company = r.company
 
         partner_obj = self.pool.get('res.partner')
-        partner_address_obj = self.pool.get('res.partner.address')
         changes_obj = self.pool.get('l10n_br_hr.changes')
         bank_obj = self.pool.get('res.partner.bank')
         holidays_obj = self.pool.get('hr.holidays')
@@ -834,7 +823,7 @@ class sefip(osv.osv_memory):
             contract_changed_employees = []
             partner_changed_employees = []
             tables = ['hr_employee', 'hr_contract', 'res_partner',
-                      'res_partner_address', 'res_company']
+                      'res_company']
 
             for table in tables:
                 changed_stuff[table] = {}
@@ -865,21 +854,21 @@ class sefip(osv.osv_memory):
                 if employee.id in changed_stuff['hr_employee']:
                     changed_employees.append(employee)
                 if employee.address_home_id.id in changed_stuff\
-                    ['res_partner_address']:
+                    ['res_partner']:
                     address_changed_employees.append(employee)
 
                 for contract in employee.contract_ids:
                     if contract.id in changed_stuff['hr_contract']:
                         contract_changed_employees.append(contract)
 
-                if not employee.address_home_id.partner_id:
+                if not employee.address_home_id:
                     raise osv.except_osv(
                         u'Não foi possível gerar o arquivo.',
                         u'Faltam dados no endereço do colaborador {}.'.format(
                             employee.name
                             ),
                         )
-                if employee.address_home_id.partner_id.id in changed_stuff\
+                if employee.address_home_id.id in changed_stuff\
                     ['res_partner']:
                     partner_changed_employees.append(employee)
 
@@ -1138,43 +1127,38 @@ class sefip(osv.osv_memory):
             # 54  93   Nome Empresa/Razão Social
             r10.write_str(sefip_data.company.legal_name, 40)
             # 94  143  Endereço
-            default_address = partner_obj.address_get(
-                cr, uid, [sefip_data.company.partner_id.id], ['default']
-                )
-            company_address = partner_address_obj.browse(
-                cr, uid, default_address['default'], context=context
-                )
+            company_partner = sefip_data.company.partner_id
 
             address = ''
 
-            if company_address.street:
-                address += company_address.street + ' '
-            if company_address.number:
-                address += company_address.number + ' '
-            if company_address.street2:
-                address += company_address.street2
+            if company_partner.street:
+                address += company_partner.street + ' '
+            if company_partner.number:
+                address += company_partner.number + ' '
+            if company_partner.street2:
+                address += company_partner.street2
 
             r10.write_str(self._clear_alfanum(address), 50)
             # 144 163  Bairro
-            r10.write_str(company_address.district, 20)
+            r10.write_str(company_partner.district, 20)
             # 164 171  CEP
-            r10.write_str(company_address.zip, 8)
+            r10.write_str(company_partner.zip, 8)
             # 172 191  Cidade
             r10.write_str(
-                self._clear_alfanum(company_address.l10n_br_city_id.name), 20
+                self._clear_alfanum(company_partner.l10n_br_city_id.name), 20
                 )
             # 192 193  Unidade da Federação
-            if company_address.state_id:
-                r10.write_str(company_address.state_id.country_id.code, 2)
+            if company_partner.state_id:
+                r10.write_str(company_partner.state_id.country_id.code, 2)
             else:
                 raise osv.except_osv(
                     u'Não foi possível gerar o arquivo.',
                     u'Faltam dados no endereço da empresa.',
                     )
             # 194 205  Telefone
-            r10.write_str(company_address.phone, 12)
+            r10.write_str(company_partner.phone, 12)
             # 206 206  Indicador de Alteração de Endereço
-            if company_address.id in changed_stuff['res_partner_address']:
+            if company_partner.id in changed_stuff['res_partner']:
                 r10.write_str('s', 1)
             else:
                 r10.write_str('n', 1)
@@ -1743,7 +1727,7 @@ class sefip(osv.osv_memory):
             '''
             Registro 14 - Inclusão/alteração do endereço do trabalhador
             '''
-            # res_partner_address
+            # res_partner
             if address_changed_employees:
                 for employee in address_changed_employees:
 
@@ -1873,12 +1857,12 @@ class sefip(osv.osv_memory):
                 # 94  143  Logradouro, rua, nº, apto
                 street = ''
 
-                if company_address.street:
-                    street += company_address.street + ' '
-                if company_address.number:
-                    street += company_address.number + ' '
-                if company_address.street2:
-                    street += company_address.street2
+                if company_partner.street:
+                    street += company_partner.street + ' '
+                if company_partner.number:
+                    street += company_partner.number + ' '
+                if company_partner.street2:
+                    street += company_partner.street2
 
                 r20.write_str(self._clear_alfanum(street), 50)
                 # 144 163  Bairro
@@ -2136,7 +2120,7 @@ class sefip(osv.osv_memory):
                 else:
                     r30.write_str('', 8)
                 # 155 162  Data de Nascimento
-                r30.write_date(employee.address_home_id.partner_id.birthday)
+                r30.write_date(employee.address_home_id.birthday)
                 # 163 167  CBO - Código Brasileiro de Ocupação
                 '''
                 SEFIP pede o código da família, que é composto pelos 4
@@ -2312,13 +2296,22 @@ class sefip(osv.osv_memory):
                 },
                 context=context)
 
-            return True
+        ir_model_data = self.pool.get('ir.model.data')
+        __, view_id = ir_model_data.get_object_reference(
+            cr, uid, 'l10n_br_hr', 'view_l10n_br_hr_sefip_generate_form'
+            )
 
-        self.write(cr, uid, ids, {
-            'state': state,
-            'message': message,
-            })
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'l10n_br_hr.sefip',
+            'res_id': ids[0],
+            'view_type': 'form',
+            'view_mode': 'form',
+            'views': [(view_id, 'form')],
+            'view_id': False,
+            'target': 'new',
+            'nodestroy': True,
+            }
 
-        return False
 
 sefip()

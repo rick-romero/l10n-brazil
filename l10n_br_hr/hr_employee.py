@@ -24,6 +24,7 @@
 from osv import osv, fields
 from tools.translate import _
 import re
+import datetime
 
 
 class hr_employee(osv.osv):
@@ -32,7 +33,7 @@ class hr_employee(osv.osv):
     def _get_address_data(self, cr, uid, ids, field_names, arg, context=None):
         """ Read the 'address' functional fields. """
         result = {}
-        address_obj = self.pool.get('res.partner.address')
+        address_obj = self.pool.get('res.partner')
         for employee in self.browse(cr, uid, ids, context=context):
             result[employee.id] = {}.fromkeys(field_names, False)
             if employee.address_id:
@@ -47,13 +48,16 @@ class hr_employee(osv.osv):
                           context=None):
         """ Write the 'address' functional fields. """
         employee = self.browse(cr, uid, employee_id, context=context)
-        address_obj = self.pool.get('res.partner.address')
+        address_obj = self.pool.get('res.partner')
 
         if employee.address_id:
-            address_obj.write(cr, uid, [employee.address_id.id],
-                              {name: value or False})
+            address_obj.write(cr, uid, [employee.address_id.id], {
+                'name': employee.name + u' - Endereço Comercial',
+                name: value or False,
+                })
         else:
             address_id = address_obj.create(cr, uid, {
+                'name': employee.name + u' - Endereço Comercial',
                 name: value or False,
                 }, context=context)
             self.write(cr, uid, [employee_id], {'address_id': address_id},
@@ -75,7 +79,7 @@ class hr_employee(osv.osv):
                 crossed_names.append((field, fixed_name))
 
         result = {}
-        address_obj = self.pool.get('res.partner.address')
+        address_obj = self.pool.get('res.partner')
         for employee in self.browse(cr, uid, ids, context=context):
             result[employee.id] = {}.fromkeys(e_fields, False)
             if employee.address_home_id:
@@ -91,17 +95,38 @@ class hr_employee(osv.osv):
         """ Write the 'address' functional fields. """
         name = name[len('home_'):]
         employee = self.browse(cr, uid, employee_id, context=context)
-        address_obj = self.pool.get('res.partner.address')
+        address_obj = self.pool.get('res.partner')
 
         if employee.address_home_id:
-            address_obj.write(cr, uid, [employee.address_home_id.id],
-                              {name: value or False})
+            address_obj.write(cr, uid, [employee.address_home_id.id], {
+                'name': employee.name + u' - Endereço Residencial',
+                name: value or False,
+                })
         else:
             address_id = address_obj.create(cr, uid, {
+                'name': employee.name + u' - Endereço Residencial',
                 name: value or False,
                 }, context=context)
             self.write(cr, uid, [employee_id], {'address_home_id': address_id},
                        context=context)
+        return True
+
+    def _set_name_address(self, cr, uid, employee_id, name, value, arg,
+                          context=None):
+        """ Write the 'address' name. """
+        employee = self.browse(cr, uid, employee_id, context=context)
+        address_obj = self.pool.get('res.partner')
+
+        if employee.address_id:
+            address_obj.write(cr, uid, [employee.address_id.id], {
+                'name': value + u' - Endereço Comercial',
+                })
+
+        if employee.address_home_id:
+            address_obj.write(cr, uid, [employee.address_home_id.id], {
+                'name': value + u' - Endereço Residencial',
+                })
+
         return True
 
     _columns = {
@@ -366,9 +391,26 @@ class hr_employee(osv.osv):
         return {'value': {'pis_pasep': pis_pasep}}
 
     def write(self, cr, uid, ids, vals, context=None):
+        result = super(hr_employee, self).write(cr, uid, ids, vals, context)
         changes_obj = self.pool.get('l10n_br_hr.changes')
         changes_obj.register_changes(cr, uid, ids, 'hr_employee', vals)
-        return super(hr_employee, self).write(cr, uid, ids, vals, context)
+
+        # Write the 'address' name.
+        for id in ids:
+            employee = self.browse(cr, uid, id, context=context)
+            address_obj = self.pool.get('res.partner')
+
+            if employee.address_id:
+                address_obj.write(cr, uid, [employee.address_id.id], {
+                    'name': employee.name + u' - Endereço Comercial',
+                    })
+
+            if employee.address_home_id:
+                address_obj.write(cr, uid, [employee.address_home_id.id], {
+                    'name': employee.name + u' - Endereço Residencial',
+                    })
+
+        return result
 
     def get_active_contract(self, cr, uid, eid, date=None, context=None):
         """Get the active contract in the current month"""

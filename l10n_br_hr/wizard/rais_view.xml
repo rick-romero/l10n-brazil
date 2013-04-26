@@ -8,11 +8,10 @@
     <record model="ir.ui.view" id="view_l10n_br_hr_rais_generate_form">
       <field name="name">l10n_br_hr.rais</field>
       <field name="model">l10n_br_hr.rais</field>
-      <field name="type">form</field>
       <field name="arch" type="xml">
-        <form string="Gerar Arquivo RAIS">
-          <field name="state" invisible="1" />
-          <group col="4" colspan="4">
+        <form string="Gerar Arquivo RAIS" version="7.0">
+          <sheet>
+            <field name="state" invisible="1" />
             <group colspan="4" states="init">
               <label colspan="2"
                 string="Esta ação gerará o arquivo RAIS da empresa selecionada." />
@@ -22,104 +21,109 @@
               <notebook colspan="4">
 
                 <page string="Empresa">
-                  <field colspan="2" name="company_id"
-                    on_change="onchange_company_id(company_id)" />
-                  <field name="cnpj" on_change="onchange_cnpj(cnpj)" />
-                  <field colspan="2" name="numero_proprietarios" />
-                  <field colspan="2" name="data_base" />
-
-                  <field colspan="2" name="indicador_retificacao" />
-                  <field colspan="2" name="crea_retificacao" />
-
-                  <field name="participa_pat" invisible="1" readonly="1" />
-                  <field colspan="2" name="pat_trabalhadores_baixa_renda"
-                    attrs="{'invisible':[('participa_pat','!=',True)]}" />
-                  <field colspan="2" name="pat_trabalhadores_alta_renda"
-                    attrs="{'invisible':[('participa_pat','!=',True)]}" />
-
-                  <field colspan="2" name="porcentagem_servico_proprio" />
-                  <field colspan="2" name="porcentagem_admin_cozinhas" />
-                  <field colspan="2" name="porcentagem_refeicao_convenio" />
-                  <field colspan="2" name="porcentagem_refeicoes_transportadas" />
-                  <field colspan="2" name="porcentagem_cesta_alimento" />
-                  <field colspan="2" name="porcentagem_alimentacao_convenio" />
-
-                  <field colspan="2" name="em_atividade_no_ano_base" />
-
-                  <field colspan="2" name="indicador_encerramento" />
-                  <field colspan="2" name="data_de_encerramento"
-                    attrs="{'invisible':[('indicador_encerramento','!=','1')]}" />
-
-                  <field colspan="2" name="para_uso_da_empresa" />
+                  <group>
+                    <field colspan="2" name="company_id"
+                      on_change="onchange_company_id(company_id)" />
+                    <field name="cnpj" on_change="onchange_cnpj(cnpj)" />
+                    <field colspan="2" name="numero_proprietarios" />
+                    <field colspan="2" name="data_base" />
+  
+                    <field colspan="2" name="indicador_retificacao" />
+                    <field colspan="2" name="crea_retificacao" />
+  
+                    <field name="participa_pat" invisible="1" readonly="1" />
+                    <field colspan="2" name="pat_trabalhadores_baixa_renda"
+                      attrs="{'invisible':[('participa_pat','!=',True)]}" />
+                    <field colspan="2" name="pat_trabalhadores_alta_renda"
+                      attrs="{'invisible':[('participa_pat','!=',True)]}" />
+  
+                    <field colspan="2" name="porcentagem_servico_proprio" />
+                    <field colspan="2" name="porcentagem_admin_cozinhas" />
+                    <field colspan="2" name="porcentagem_refeicao_convenio" />
+                    <field colspan="2" name="porcentagem_refeicoes_transportadas" />
+                    <field colspan="2" name="porcentagem_cesta_alimento" />
+                    <field colspan="2" name="porcentagem_alimentacao_convenio" />
+  
+                    <field colspan="2" name="em_atividade_no_ano_base" />
+  
+                    <field colspan="2" name="indicador_encerramento" />
+                    <field colspan="2" name="data_de_encerramento"
+                      attrs="{'invisible':[('indicador_encerramento','!=','1')]}" />
+  
+                    <field colspan="2" name="para_uso_da_empresa" />
+                  </group>
                 </page>
 
                 <page string="Contribuição">
-                  <field colspan="2" name="indicador_centralizacao_contribuicao" />
-                  <field colspan="2" name="cnpj_centralizador_contribuicao"
-                    on_change="onchange_cnpj_centralizador_contribuicao(cnpj_centralizador_contribuicao)"
-                    attrs="{'invisible':[('indicador_centralizacao_contribuicao','!=',True)]}" />
-
-                  <field colspan="2" name="sindicato_contribuicao_associativa" />
-                  <field colspan="2" name="valor_contribuicao_associativa" />
-
-                  <field colspan="2" name="sindicato_contribuicao_sindical" />
-                  <field colspan="2" name="valor_contribuicao_sindical" />
-
-                  <field colspan="2" name="sindicato_contribuicao_assistencial" />
-                  <field colspan="2" name="valor_contribuicao_assistencial" />
-
-                  <field colspan="2" name="sindicato_contribuicao_confederativa" />
-                  <field colspan="2" name="valor_contribuicao_confederativa" />
-
-                  <field colspan="2" name="filiada_a_sindicato" />
+                  <group>
+                    <field colspan="2" name="indicador_centralizacao_contribuicao" />
+                    <field colspan="2" name="cnpj_centralizador_contribuicao"
+                      on_change="onchange_cnpj_centralizador_contribuicao(cnpj_centralizador_contribuicao)"
+                      attrs="{'invisible':[('indicador_centralizacao_contribuicao','!=',True)]}" />
+  
+                    <field colspan="2" name="sindicato_contribuicao_associativa" />
+                    <field colspan="2" name="valor_contribuicao_associativa" />
+  
+                    <field colspan="2" name="sindicato_contribuicao_sindical" />
+                    <field colspan="2" name="valor_contribuicao_sindical" />
+  
+                    <field colspan="2" name="sindicato_contribuicao_assistencial" />
+                    <field colspan="2" name="valor_contribuicao_assistencial" />
+  
+                    <field colspan="2" name="sindicato_contribuicao_confederativa" />
+                    <field colspan="2" name="valor_contribuicao_confederativa" />
+  
+                    <field colspan="2" name="filiada_a_sindicato" />
+                  </group>
                 </page>
 
                 <page string="Responsável pela Entrega">
-                  <field name="responsavel"
-                    on_change="onchange_responsavel(responsavel)" />
-                  <field name="responsavel_legal_name" />
-                  <field name="responsavel_tipo_de_inscricao" />
-                  <field name="responsavel_cnpj"
-                    on_change="onchange_responsavel_cnpj(responsavel_cnpj)"
-                    attrs="{'invisible':[('responsavel_tipo_de_inscricao','!=','1')]}" />
-                  <field name="responsavel_cpf" on_change="onchange_responsavel_cpf(responsavel_cpf)"
-                    attrs="{'invisible':[('responsavel_tipo_de_inscricao','!=','4')]}" />
-                  <field name="responsavel_name" />
-                  <field name="responsavel_email" />
-                  <field name="responsavel_birthday" />
-                  <field name="responsavel_phone_ddd" />
-                  <field name="responsavel_phone" />
-                  <separator string="Endereço" colspan="4" />
-                  <field name="responsavel_street" />
-                  <field name="responsavel_number" />
-                  <field name="responsavel_street2" />
-                  <field name="responsavel_district" />
-                  <field name="responsavel_zip" />
-                  <field name="responsavel_l10n_br_city_id" />
+                  <group>
+                    <field name="responsavel"
+                      on_change="onchange_responsavel(responsavel)" />
+                    <field name="responsavel_legal_name" />
+                    <field name="responsavel_tipo_de_inscricao" />
+                    <field name="responsavel_cnpj"
+                      on_change="onchange_responsavel_cnpj(responsavel_cnpj)"
+                      attrs="{'invisible':[('responsavel_tipo_de_inscricao','!=','1')]}" />
+                    <field name="responsavel_cpf" on_change="onchange_responsavel_cpf(responsavel_cpf)"
+                      attrs="{'invisible':[('responsavel_tipo_de_inscricao','!=','4')]}" />
+                    <field name="responsavel_name" />
+                    <field name="responsavel_email" />
+                    <field name="responsavel_birthday" />
+                    <field name="responsavel_phone_ddd" />
+                    <field name="responsavel_phone" />
+                    <separator string="Endereço" colspan="4" />
+                    <field name="responsavel_street" />
+                    <field name="responsavel_number" />
+                    <field name="responsavel_street2" />
+                    <field name="responsavel_district" />
+                    <field name="responsavel_zip" />
+                    <field name="responsavel_l10n_br_city_id" />
+                  </group>
                 </page>
 
               </notebook>
             </group>
 
             <group colspan="4" states="done">
-              <field name="message" widget="text_tag" nolabel="1"
+              <field name="message" widget="text_tag"
                 readonly="1" colspan="4" />
               <field name="file_name" invisible="1" />
               <field name="file" colspan="4" filename="file_name"
                 attrs="{'invisible':[('file','=','')]}" />
             </group>
+          </sheet>
+          
 
-            <group col="4" colspan="4">
-              <separator string="" colspan="4" />
-              <label colspan="2" string="" />
-              <button string="Cancelar" special="cancel" states="init"
-                icon="gtk-cancel" colspan="1" />
-              <button name="generate_file" string="Prosseguir" type="object"
-                states="init" icon="gtk-go-forward" colspan="1" />
-              <button string="Fechar" special="cancel" states="done"
-                icon="gtk-ok" colspan="1" />
-            </group>
-          </group>
+          <footer>
+            <button string="Cancelar" special="cancel" states="init"
+              icon="gtk-cancel" />
+            <button name="generate_file" string="Prosseguir" type="object"
+              states="init" icon="gtk-go-forward" />
+            <button string="Fechar" special="cancel" states="done"
+              icon="gtk-ok" />
+          </footer>
         </form>
       </field>
     </record>

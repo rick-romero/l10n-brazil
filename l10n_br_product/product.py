@@ -26,8 +26,14 @@ class product_template(osv.osv):
     _columns = {
         'origin': fields.selection(
             (('0', 'Nacional'),
-             ('1', 'Internacional'),
-             ('2', 'Inter. Adiquirido Internamente')),
+             ('1', 'Estrangeira - Importação direta'),
+             ('2', 'Estrangeira - Adquirida no mercado interno'),
+             ('3', 'Nacional, mercadoria ou bem com conteúdo de importação superior a 40%'),
+             ('4', 'Nacional, cuja produção tenha sido feita em conformidade com os processos produtivos básicos de que tratam as legislações citadas nos ajustes'),
+             ('5', 'Nacional, mercadoria ou bem com conteúdo de importação inferior ou igual a 40%'),
+             ('6', 'Estrangeira - Importação direta, sem similar nacional, constante em lista da CAMEX'),
+             ('7', 'Estrangeira - Adquirida no mercado interno, sem similar nacional, constante em lista da CAMEX')
+            ),
             u'Origem'
             ),
         'company_id':fields.many2one('res.company','Company', required=True),

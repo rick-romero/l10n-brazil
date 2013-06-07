@@ -93,7 +93,7 @@
           <field name="use_picking"/>
           <newline/>
           <separator colspan="4" string="Diários Contábeis"/>
-          <field colspan="4" name="journal_ids" />
+          <field colspan="4" name="journal_ids" nolabel="1" />
         </form>
       </field>
     </record>

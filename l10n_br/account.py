@@ -48,10 +48,10 @@ def change_digit_tax(cr):
 
 
 _columns_tax = {
-    'tax_discount': fields.boolean('Tax Discounted in Price', help="Mark it for Brazilian legal Taxes(ICMS, PIS e etc.)."),
-    'tax_add': fields.boolean('Add the Tax Amount in Price', help="Mark it to add the Tax Amount in Price."),
-    'tax_include': fields.boolean('Include the Tax Amount in Price', help="Mark it to include the Tax Amount in Price."),
-    'tax_retain': fields.boolean('Discount the Tax Amount in Price', help="Mark it to for clients who retain the Taxes."),
+    'tax_discount': fields.boolean(u'Desconta esta Taxa no Preço', help="Mark it for Brazilian legal Taxes(ICMS, PIS e etc.)."),
+    'tax_add': fields.boolean(u'Adiciona o Valor da Taxa no Preço', help="Mark it to add the Tax Amount in Price."),
+    'tax_include': fields.boolean(u'Inclui o Valor da Taxa no Preço', help="Mark it to include the Tax Amount in Price."),
+    'tax_retain': fields.boolean(u'Desconta o Valor da Taxa no Preço', help="Mark it to for clients who retain the Taxes."),
     'base_reduction': fields.float('Redution', required=True, digits_compute=change_digit_tax, help="Um percentual decimal em % entre 0-1."),
     'amount_mva': fields.float('MVA Percent', required=True, digits_compute=change_digit_tax, help="Um percentual decimal em % entre 0-1."),
     'type': fields.selection([('percent', 'Percentage'), ('fixed', 'Fixed Amount'),

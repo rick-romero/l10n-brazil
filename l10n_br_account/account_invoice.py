@@ -2314,6 +2314,12 @@ class account_invoice_tax(osv.osv):
     _inherit = "account.invoice.tax"
     _description = "Invoice Tax"
 
+    _columns = {
+        'aliquota': fields.float(
+            u'Alíquota', digits_compute=dp.get_precision('Account')
+            ),
+        }
+
     def compute(self, cr, uid, invoice_id, context={}):
         tax_grouped = {}
         tax_obj = self.pool.get('account.tax')
@@ -2332,6 +2338,8 @@ class account_invoice_tax(osv.osv):
                 val['manual'] = False
                 val['sequence'] = tax['sequence']
                 val['base'] = tax['total_base']
+                val['aliquota'] = tax['aliquota']
+
                 if inv.type in ('out_invoice','in_invoice'):
                     val['base_code_id'] = tax['base_code_id']
                     val['tax_code_id'] = tax['tax_code_id']

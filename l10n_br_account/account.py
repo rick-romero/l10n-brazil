@@ -158,7 +158,9 @@ class account_tax(osv.osv):
             if tax_brw.domain == 'icmsst':
                 tax['total_base'] += (totalex + ipi_value) * (1 + tax_brw.amount_mva)
                 tax['amount'] = (((totalex + ipi_value) * (1 + tax_brw.amount_mva)) * tax_brw.amount) - icms_value
-       
+
+            tax['aliquota'] = tax_brw.amount
+
         return {
             'total': totalex,
             'total_included': totalin,

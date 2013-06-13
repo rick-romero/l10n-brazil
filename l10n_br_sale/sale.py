@@ -93,14 +93,6 @@ class sale_order(orm.Model):
             partner_id, shop_id, context,
             fiscal_category_id=fiscal_category_id)
 
-    def onchange_shop_id(self, cr, uid, ids, shop_id=None, context=None,
-                         partner_id=None, partner_invoice_id=None,
-                         partner_shipping_id=None,
-                         fiscal_category_id=None, **kwargs):
-        return super(sale_order, self).onchange_shop_id(
-            cr, uid, ids, shop_id, context, partner_id, partner_invoice_id,
-            partner_shipping_id, fiscal_category_id=fiscal_category_id)
-
     def onchange_fiscal_category_id(self, cr, uid, ids, partner_id,
                                     partner_invoice_id=False, shop_id=False,
                                     fiscal_category_id=False, context=None):

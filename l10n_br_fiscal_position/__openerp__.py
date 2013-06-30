@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 ###############################################################################
 #                                                                             #
-# Copyright (C) 2009  Renato Lima - Akretion                                  #
+# Copyright (C) 2009-2013  Renato Lima - Akretion                             #
 #                                                                             #
 #This program is free software: you can redistribute it and/or modify         #
 #it under the terms of the GNU Affero General Public License as published by  #
@@ -18,23 +18,46 @@
 ###############################################################################
 
 {
-    'name': 'Brazilian Localization Sale',
-    'description': 'Brazilian Localization for Sale',
+    'name': 'Brazilian Localization - Fiscal Position',
+    'description': '''
+        Brazilian Localization - Module implementing the "fiscal_position" method for defining tax-related properties.
+        The fiscal_position method is the default method used by OpenERP for defining taxes on invoices. To ease the 
+        selection of fiscal positions, the Brazillian Localization uses a "rules" system, defined in the 
+        "account_fiscal_position_rule*" modules.  
+    ''',
     'category': 'Localisation',
     'license': 'AGPL-3',
-    'author': 'Akretion, OpenERP Brasil',
+    'author': 'Akretion, OpenERP Brasil, Brblue',
     'website': 'http://openerpbrasil.org',
     'version': '0.6',
     'depends': [
+        'l10n_br',
+        'l10n_br_base',
+        'l10n_br_product',
         'l10n_br_account',
+        'l10n_br_stock',
+        'l10n_br_sale_stock',
+        'l10n_br_purchase',
+        'account_fiscal_position_rule',
+        'account_fiscal_position_rule_purchase',
+        'account_fiscal_position_rule_sale',
+        'account_fiscal_position_rule_stock',
     ],
     'data': [
+        'account_fiscal_position_rule_view.xml',
+        'account_invoice_view.xml',
+        'purchase_view.xml',
         'sale_view.xml',
+        'stock_view.xml',
+        'l10n_br_account_view.xml',
+        'account_fiscal_position_view.xml',
+        'account_fiscal_position_rule_data.xml',
         'security/ir.model.access.csv',
-        'l10n_br_sale_data.xml',
-        'report/sale_report_view.xml',
     ],
-    'demo': [],
+    'demo': [
+        'account_fiscal_position_rule_demo.xml',
+    ],
+    'test': [],
     'installable': True,
-    'auto_install': True
+    'auto_install': True,
 }

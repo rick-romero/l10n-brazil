@@ -57,67 +57,10 @@ class stock_picking(orm.Model):
         'fiscal_category_id': _default_fiscal_category
     }
 
-    def onchange_partner_in(self, cr, uid, ids, partner_id=None,
-                            company_id=None, context=None,
-                            fiscal_category_id=None):
-        if not context:
-            context = {}
-
-        return super(stock_picking, self).onchange_partner_in(
-            cr, uid, ids, partner_id=partner_id, company_id=company_id,
-            context=context, fiscal_category_id=fiscal_category_id)
-
-    def onchange_fiscal_category_id(self, cr, uid, ids,
-                                    partner_id, company_id=False,
-                                    fiscal_category_id=False,
-                                    context=None, **kwargs):
-        if not context:
-            context = {}
-
-        result = {'value': {'fiscal_position': False}}
-
-        if not partner_id or not company_id:
-            return result
-
-        partner_invoice_id = self.pool.get('res.partner').address_get(
-            cr, uid, [partner_id], ['invoice'])['invoice']
-        partner_shipping_id = self.pool.get('res.partner').address_get(
-            cr, uid, [partner_id], ['delivery'])['delivery']
-
-        kwargs = {
-           'partner_id': partner_id,
-           'partner_invoice_id': partner_invoice_id,
-           'partner_shipping_id': partner_shipping_id,
-           'company_id': company_id,
-           'context': context,
-           'fiscal_category_id': fiscal_category_id
-        }
-        return self._fiscal_position_map(cr, uid, result, **kwargs)
-
-    def onchange_company_id(self, cr, uid, ids, partner_id, company_id=False,
-                            fiscal_category_id=False, context=None, **kwargs):
-        if not context:
-            context = {}
-
-        result = {'value': {'fiscal_position': False}}
-
-        if not partner_id or not company_id:
-            return result
-
-        partner_invoice_id = self.pool.get('res.partner').address_get(
-            cr, uid, [partner_id], ['invoice'])['invoice']
-        partner_shipping_id = self.pool.get('res.partner').address_get(
-            cr, uid, [partner_id], ['delivery'])['delivery']
-
-        kwargs = {
-           'partner_id': partner_id,
-           'partner_invoice_id': partner_invoice_id,
-           'partner_shipping_id': partner_shipping_id,
-           'company_id': company_id,
-           'context': context,
-           'fiscal_category_id': fiscal_category_id
-        }
-        return self._fiscal_position_map(cr, uid, result, **kwargs)
+    
+    def _get_fiscal_data(self, cr, uid, move_line, fiscal_category):
+        ''' Reserved method for getting fiscal data from account.fiscal.position.rule.stock '''
+        return []
 
     def _prepare_invoice_line(self, cr, uid, group, picking, move_line,
                               invoice_id, invoice_vals, context=None):
@@ -129,29 +72,26 @@ class stock_picking(orm.Model):
             move_line.sale_line_id.order_id.fiscal_position
             fiscal_category_id = move_line.sale_line_id.fiscal_category_id or \
             move_line.sale_line_id.order_id.fiscal_category_id
-            refund_fiscal_position = fiscal_category_id.refund_fiscal_category_id or False
+            refund_fiscal_category = fiscal_category_id.refund_fiscal_category_id or False
         elif move_line.purchase_line_id:
             fiscal_position = move_line.purchase_line_id.fiscal_position or \
             move_line.purchase_line_id.order_id.fiscal_position
             fiscal_category_id = move_line.purchase_line_id.fiscal_category_id or move_line.purchase_line_id.order_id.fiscal_category_id
-            refund_fiscal_position = fiscal_category_id.refund_fiscal_category_id or False
+            refund_fiscal_category = fiscal_category_id.refund_fiscal_category_id or False
         else:
             fiscal_position = move_line.picking_id.fiscal_position
             fiscal_category_id = move_line.picking_id.fiscal_category_id
 
         if context.get('inv_type') in ('in_refund', 'out_refund'):
-            if not refund_fiscal_position:
+            if not refund_fiscal_category:
                 raise orm.except_orm(
                     _('Error!'),
                     _("This Fiscal Operation does not has Fiscal Operation \
                     for Returns!"))
 
-            fiscal_category_id = refund_fiscal_position
-            fiscal_data = self._fiscal_position_map(
-                cr, uid, move_line.picking_id.partner_id.id,
-                move_line.picking_id.address_id.id,
-                move_line.picking_id.company_id.id,
-                fiscal_category_id.id)
+            fiscal_category_id = refund_fiscal_category
+            fiscal_data = self._get_fiscal_data(cr, uid, move_line, fiscal_category_id)
+            
 
             fiscal_position = self.pool.get('account.fiscal.position').browse(
                 cr, uid, fiscal_data.get('fiscal_position', 0))
@@ -174,7 +114,7 @@ class stock_picking(orm.Model):
             cr, uid, picking, partner, inv_type, journal_id, context)
 
         comment = ''
-        if picking.fiscal_position.inv_copy_note:
+        if picking.fiscal_position and picking.fiscal_position.inv_copy_note:
             comment += picking.fiscal_position.note or ''
 
         if picking.note:
@@ -211,39 +151,6 @@ class stock_picking_in(stock_picking):
         'fiscal_category_id': _default_fiscal_category
     }
 
-    def _fiscal_position_map(self, cr, uid, result, **kwargs):
-        kwargs['context'].update({'use_domain': ('use_picking', '=', True)})
-        fp_rule_obj = self.pool.get('account.fiscal.position.rule')
-        return fp_rule_obj.apply_fiscal_mapping(cr, uid, result, kwargs)
-
-    def onchange_partner_in(self, cr, uid, ids, partner_id=None,
-                            company_id=None, context=None,
-                            fiscal_category_id=None):
-
-        result = super(stock_picking, self).onchange_partner_in(
-            cr, uid, partner_id, context)
-
-        if not result:
-            result = {'value': {'fiscal_position': False}}
-
-        if not partner_id or not company_id:
-            return result
-
-        partner_invoice_id = self.pool.get('res.partner').address_get(
-            cr, uid, [partner_id], ['invoice'])['invoice']
-        partner_shipping_id = self.pool.get('res.partner').address_get(
-            cr, uid, [partner_id], ['delivery'])['delivery']
-
-        kwargs = {
-           'partner_id': partner_id,
-           'partner_invoice_id': partner_invoice_id,
-           'partner_shipping_id': partner_shipping_id,
-           'company_id': company_id,
-           'fiscal_category_id': fiscal_category_id,
-           'context': context
-        }
-        return self._fiscal_position_map(cr, uid, result, **kwargs)
-
 
 class stock_picking_out(stock_picking):
     _inherit = 'stock.picking.out'
@@ -267,36 +174,3 @@ class stock_picking_out(stock_picking):
         'invoice_state': 'none',
         'fiscal_category_id': _default_fiscal_category,
     }
-
-    def _fiscal_position_map(self, cr, uid, result, **kwargs):
-        kwargs['context'].update({'use_domain': ('use_picking', '=', True)})
-        fp_rule_obj = self.pool.get('account.fiscal.position.rule')
-        return fp_rule_obj.apply_fiscal_mapping(cr, uid, result, kwargs)
-
-    def onchange_partner_in(self, cr, uid, ids, partner_id=None,
-                            company_id=None, context=None,
-                            fiscal_category_id=None):
-
-        result = super(stock_picking, self).onchange_partner_in(
-            cr, uid, partner_id, context)
-
-        if not result:
-            result = {'value': {'fiscal_position': False}}
-
-        if not partner_id or not company_id:
-            return result
-
-        partner_invoice_id = self.pool.get('res.partner').address_get(
-            cr, uid, [partner_id], ['invoice'])['invoice']
-        partner_shipping_id = self.pool.get('res.partner').address_get(
-            cr, uid, [partner_id], ['delivery'])['delivery']
-
-        kwargs = {
-           'partner_id': partner_id,
-           'partner_invoice_id': partner_invoice_id,
-           'partner_shipping_id': partner_shipping_id,
-           'company_id': company_id,
-           'fiscal_category_id': fiscal_category_id,
-           'context': context
-        }
-        return self._fiscal_position_map(cr, uid, result, **kwargs)

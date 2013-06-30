@@ -135,9 +135,7 @@ class l10n_br_account_fiscal_category(orm.Model):
             u'Categoria Fiscal de Devolução',
             domain="[('type', '!=', type), ('fiscal_type', '=', fiscal_type), "
             "('journal_type', 'like', journal_type)]"),
-        'fiscal_position_ids': fields.one2many('account.fiscal.position',
-                                               'fiscal_category_id',
-                                               u'Posições Fiscais'),
+        
         'note': fields.text(u'Observações')
     }
     _defaults = {

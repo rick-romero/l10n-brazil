@@ -27,7 +27,6 @@
     'version': '0.6',
     'depends': [
         'l10n_br_account',
-        'account_fiscal_position_rule_purchase',
     ],
     'data': [
         'l10n_br_purchase_data.xml',

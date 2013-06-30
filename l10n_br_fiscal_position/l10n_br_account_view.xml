@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+		<record model="ir.ui.view" id="view_l10n_br_fiscal_position_account_fiscal_category_form">
+			<field name="name">l10n_br_fiscal_position_l10n_br_account.fiscal.category</field>
+			<field name="model">l10n_br_account.fiscal.category</field>
+			<field name="inherit_id" ref="l10n_br_account.view_l10n_br_account_fiscal_category_form" />
+			<field name="arch" type="xml">
+				<field position="after" name="property_journal">
+					<separator colspan="4" string="Posições Fiscais"/>
+					<field colspan="4" name="fiscal_position_ids" nolabel="1" widget="one2many_list"/>
+				</field>
+			</field>
+		</record>
+	</data>
+</openerp>

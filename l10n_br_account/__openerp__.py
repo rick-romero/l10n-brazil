@@ -29,7 +29,6 @@
         'l10n_br',
         'l10n_br_base',
         'l10n_br_product',
-        'account_fiscal_position_rule',
         'account_product_fiscal_classification',
     ],
     'data': [
@@ -38,7 +37,6 @@
         'data/l10n_br_account_data.xml',
         'account_view.xml',
         'l10n_br_account_sequence.xml',
-        'account_fiscal_position_rule_view.xml',
         'account_invoice_view.xml',
         'account_invoice_workflow.xml',
         'l10n_br_account_view.xml',

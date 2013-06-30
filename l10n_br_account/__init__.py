@@ -24,6 +24,6 @@ import res_partner
 import account
 import account_invoice
 import product
-import account_fiscal_position_rule
 import account_product_fiscal_classification
+import account_fiscal_position
 import wizard

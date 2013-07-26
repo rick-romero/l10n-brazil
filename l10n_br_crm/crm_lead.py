@@ -38,6 +38,28 @@ class crm_lead(osv.osv):
         'district': fields.char(u'Bairro', size=32),
         'number': fields.char(u'Número', size=10),
         }
+    
+    def onchange_partner_br(self, cr, uid, ids, partner_id):
+        result = {}
+        values = {}
+        if partner_id:
+            partner = self.pool.get('res.partner').browse(cr, uid, partner_id)
+            values = {
+                'partner_name' : partner.name,
+                'street' : partner.street,
+                'number' : partner.number,
+                'district' : partner.district,
+                'street2' : partner.street2,
+                'l10n_br_city_id' : partner.l10n_br_city_id.id,
+                'state_id' : partner.state_id and partner.state_id.id or False,
+                'country_id' : partner.country_id and partner.country_id.id or False,
+                'email_from' : partner.email,
+                'phone' : partner.phone,
+                'mobile' : partner.mobile,
+                'fax' : partner.fax,
+                'zip' : partner.zip,
+            }
+        return {'value' : values}
 
     def onchange_l10n_br_city_id(self, cr, uid, ids, l10n_br_city_id):
         result = {'value': {'city': False, 'l10n_br_city_id': False}}

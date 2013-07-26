@@ -22,6 +22,9 @@ import string
 
 from osv import osv, fields
 
+ADDRESS_FIELDS = ('street', 'number', 'street2', 'zip', 'city', 'state_id', 'country_id', 'district')
+POSTAL_ADDRESS_FIELDS = ADDRESS_FIELDS # deprecated, to remove after 7.0  
+
 class res_partner(osv.osv):
 
     _inherit = 'res.partner'
@@ -76,6 +79,64 @@ class res_partner(osv.osv):
     _defaults = {
         'tipo_pessoa': lambda *a: 'F',
         }
+
+    def _address_fields(self, cr, uid, context=None):
+        """ Returns the list of address fields that are synced from the parent
+        when the `use_parent_address` flag is set. """
+        return list(ADDRESS_FIELDS)
+
+    def update_address(self, cr, uid, ids, vals, context=None):
+        address_fields = self._address_fields(cr, uid, context=context)
+        addr_vals = dict((key, vals[key]) for key in address_fields if key in vals)
+        if addr_vals:
+            return super(res_partner, self).write(cr, uid, ids, addr_vals, context)
+
+    def _commercial_sync_from_company(self, cr, uid, partner, context=None):
+        """ Handle sync of commercial fields when a new parent commercial entity is set,
+        as if they were related fields """
+        if partner.commercial_partner_id != partner:
+            commercial_fields = self._commercial_fields(cr, uid, context=context)
+            sync_vals = self._update_fields_values(cr, uid, partner.commercial_partner_id,
+                                                        commercial_fields, context=context)
+            partner.write(sync_vals)
+
+    def _commercial_sync_to_children(self, cr, uid, partner, context=None):
+        """ Handle sync of commercial fields to descendants """
+        commercial_fields = self._commercial_fields(cr, uid, context=context)
+        sync_vals = self._update_fields_values(cr, uid, partner.commercial_partner_id,
+                                                   commercial_fields, context=context)
+        sync_children = [c for c in partner.child_ids if not c.is_company]
+        for child in sync_children:
+            self._commercial_sync_to_children(cr, uid, child, context=context)
+        return self.write(cr, uid, [c.id for c in sync_children], sync_vals, context=context)
+
+    def _fields_sync(self, cr, uid, partner, update_values, context=None):
+        """ Sync commercial fields and address fields from company and to children after create/update,
+        just as if those were all modeled as fields.related to the parent """
+        # 1. From UPSTREAM: sync from parent
+        if update_values.get('parent_id') or update_values.get('use_parent_address'):
+            # 1a. Commercial fields: sync if parent changed
+            if update_values.get('parent_id'):
+                self._commercial_sync_from_company(cr, uid, partner, context=context)
+            # 1b. Address fields: sync if parent or use_parent changed *and* both are now set 
+            if partner.parent_id and partner.use_parent_address:
+                onchange_vals = self.onchange_address(cr, uid, [partner.id],
+                                                      use_parent_address=partner.use_parent_address,
+                                                      parent_id=partner.parent_id.id,
+                                                      context=context).get('value', {})
+                partner.update_address(onchange_vals)
+
+        # 2. To DOWNSTREAM: sync children 
+        if partner.child_ids:
+            # 2a. Commercial Fields: sync if commercial entity
+            if partner.commercial_partner_id == partner:
+                self._commercial_sync_to_children(cr, uid, partner, context=context)
+            # 2b. Address fields: sync if address changed
+            address_fields = self._address_fields(cr, uid, context=context)
+            if any(field in update_values for field in address_fields):
+                domain_children = [('parent_id', '=', partner.id), ('use_parent_address', '=', True)]
+                update_ids = self.search(cr, uid, domain_children, context=context)
+                self.update_address(cr, uid, update_ids, update_values, context=context)
 
     def _check_cnpj_cpf(self, cr, uid, ids):
 

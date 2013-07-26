@@ -76,7 +76,7 @@ class account_fiscal_position_rule(osv.osv):
         #Initiate variable result
         result = {'fiscal_position': False, 'fiscal_operation_id': False}
 
-        if partner_id == False or company_id == False or fiscal_operation_category_id == False:
+        if partner_id == False or company_id == False:
             return result
 
         obj_partner = self.pool.get("res.partner").browse(cr, uid, partner_id)
@@ -102,9 +102,8 @@ class account_fiscal_position_rule(osv.osv):
         use_domain = context.get('use_domain', ('use_sale', '=', True))
         
         domain = ['&', ('company_id', '=', company_id), 
-                  ('fiscal_operation_category_id', '=', fiscal_operation_category_id), 
                   use_domain,
-                  ('fiscal_type', '=', obj_company.fiscal_type),
+                  ('partner_fiscal_type_id', '=', obj_partner.partner_fiscal_type_id.id),
                   '|', ('from_country','=',from_country), ('from_country', '=', False), 
                   '|', ('to_country', '=', to_country), ('to_country', '=', False), 
                   '|', ('from_state', '=', from_state), ('from_state', '=', False), 

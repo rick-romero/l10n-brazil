@@ -36,7 +36,7 @@ class account_tax(osv.osv):
         'account_result_id':fields.many2one('account.account', 'Conta de resultado do imposto'),
    }
     
-    def compute_all(self, cr, uid, taxes, price_unit, quantity, product=None, partner=None, force_excluded=False, fiscal_operation=False):
+    def compute_all(self, cr, uid, taxes, price_unit, quantity, invoice_id=None, product=None, partner=None, freight=0.0, fiscal_operation=False):
         """
         RETURN: {
                 'total': 0.0,                 # Total without taxes
@@ -97,6 +97,9 @@ class account_tax(osv.osv):
         for tax in res_taxes:
             tax_brw = tax_obj.browse(cr, uid, tax['id'])
 
+            tax['account_analytic_collected_id'] = tax_brw.account_analytic_collected_id.id
+            tax['account_analytic_paid_id'] = tax_brw.account_analytic_paid_id.id
+
             if tax_brw.domain in ['icms', 'icmsst']:            
                 continue            
 
@@ -126,12 +129,21 @@ class account_tax(osv.osv):
             
             #Guarda o valor do icms para ser usado para calcular a st
             if tax_brw.domain == 'icms':
-
+                # se eh operacao de aquisicao de ativos
                 if fiscal_operation and fiscal_operation.asset_operation:
-                    tax_base = totalex + ipi_value
+                    tax_base = totalex + ipi_value + freight
                     tax['amount'] = round(tax_base * tax_brw.amount, precision)
+                elif partner:
+                    # se o tipo fiscal for contribuinte
+                    if partner.partner_fiscal_type_id.id == 4:
+                        tax_base = totalex + ipi_value + freight
+                        tax['amount'] = round(tax_base * tax_brw.amount, precision)
+                    else:
+                        tax_base = totalex + freight
+                        tax['amount'] = round(tax_base * tax_brw.amount, precision)
                 else:
-                    tax_base = totalex
+                    tax_base = totalex + freight
+                    tax['amount'] = round(tax_base * tax_brw.amount, precision)
 
                 if tax_brw.type == 'quantity':
                     tax['amount'] = round((quantity * product.weight_net) * tax_brw.amount, precision)

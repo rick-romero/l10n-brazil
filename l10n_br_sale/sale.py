@@ -56,43 +56,78 @@ class sale_order(osv.osv):
                 res[sale.id] = 0.0
         return res
 
+    def _get_weight(self, cr, uid, ids, name, arg, context=None):
+        res = {}
+        for order in self.browse(cr, uid, ids, context=context):
+            weight = 0.0
+            for line in order.order_line:
+                weight += line.th_weight * line.product_uom_qty
+            res[order.id] = weight
+
+        return res
+
     _columns = {
         'order_line': fields.one2many(
-            'sale.order.line', 'order_id', 'Order Lines', readonly=True,
+            'sale.order.line', 'order_id', 'Order Lines', readonly=False,
             states={
-                'draft': [('readonly', False)],
-                'manual': [('readonly', False)]
+                'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
                 }
             ),
         'fiscal_operation_category_id': fields.many2one(
             'l10n_br_account.fiscal.operation.category', 'Categoria',
             domain="[('type','=','output'),('use_sale','=',True)]",
-            readonly=True,
+            readonly=False,
             states={
-                'draft': [('readonly', False)],
-                'manual': [('readonly', False)]
+                'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
                 }
             ),
         'fiscal_operation_id': fields.many2one(
             'l10n_br_account.fiscal.operation', u'Operação Fiscal',
-            readonly=True,
+            readonly=False,
             states={
-                'draft': [('readonly', False)],
-                'manual': [('readonly', False)]
+                'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
                 },
             domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),('type','=','output'),('use_sale','=',True)]"
             ),
         'fiscal_position': fields.many2one(
-            'account.fiscal.position', 'Fiscal Position', readonly=True,
+            'account.fiscal.position', 'Fiscal Position', readonly=False,
             states={
-                'draft': [('readonly', False)],
-                'manual': [('readonly', False)]
+                'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
                 }
             ),
         'invoiced_rate': fields.function(
             _invoiced_rate, method=True, string='Invoiced', type='float'
             ),
+        'freight': fields.float('Valor do Frete', digits_compute=dp.get_precision('Product Price'), help="Valor do Frete"),
+        'weight': fields.function(_get_weight, string='Peso Estimado', type='char')
        }
+
+    def button_dummy(self, cr, uid, ids, context=None):
+        res = {}
+        res = self._get_weight(cr, uid, ids, None, None, context)
+        return res
+
+    def _amount_line_tax(self, cr, uid, line, context=None):
+        val = 0.0
+        freight = 0.0
+        freight_rate = 0.0
+        order_lines = self.pool.get('sale.order.line').search(cr, uid, [('order_id', '=', line.order_id.id)], context=context)
+
+        if line.order_id.amount_untaxed:
+            freight_rate = (line.order_id.freight / line.order_id.amount_untaxed) * line.price_subtotal
+        for c_tax in self.pool.get('account.tax').compute_all(cr, uid, line.tax_id, line.price_unit * (1 - (line.discount or 0.0) / 100.0), line.product_uom_qty, line.order_id.partner_invoice_id.id, line.product_id, line.order_id.partner_id, freight_rate, fiscal_operation=line.fiscal_operation_id)['taxes']:
+            tax_brw = self.pool.get('account.tax').browse(cr, uid, c_tax['id'])
+            if tax_brw.tax_add:
+                val += c_tax.get('amount', 0.0)
+        return val
 
     def onchange_partner_id(self, cr, uid, ids, partner_id=False,
                             shop_id=False, fiscal_operation_category_id=False,
@@ -172,6 +207,49 @@ class sale_order(osv.osv):
 
         return result
 
+
+    def _prepare_invoice(self, cr, uid, order, lines, context=None):
+        """Prepare the dict of values to create the new invoice for a
+           sales order. This method may be overridden to implement custom
+           invoice generation (making sure to call super() to establish
+           a clean extension chain).
+
+           :param browse_record order: sale.order record to invoice
+           :param list(int) line: list of invoice line IDs that must be
+                                  attached to the invoice
+           :return: dict of value to create() the invoice
+        """
+        if context is None:
+            context = {}
+        journal_ids = self.pool.get('account.journal').search(cr, uid,
+            [('type', '=', 'sale'), ('company_id', '=', order.company_id.id)],
+            limit=1)
+        if not journal_ids:
+            raise osv.except_osv(_('Error!'),
+                _('Please define sales journal for this company: "%s" (id:%d).') % (order.company_id.name, order.company_id.id))
+        invoice_vals = {
+            'name': order.client_order_ref or '',
+            'origin': order.name,
+            'type': 'out_invoice',
+            'reference': order.client_order_ref or order.name,
+            'account_id': order.partner_id.property_account_receivable.id,
+            'partner_id': order.partner_invoice_id.id,
+            'journal_id': journal_ids[0],
+            'invoice_line': [(6, 0, lines)],
+            'currency_id': order.pricelist_id.currency_id.id,
+            'comment': order.note,
+            'payment_term': order.payment_term and order.payment_term.id or False,
+            'fiscal_position': order.fiscal_position.id or order.partner_id.property_account_position.id,
+            'date_invoice': context.get('date_invoice', False),
+            'company_id': order.company_id.id,
+            'amount_freight': order.freight,
+            'user_id': order.user_id and order.user_id.id or False
+        }
+
+        # Care for deprecated _inv_get() hook - FIXME: to be removed after 6.1
+        invoice_vals.update(self._inv_get(cr, uid, order, context=context))
+        return invoice_vals
+
     def _make_invoice(self, cr, uid, order, lines, context=None):
         inv_obj = self.pool.get('account.invoice')
         obj_invoice_line = self.pool.get('account.invoice.line')
@@ -180,6 +258,7 @@ class sale_order(osv.osv):
         inv_ids = []
         inv_id_product = False
         inv_id_service = False
+        amount_freight = 0.0
 
         if context is None:
             context = {}
@@ -274,14 +353,6 @@ class sale_order(osv.osv):
         result['fiscal_position'] = order.fiscal_position and order.fiscal_position.id
         return result
 
-    def _amount_line_tax(self, cr, uid, line, context=None):
-        val = 0.0
-        for c_tax in self.pool.get('account.tax').compute_all(cr, uid, line.tax_id, line.price_unit * (1 - (line.discount or 0.0) / 100.0), line.product_uom_qty, line.order_id.partner_invoice_id.id, line.product_id, line.order_id.partner_id, fiscal_operation=line.fiscal_operation_id)['taxes']:
-            tax_brw = self.pool.get('account.tax').browse(cr, uid, c_tax['id'])
-            if tax_brw.tax_add:
-                val += c_tax.get('amount', 0.0)
-        return val
-
 
 sale_order()
 
@@ -308,40 +379,44 @@ class sale_order_line(osv.osv):
             'l10n_br_account.fiscal.operation.category',
             u'Categoria',
             domain="[('type','=','output'),('use_sale','=',True)]",
-            readonly=True,
+            readonly=False,
             states={
-                'draft': [('readonly', False)],
-                'confirmed': [('readonly', False)]
+                'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
                 }
             ),
         'fiscal_operation_id': fields.many2one(
             'l10n_br_account.fiscal.operation',
             u'Operação Fiscal',
-            readonly=True,
+            readonly=False,
             states={
-                'draft': [('readonly', False)],
-                'confirmed': [('readonly', False)]
+                'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
                 },
             domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id),('type','=','output'),('use_sale','=',True)]"
             ),
         'cfop_id': fields.many2one(
             'l10n_br_account.cfop',
             u'Código Fiscal',
-            readonly=True,
+            readonly=False,
             states={
-                'draft': [('readonly', False)],
-                'confirmed': [('readonly', False)]
+                'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
                 },
             domain="[('type','=','output'),('internal_type','=','normal')]"
             ),
         'fiscal_position': fields.many2one(
             'account.fiscal.position',
             u'Posição Fiscal',
-            readonly=True,
+            readonly=False,
             domain="[('fiscal_operation_id','=',fiscal_operation_id)]",
             states={
-                'draft': [('readonly', False)],
-                'confirmed': [('readonly', False)],
+                'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
                 }
             ),
         'price_subtotal': fields.function(
@@ -350,10 +425,12 @@ class sale_order_line(osv.osv):
         'tax_id': fields.many2many(
             'account.tax', 
             'sale_order_tax', 'order_line_id', 'tax_id', 'Taxes', 
-            readonly=True,
+            readonly=False,
             states={
-                'draft': [('readonly', False)],
-                'confirmed': [('readonly', False)]
+		'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
+
                 }
             ),
         'product_id': fields.many2one(
@@ -361,20 +438,42 @@ class sale_order_line(osv.osv):
             'Product',
             domain=[('sale_ok', '=', True)],
             change_default=True,
-            states={'confirmed': [('readonly', True)]}
+            states={
+		'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
+
+                }
             ),
         'product_uos': fields.many2one(
             'product.uom',
             'Product UoS',
-            states={'confirmed': [('readonly', True)]}
+            states={
+		'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
+
+                }
             ),
         'product_packaging': fields.many2one(
             'product.packaging',
             'Packaging',
-            states={'confirmed': [('readonly', True)]}
+            states={
+		'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
+
+                }
             ),
         'notes': fields.text(
-            'Notes', states={'confirmed': [('readonly', True)]}
+            'Notes',
+            states={
+		'done': [('readonly', True)],
+                'shipping_except': [('readonly', True)],
+                'invoice_except': [('readonly', True)]
+
+                }
+ 
             ),
         }
 

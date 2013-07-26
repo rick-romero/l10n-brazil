@@ -43,6 +43,9 @@
       <field name="inherit_id" ref="account.view_partner_property_form"/>
       <field name="priority">33</field>
       <field name="arch" type="xml">
+	<field name="property_account_position" position="replace">
+		<field name="property_account_position" widget="selection" invisible="True"/>
+	</field>
         <field name="acc_number" position="replace">
           <field name="bra_number" />
           <field name="bra_number_dig" />

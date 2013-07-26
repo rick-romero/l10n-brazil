@@ -2012,6 +2012,7 @@ class account_invoice_line(osv.osv):
         res = {} #super(account_invoice_line, self)._amount_line(cr, uid, ids, prop, unknow_none, unknow_dict)
         tax_obj = self.pool.get('account.tax')
         cur_obj = self.pool.get('res.currency')
+        freight = 0.0
         for line in self.browse(cr, uid, ids):
             res[line.id] = {
                 'price_subtotal': 0.0,
@@ -2045,7 +2046,12 @@ class account_invoice_line(osv.osv):
                 'cofins_cst': '99', #Coloca como isento caso não tenha COFINS
             }
             price = line.price_unit * (1-(line.discount or 0.0)/100.0)
-            taxes = tax_obj.compute_all(cr, uid, line.invoice_line_tax_id, price, line.quantity, product=line.product_id, partner=line.invoice_id.partner_id, fiscal_operation=line.fiscal_operation_id)
+            if line.invoice_id:
+                if line.invoice_id.amount_untaxed:
+                    freight = (line.invoice_id.amount_freight / line.invoice_id.amount_untaxed) * line.price_subtotal
+                taxes = tax_obj.compute_all(cr, uid, line.invoice_line_tax_id, price, line.quantity, product=line.product_id, partner=line.invoice_id.partner_id, freight=freight, fiscal_operation=line.fiscal_operation_id)
+            else:
+                taxes = tax_obj.compute_all(cr, uid, line.invoice_line_tax_id, price, line.quantity, product=line.product_id, partner=line.invoice_id.partner_id, freight=freight, fiscal_operation=line.fiscal_operation_id)
             
             icms_base = 0.0
             icms_base_other = 0.0
@@ -2206,6 +2212,14 @@ class account_invoice_line(osv.osv):
                 
         return res
 
+    def _get_ncm(self, cr, uid, ids, name, arg, context=None):
+        res = {}
+        for inv_line in self.browse(cr, uid, ids, context=context):
+            if inv_line.product_id:
+                res[inv_line.id] = inv_line.product_id.property_fiscal_classification
+
+        return res
+
     _columns = {
                 'fiscal_operation_category_id': fields.many2one('l10n_br_account.fiscal.operation.category', 'Categoria'),
                 'fiscal_operation_id': fields.many2one('l10n_br_account.fiscal.operation', 'Operação Fiscal', domain="[('fiscal_operation_category_id','=',fiscal_operation_category_id)]"),
@@ -2269,6 +2283,8 @@ class account_invoice_line(osv.osv):
                                                   digits_compute= dp.get_precision('Account'), store=True, multi='all'),
                 'cofins_cst': fields.function(_amount_line, method=True, string='Valor COFINS', type="char", size=2,
                                               store=True, multi='all'),
+                'ncm': fields.function(_get_ncm, method=True, string='NCM', type="char", size=32,
+                                              store=True, multi='all'),
                 }
 
     def _fiscal_position_map(self, cr, uid, ids, partner_id, company_id, fiscal_operation_category_id):
@@ -2327,9 +2343,12 @@ class account_invoice_tax(osv.osv):
         inv = self.pool.get('account.invoice').browse(cr, uid, invoice_id, context)
         cur = inv.currency_id
         company_currency = inv.company_id.currency_id.id
+        freight = 0.0
 
         for line in inv.invoice_line:
-            taxes = tax_obj.compute_all(cr, uid, line.invoice_line_tax_id, (line.price_unit* (1-(line.discount or 0.0)/100.0)), line.quantity, line.product_id, inv.partner_id, fiscal_operation=line.fiscal_operation_id)
+            if inv.amount_untaxed:
+                freight = (inv.amount_freight / inv.amount_untaxed) * line.price_subtotal
+            taxes = tax_obj.compute_all(cr, uid, line.invoice_line_tax_id, (line.price_unit* (1-(line.discount or 0.0)/100.0)), line.quantity, invoice_id, line.product_id, inv.partner_id, freight, fiscal_operation=line.fiscal_operation_id)
             for tax in taxes['taxes']:
                 val = {}
                 val['invoice_id'] = inv.id
@@ -2346,14 +2365,22 @@ class account_invoice_tax(osv.osv):
                     val['base_amount'] = cur_obj.compute(cr, uid, inv.currency_id.id, company_currency, val['base'] * tax['base_sign'], context={'date': inv.date_invoice or time.strftime('%Y-%m-%d')}, round=False)
                     val['tax_amount'] = cur_obj.compute(cr, uid, inv.currency_id.id, company_currency, val['amount'] * tax['tax_sign'], context={'date': inv.date_invoice or time.strftime('%Y-%m-%d')}, round=False)
                     val['account_id'] = tax['account_collected_id'] or line.account_id.id
+                    if tax.has_key('account_analytic_collected_id'):
+                        val['account_analytic_id'] = tax['account_analytic_collected_id']
+                    else:
+                        val['account_analytic_id'] = line.account_analytic_id.id
                 else:
                     val['base_code_id'] = tax['ref_base_code_id']
                     val['tax_code_id'] = tax['ref_tax_code_id']
                     val['base_amount'] = cur_obj.compute(cr, uid, inv.currency_id.id, company_currency, val['base'] * tax['ref_base_sign'], context={'date': inv.date_invoice or time.strftime('%Y-%m-%d')}, round=False)
                     val['tax_amount'] = cur_obj.compute(cr, uid, inv.currency_id.id, company_currency, val['amount'] * tax['ref_tax_sign'], context={'date': inv.date_invoice or time.strftime('%Y-%m-%d')}, round=False)
                     val['account_id'] = tax['account_paid_id'] or line.account_id.id
+                    if tax.has_key('account_analytic_paid_id'):
+                        val['account_analytic_id'] = tax['account_analytic_paid_id']
+                    else:
+                        val['account_analytic_id'] = line.account_analytic_id.id
 
-                key = (val['tax_code_id'], val['base_code_id'], val['account_id'])
+                key = (val['tax_code_id'], val['base_code_id'], val['account_id'], val['account_analytic_id'])
                 if not key in tax_grouped:
                     tax_grouped[key] = val
                 else:

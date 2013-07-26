@@ -30,6 +30,10 @@
         <xpath expr="/form/sheet/group/group/div/div[@class='address_format']"
           position="replace">
         </xpath>
+        <field name="partner_id" position="replace">
+	    <field name="partner_id" string="Customer"
+		on_change="onchange_partner_br(partner_id)"/>
+	</field>
       </field>
     </record>
 

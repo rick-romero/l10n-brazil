@@ -22,7 +22,7 @@
           <field name="fiscal_operation_id"
             attrs="{'required':[('state','!=','draft')]}" />
           <field domain="[('fiscal_operation_id','=',fiscal_operation_id)]"
-            name="fiscal_position" />
+            name="fiscal_position" readonly="True"/>
         </field>
 
         <field name="partner_id" position="replace">
@@ -54,19 +54,22 @@
       <field name="arch" type="xml">
         <field name="discount" position="after">
 
-          <field name="fiscal_operation_category_id"
+          <field name="fiscal_operation_category_id" invisible="True"
             groups="base.group_sale_salesman"
             attrs="{'required':[('state','!=','draft')]}" />
-          <field name="fiscal_operation_id"
+          <field name="fiscal_operation_id" invisible="True"
             groups="base.group_sale_salesman"
             on_change="fiscal_operation_id_change(fiscal_operation_id)"
             attrs="{'required':[('state','!=','draft')]}" />
-          <field name="fiscal_position"
+          <field name="fiscal_position" invisible="True"
             groups="base.group_sale_salesman"
             on_change="product_id_change(parent.pricelist_id,product_id,product_uom_qty,product_uom,product_uos_qty,product_uos,name,parent.partner_id, False, True, parent.date_order, product_packaging, fiscal_position, False, context, fiscal_operation_category_id, fiscal_operation_id, parent.shop_id)" />
-          <field name="cfop_id" groups="base.group_sale_salesman"/>
 
         </field>
+        <field name="tax_id" position="after">
+          <field string="CFOP" name="cfop_id" groups="base.group_sale_salesman"/>
+	</field>
+	<field name="address_allotment_id" position="replace"/>
       </field>
     </record>
     <record id="l10n_br_sale_view_order_form5" model="ir.ui.view">
@@ -83,8 +86,36 @@
         <field name="product_uos" position="replace">
           <field groups="product.group_uos" name="product_uos" />
         </field>
+
+        <notebook>
+            <page string="Frete">
+                <group>
+                    <field name="freight" string="Frete"/>
+                    <div class="oe_subtotal_footer_separator oe_inline">
+                        <label for="weight" />
+                        <button name="button_dummy"
+                            states="draft,sent" string="(update)" type="object" class="oe_edit_only oe_link"/>
+                    </div>
+                    <field name="weight" nolabel="1" readonly="True"/>
+                </group>
+            </page>
+        </notebook>
       </field>
     </record>
+        
+    <record id="l10n_br_view_sale_advance_payment_inv" model="ir.ui.view">
+        <field name="name">Invoice Order</field>
+        <field name="model">sale.advance.payment.inv</field>
+        <field name="inherit_id" ref="sale.view_sale_advance_payment_inv"/>
+        <field name="arch" type="xml">
+            <button name="create_invoices" position="replace">
+                <button name="create_invoices" string="Criar e Visualizar Nota Fiscal" type="object"
+                    context="{'open_invoices': True}" class="oe_highlight"
+                    attrs="{'invisible': [('advance_payment_method', '=', 'lines')]}"/>
+            </button>
+        </field>
+    </record>
+
 
   </data>
 

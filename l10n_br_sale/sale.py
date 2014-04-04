@@ -388,7 +388,7 @@ class SaleOrderLine(orm.Model):
             obj_product = self.pool.get('product.product').browse(
                 cr, uid, product)
             context.update({'fiscal_type': obj_product.fiscal_type,
-                'type_tax_use': 'sale'})
+                'type_tax_use': 'sale', 'product_id': product})
 
         result_super = super(SaleOrderLine, self).product_id_change(
             cr, uid, ids, pricelist, product, qty, uom, qty_uos, uos, name,
@@ -443,7 +443,7 @@ class SaleOrderLine(orm.Model):
             obj_product = self.pool.get('product.product').browse(
                 cr, uid, product_id)
             context = {'fiscal_type': obj_product.fiscal_type,
-                       'type_tax_use': 'sale'}
+                       'type_tax_use': 'sale', 'product_id': product_id}
             taxes = obj_product.taxes_id or False
             tax_ids = self.pool.get('account.fiscal.position').map_tax(
                 cr, uid, obj_fposition, taxes, context)

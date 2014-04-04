@@ -86,7 +86,25 @@ class AccountFiscalPosition(orm.Model):
                                            tax_def.tax_code_id.id})
 
             if fiscal_position:
-                for fp_tax in fiscal_position.tax_ids:
+
+                #TODO Criar um método para varrer as regras de mapeamento
+                mapping_taxes = [tax_map for tax_map in fposition_id.tax_ids
+                if not tax_map.ncm_id]
+
+                for fp_tax in mapping_taxes:
+                    if fp_tax.tax_dest_id:
+                        if fp_tax.tax_dest_id.id in tax_ids and fp_tax.tax_code_dest_id:
+                            result.update({fp_tax.tax_dest_id.domain:
+                                           fp_tax.tax_code_dest_id.id})
+                    if not fp_tax.tax_dest_id and fp_tax.tax_code_src_id and \
+                    fp_tax.tax_code_dest_id:
+                        result.update({fp_tax.tax_code_src_id.domain:
+                                       fp_tax.tax_code_dest_id.id})
+
+                mapping_ncm_taxes = [tax_map for tax_map in fposition_id.tax_ids
+                if tax_map.ncm_id.id == product.ncm_id.id]
+
+                for fp_tax in mapping_ncm_taxes:
                     if fp_tax.tax_dest_id:
                         if fp_tax.tax_dest_id.id in tax_ids and fp_tax.tax_code_dest_id:
                             result.update({fp_tax.tax_dest_id.domain:
@@ -118,21 +136,54 @@ class AccountFiscalPosition(orm.Model):
 
         if not fposition_id and not taxes:
             return map(lambda x: x.id, taxes)
-        for t in taxes:
-            ok = False
-            tax_src = False
-            for tax in fposition_id.tax_ids:
-                tax_src = tax.tax_src_id and tax.tax_src_id.id == t.id
-                tax_code_src = tax.tax_code_src_id and \
-                    tax.tax_code_src_id.id == t.tax_code_id.id
+        product_ncm = False
+        if context.get('product_id'):
+            product_ncm = self.pool.get('product.product').read(
+                cr, uid, context.get('product_id'), ['ncm_id'],
+                context=context)['ncm_id'][0]
+
+        taxes_mapped = {}
+        for tax in taxes:
+            taxes_mapped[tax.domain] = tax.id
+
+            #TODO Criar um método para varrer as regras de mapeamento
+            mapping_taxes = [tax_map for tax_map in fposition_id.tax_ids
+            if not tax_map.ncm_id]
+
+            for tax_mapping in mapping_taxes:
+                tax_src = tax_mapping.tax_src_id and \
+                tax_mapping.tax_src_id.id == tax.id
+
+                tax_code_src = tax_mapping.tax_code_src_id and \
+                tax_mapping.tax_code_src_id.id == tax.tax_code_id.id
+
+                domain = tax.domain
+                if tax_src or tax_code_src:
+                    if tax_mapping.tax_dest_id:
+                        taxes_mapped[domain] = tax_mapping.tax_dest_id.id
+                    else:
+                        taxes_mapped[domain] = False
+
+            mapping_ncm_taxes = [tax_map for tax_map in fposition_id.tax_ids
+            if tax_map.ncm_id.id == product_ncm]
+
+            for tax_mapping in mapping_ncm_taxes:
+                domain = tax.domain
+                tax_src = tax_mapping.tax_src_id and \
+                tax_mapping.tax_src_id.id == tax.id
+
+                tax_code_src = tax_mapping.tax_code_src_id and \
+                tax_mapping.tax_code_src_id.id == tax.tax_code_id.id
 
                 if tax_src or tax_code_src:
-                    if tax.tax_dest_id:
-                        result.append(tax.tax_dest_id.id)
-                    ok = True
-            if not ok:
-                result.append(t.id)
+                    if tax_mapping.tax_dest_id:
+                        taxes_mapped[domain] = tax_mapping.tax_dest_id.id
+                    else:
+                        taxes_mapped[domain] = False
 
+            for tax_id in taxes_mapped.values():
+                if tax_id:
+                    result.append(tax_id)
         return list(set(result))
 
 

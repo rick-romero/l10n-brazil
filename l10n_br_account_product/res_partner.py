@@ -88,7 +88,7 @@ class AccountFiscalPosition(orm.Model):
             if fiscal_position:
 
                 #TODO Criar um método para varrer as regras de mapeamento
-                mapping_taxes = [tax_map for tax_map in fposition_id.tax_ids
+                mapping_taxes = [tax_map for tax_map in fiscal_position.tax_ids
                 if not tax_map.ncm_id]
 
                 for fp_tax in mapping_taxes:
@@ -101,7 +101,7 @@ class AccountFiscalPosition(orm.Model):
                         result.update({fp_tax.tax_code_src_id.domain:
                                        fp_tax.tax_code_dest_id.id})
 
-                mapping_ncm_taxes = [tax_map for tax_map in fposition_id.tax_ids
+                mapping_ncm_taxes = [tax_map for tax_map in fiscal_position.tax_ids
                 if tax_map.ncm_id.id == product.ncm_id.id]
 
                 for fp_tax in mapping_ncm_taxes:

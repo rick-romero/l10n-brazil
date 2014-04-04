@@ -29,6 +29,14 @@ class AccountFiscalPositionTemplate(orm.Model):
     _columns = FISCAL_POSITION_COLUMNS
 
 
+class AccountFiscalPositionTaxTemplate(orm.Model):
+    _inherit = 'account.fiscal.position.tax.template'
+    _columns = {
+        'ncm_id': fields.many2one(
+            'account.product.fiscal.classification.template', 'NCM'),
+    }
+
+
 class AccountFiscalPosition(orm.Model):
     _inherit = 'account.fiscal.position'
     _columns = FISCAL_POSITION_COLUMNS
@@ -108,9 +116,7 @@ class AccountFiscalPosition(orm.Model):
                 all_taxes = company_taxes
             taxes = all_taxes
 
-        if not taxes:
-            return []
-        if not fposition_id:
+        if not fposition_id and not taxes:
             return map(lambda x: x.id, taxes)
         for t in taxes:
             ok = False
@@ -128,3 +134,11 @@ class AccountFiscalPosition(orm.Model):
                 result.append(t.id)
 
         return list(set(result))
+
+
+class AccountFiscalPositionTax(orm.Model):
+    _inherit = 'account.fiscal.position.tax'
+    _columns = {
+        'ncm_id': fields.many2one(
+            'account.product.fiscal.classification', 'NCM'),
+    }

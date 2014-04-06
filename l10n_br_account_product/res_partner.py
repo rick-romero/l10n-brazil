@@ -138,9 +138,11 @@ class AccountFiscalPosition(orm.Model):
             return map(lambda x: x.id, taxes)
         product_ncm = False
         if context.get('product_id'):
-            product_ncm = self.pool.get('product.product').read(
+            product = self.pool.get('product.product').read(
                 cr, uid, context.get('product_id'), ['ncm_id'],
-                context=context)['ncm_id'][0]
+                context=context)
+            if product.get('ncm_id'):
+                product_ncm = product['ncm_id'][0]
 
         taxes_mapped = {}
         for tax in taxes:
@@ -193,3 +195,4 @@ class AccountFiscalPositionTax(orm.Model):
         'ncm_id': fields.many2one(
             'account.product.fiscal.classification', 'NCM'),
     }
+

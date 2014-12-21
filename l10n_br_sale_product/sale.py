@@ -64,6 +64,7 @@ class SaleOrder(orm.Model):
                 val2 += (line.insurance_value + line.freight_value + line.other_costs_value)
                 val3 += line.discount_value
                 val4 += line.price_gross
+                val = val - (line.insurance_value + line.freight_value + line.other_costs_value)
             result[order.id]['amount_tax'] = cur_obj.round(cr, uid, cur, val)
             result[order.id]['amount_untaxed'] = cur_obj.round(cr, uid, cur, val1)
             result[order.id]['amount_extra'] = cur_obj.round(cr, uid, cur, val2)
@@ -84,7 +85,7 @@ class SaleOrder(orm.Model):
             freight_value=line.freight_value,
             other_costs_value=line.other_costs_value)['taxes']:
             tax = self.pool.get('account.tax').browse(cr, uid, c['id'])
-            if not tax.tax_code_id.tax_discount:
+            if not tax.tax_discount:
                 val += c.get('amount', 0.0)
         return val
 
@@ -355,9 +356,10 @@ class SaleOrderLine(orm.Model):
                                                               result, account_id=False, context=None):
 
         if line.product_id.fiscal_type == 'product':
-            if line.fiscal_position:
+            fp_id = line.fiscal_position.id or result.get('fiscal_position', False) or False
+            if fp_id:
                 cfop = self.pool.get("account.fiscal.position").read(
-                    cr, uid, [line.fiscal_position.id], ['cfop_id'],
+                    cr, uid, [fp_id], ['cfop_id'],
                     context=context)
                 if cfop[0]['cfop_id']:
                     result['cfop_id'] = cfop[0]['cfop_id'][0]

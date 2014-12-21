@@ -201,7 +201,7 @@ class AccountInvoice(orm.Model):
         'vehicle_state_id': fields.many2one(
             'res.country.state', 'UF da Placa'),
         'vehicle_l10n_br_city_id': fields.many2one('l10n_br_base.city',
-            'Municipio', domain="[('state_id', '=', vehicle_state_id)]"),
+            'Município', domain="[('state_id', '=', vehicle_state_id)]"),
         'amount_gross': fields.function(
             _amount_all, method=True,
             digits_compute=dp.get_precision('Account'), string='Vlr. Bruto',
@@ -421,10 +421,10 @@ class AccountInvoice(orm.Model):
                                           'invoice_line_tax_id',
                                           'quantity', 'discount'], 20),
             }, multi='all'),
-        'weight': fields.float('Gross weight', readonly=True,
+        'weight': fields.float('Peso Bruto', readonly=True,
                                states={'draft': [('readonly', False)]},
                                help="The gross weight in Kg.",),
-        'weight_net': fields.float('Net weight', help="The net weight in Kg.",
+        'weight_net': fields.float('Peso Líquido', help="The net weight in Kg.",
                                     readonly=True,
                                     states={'draft': [('readonly', False)]}),
         'number_of_packages': fields.integer(
@@ -432,7 +432,7 @@ class AccountInvoice(orm.Model):
         'kind_of_packages': fields.char(
             'Espécie', size=60, readonly=True, states={'draft': [('readonly', False)]}),
         'brand_of_packages': fields.char(
-            'Brand',  size=60, readonly=True, states={'draft': [('readonly', False)]}),
+            'Marca',  size=60, readonly=True, states={'draft': [('readonly', False)]}),
         'notation_of_packages': fields.char(
             'Numeração', size=60, readonly=True, states={'draft': [('readonly', False)]}),
         'amount_insurance': fields.function(
@@ -448,7 +448,7 @@ class AccountInvoice(orm.Model):
         'amount_freight': fields.function(
             _amount_all, method=True,
             digits_compute=dp.get_precision('Account'),
-            string='Valor do Seguro',
+            string='Valor do Frete',
             store={
                 'account.invoice': (lambda self, cr, uid, ids, c={}: ids,
                                     ['invoice_line'], 20),

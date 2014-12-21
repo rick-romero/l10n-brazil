@@ -837,7 +837,7 @@ class AccountInvoiceLine(orm.Model):
             'icms_base_other': tax.get('total_base_other', 0.0),
             'icms_value': tax.get('amount', 0.0),
             'icms_percent': tax.get('percent', 0.0) * 100,
-            'icms_percent_reduction': tax.get('base_reduction') * 100,
+            'icms_percent_reduction': tax.get('base_reduction', 0.0) * 100,
         }
         return result
 

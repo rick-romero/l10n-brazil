@@ -36,7 +36,7 @@
         'security/ir.model.access.csv',
         'data/l10n_br_account.fiscal.document.csv',
         'data/l10n_br_account_service.service.type.csv',
-        'data/l10n_br_account_service_data.xml',
+        #'data/l10n_br_account_service_data.xml',
     ],
     'demo': [
         'demo/account_tax_demo.xml',

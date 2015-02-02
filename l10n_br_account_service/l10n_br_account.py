@@ -48,9 +48,3 @@ class L10n_brAccountServiceType(orm.Model):
                 name = record['code'] + ' - ' + name
             res.append((record['id'], name))
         return res
-
-class L10n_brAccountFiscalCategory(orm.Model):
-    _name = 'l10n_br_account.fiscal.category'
-    
-class L10n_brAccountDocumentSerie(orm.Model):
-    _name = 'l10n_br_account.document.serie'

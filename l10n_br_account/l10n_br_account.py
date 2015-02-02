@@ -28,7 +28,7 @@ TYPE = [
 ]
 
 PRODUCT_FISCAL_TYPE = [
-    ('service', u'Serviço'),
+    ('product', u'Produto'),
 ]
 
 PRODUCT_FISCAL_TYPE_DEFAULT = PRODUCT_FISCAL_TYPE[0][0]
@@ -187,39 +187,6 @@ class L10n_brAccountFiscalCategory(orm.Model):
             wf_service.trg_create(
                 uid, 'l10n_br_account.fiscal.category', fc_id, cr)
         return True
-
-
-class L10n_brAccountServiceType(orm.Model):
-    _name = 'l10n_br_account.service.type'
-    _description = u'Cadastro de Operações Fiscais de Serviço'
-    _columns = {
-        'code': fields.char(u'Código', size=16, required=True),
-        'name': fields.char(u'Descrição', size=256, required=True),
-        'parent_id': fields.many2one(
-            'l10n_br_account.service.type', 'Tipo de Serviço Pai'),
-        'child_ids': fields.one2many(
-            'l10n_br_account.service.type', 'parent_id',
-            u'Tipo de Serviço Filhos'),
-        'internal_type': fields.selection(
-            [('view', u'Visualização'), ('normal', 'Normal')],
-            'Tipo Interno', required=True),
-    }
-    _defaults = {
-        'internal_type': 'normal'
-    }
-
-    def name_get(self, cr, uid, ids, context=None):
-        if not ids:
-            return []
-        reads = self.read(cr, uid, ids, ['name', 'code'], context=context)
-        res = []
-        for record in reads:
-            name = record['name']
-            if record['code']:
-                name = record['code'] + ' - ' + name
-            res.append((record['id'], name))
-        return res
-
 
 class L10n_brAccountFiscalDocument(orm.Model):
     _name = 'l10n_br_account.fiscal.document'

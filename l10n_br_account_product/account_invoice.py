@@ -690,7 +690,7 @@ class AccountInvoiceLine(orm.Model):
             ('S', 'Substituta'), ('I', 'Isenta')], 'Tipo do ISSQN',
             required=True),
         'service_type_id': fields.many2one(
-            'l10n_br_account.service.type', u'Tipo de Serviço'),
+            'l10n_br_account_service.service.type', u'Tipo de Serviço'),
         'issqn_base': fields.float('Base ISSQN', required=True,
             digits_compute=dp.get_precision('Account')),
         'issqn_percent': fields.float('Perc ISSQN', required=True,

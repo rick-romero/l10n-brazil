@@ -29,12 +29,14 @@
         'l10n_br_account',
     ],
     'data': [
-        'data/l10n_br_account_service_data.xml',
         'product_view.xml',
-        'l10n_br_account_view.xml',
+        'l10n_br_service_type.xml',
         'res_company_view.xml',
         'account_invoice_view.xml',
         'security/ir.model.access.csv',
+        'data/l10n_br_account.fiscal.document.csv',
+        'data/l10n_br_account_service.service.type.csv',
+        'data/l10n_br_account_service_data.xml',
     ],
     'demo': [
         'demo/account_tax_demo.xml',

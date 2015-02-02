@@ -29,7 +29,6 @@
     ],
     'data': [
         'l10n_br_account.cnae.csv',
-        'l10n_br_account.service.type.csv',
     ],
     'demo': [],
     'category': 'Localisation',

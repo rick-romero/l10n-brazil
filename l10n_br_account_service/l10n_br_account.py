@@ -22,14 +22,35 @@ from openerp.osv import orm, fields
 from .l10n_br_account_service import (
     PRODUCT_FISCAL_TYPE,
     PRODUCT_FISCAL_TYPE_DEFAULT)
-
-
-class L10n_brAccountFiscalCategory(orm.Model):
-    _inherit = 'l10n_br_account.fiscal.category'
+    
+class L10n_brAccountServiceType(orm.Model):
+    _name = 'l10n_br_account_service.service.type'
+    _description = u'Cadastro de Operações Fiscais de Serviço'
     _columns = {
-        'fiscal_type': fields.selection(PRODUCT_FISCAL_TYPE,
-            'Tipo Fiscal', required=True),
+        'code': fields.char(u'Código', size=16, required=True),
+        'name': fields.char(u'Descrição', size=256, required=True),
+        'parent_id': fields.many2one('l10n_br_account_service.service.type', 'Tipo de Serviço Pai'),
+        'child_ids': fields.one2many('l10n_br_account_service.service.type', 'parent_id', u'Tipo de Serviço Filhos'),
+        'internal_type': fields.selection([('view', u'Visualização'), ('normal', 'Normal')], 'Tipo Interno', required=True),
     }
     _defaults = {
-        'fiscal_type': PRODUCT_FISCAL_TYPE_DEFAULT,
+        'internal_type': 'normal'
     }
+
+    def name_get(self, cr, uid, ids, context=None):
+        if not ids:
+            return []
+        reads = self.read(cr, uid, ids, ['name', 'code'], context=context)
+        res = []
+        for record in reads:
+            name = record['name']
+            if record['code']:
+                name = record['code'] + ' - ' + name
+            res.append((record['id'], name))
+        return res
+
+class L10n_brAccountFiscalCategory(orm.Model):
+    _name = 'l10n_br_account.fiscal.category'
+    
+class L10n_brAccountDocumentSerie(orm.Model):
+    _name = 'l10n_br_account.document.serie'

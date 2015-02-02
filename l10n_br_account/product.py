@@ -27,15 +27,13 @@ class ProductTemplate(orm.Model):
         'fiscal_category_default_ids': fields.one2many(
             'l10n_br_account.product.category', 'product_tmpl_id',
             u'Categoria de Operação Fiscal Padrões'),
-        'service_type_id': fields.many2one(
-            'l10n_br_account.service.type', u'Tipo de Serviço'),
         'fiscal_type': fields.selection(
             PRODUCT_FISCAL_TYPE, 'Tipo Fiscal', required=True),
     }
     _defaults = {
         'fiscal_type': PRODUCT_FISCAL_TYPE_DEFAULT
     }
-
+    
 
 class L10n_brAccountProductFiscalCategory(orm.Model):
     _name = 'l10n_br_account.product.category'

@@ -85,28 +85,4 @@ class ProductTemplate(orm.Model):
         return result
 
 
-class ProductProduct(orm.Model):
-    _inherit = 'product.product'
-    
-    _columns = {
-        'fiscal_type': fields.selection(PRODUCT_FISCAL_TYPE, 'Tipo Fiscal', required=True),
-        'origin': fields.selection(PRODUCT_ORIGIN, 'Origem'),
-        'ncm_id': fields.many2one('account.product.fiscal.classification', u'NCM'),
-    }
-    
-    _defaults = {
-        'fiscal_type': PRODUCT_FISCAL_TYPE_DEFAULT,
-        'origin': '0'
-    }
 
-    def ncm_id_change(self, cr, uid, ids, ncm_id=False, sale_tax_ids=None,
-                    purchase_tax_ids=None, context=None):
-        """We eventually keep the sale and purchase taxes because those
-        are not company wise in OpenERP. So if we choose a different
-        fiscal position for a different company, we don't want to override
-        other's companies setting"""
-
-        product_template = self.pool.get('product.template')
-        return product_template.ncm_id_change(
-            cr, uid, ids, ncm_id, sale_tax_ids,
-            purchase_tax_ids)

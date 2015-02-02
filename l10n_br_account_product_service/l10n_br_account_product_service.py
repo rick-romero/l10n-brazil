@@ -20,18 +20,16 @@
 from openerp.osv import orm, fields
 
 PRODUCT_FISCAL_TYPE = [
+    ('product', u'Produto'),
     ('service', u'Serviço'),
-    ('product', 'Produto'),
 ]
 
 PRODUCT_FISCAL_TYPE_DEFAULT = PRODUCT_FISCAL_TYPE[0][0]
 
-
 class L10n_brAccountFiscalCategory(orm.Model):
     _inherit = 'l10n_br_account.fiscal.category'
     _columns = {
-        'fiscal_type': fields.selection(
-            PRODUCT_FISCAL_TYPE, 'Tipo Fiscal', required=True),
+        'fiscal_type': fields.selection(PRODUCT_FISCAL_TYPE, 'Tipo Fiscal', required=True),
     }
     _defaults = {
         'fiscal_type': PRODUCT_FISCAL_TYPE_DEFAULT,

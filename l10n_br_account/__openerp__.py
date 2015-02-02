@@ -35,12 +35,11 @@
     'data': [
         'l10n_br_account_workflow.xml',
         'account_fiscal_position_workflow.xml',
-        'data/l10n_br_account.fiscal.document.csv',
         'data/l10n_br_account_data.xml',
         'account_view.xml',
+        'l10n_br_account_view.xml',
         'account_fiscal_position_rule_view.xml',
         'account_invoice_view.xml',
-        'l10n_br_account_view.xml',
         'res_partner_view.xml',
         'product_view.xml',
         'res_company_view.xml',

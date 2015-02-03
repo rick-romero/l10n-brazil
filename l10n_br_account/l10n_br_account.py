@@ -174,7 +174,7 @@ class L10n_brAccountFiscalCategory(orm.Model):
         'journal_type': 'sale',
     }
     _sql_constraints = [
-        ('l10n_br_account_fiscal_category_code_uniq', 'unique (code)',
+        ('l10n_br_account.fiscal.category_code_uniq', 'unique (code)',
          u'Já existe uma categoria fiscal com esse código !')
     ]
 

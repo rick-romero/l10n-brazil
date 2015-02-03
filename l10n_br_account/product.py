@@ -18,8 +18,14 @@
 ###############################################################################
 
 from openerp.osv import orm, fields
-from .l10n_br_account import PRODUCT_FISCAL_TYPE, PRODUCT_FISCAL_TYPE_DEFAULT
+from openerp import api
 
+PRODUCT_FISCAL_TYPE = [
+    ('product', u'Produto'),
+    ('service', u'Serviço'),
+]
+
+PRODUCT_FISCAL_TYPE_DEFAULT = PRODUCT_FISCAL_TYPE[0][0]
 
 class ProductTemplate(orm.Model):
     _inherit = 'product.template'
@@ -33,6 +39,13 @@ class ProductTemplate(orm.Model):
     _defaults = {
         'fiscal_type': PRODUCT_FISCAL_TYPE_DEFAULT
     }
+    
+    @api.onchange('type')
+    def _onchange_type(self):
+        if self.type == 'consu' or self.type == 'product':
+            self.fiscal_type = 'product'
+        elif self.type == 'service':
+            self.fiscal_type = 'service'
     
 
 class L10n_brAccountProductFiscalCategory(orm.Model):

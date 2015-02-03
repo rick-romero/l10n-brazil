@@ -24,9 +24,8 @@ from openerp import SUPERUSER_ID
 from openerp.osv import orm, fields
 from openerp.addons import decimal_precision as dp
 
-from .l10n_br_account_product import (
-    PRODUCT_FISCAL_TYPE,
-    PRODUCT_FISCAL_TYPE_DEFAULT)
+from openerp.addons.l10n_br_account.l10n_br_account import (PRODUCT_FISCAL_TYPE, PRODUCT_FISCAL_TYPE_DEFAULT)
+
 from .product import PRODUCT_ORIGIN
 from .sped.nfe.validator import txt
 

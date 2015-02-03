@@ -18,10 +18,6 @@
 ###############################################################################
 
 from openerp.osv import orm, fields
-
-from .l10n_br_account_service import (
-    PRODUCT_FISCAL_TYPE,
-    PRODUCT_FISCAL_TYPE_DEFAULT)
     
 class L10n_brAccountServiceType(orm.Model):
     _name = 'l10n_br_account_service.service.type'

@@ -19,8 +19,3 @@
 
 from openerp.osv import orm, fields
 
-PRODUCT_FISCAL_TYPE = [
-    ('service', u'Serviço')
-]
-
-PRODUCT_FISCAL_TYPE_DEFAULT = PRODUCT_FISCAL_TYPE[0][0]

@@ -19,11 +19,6 @@
 
 from openerp.osv import orm, fields
 from openerp import SUPERUSER_ID
-from openerp import api
-
-from .l10n_br_account_product import (
-    PRODUCT_FISCAL_TYPE,
-    PRODUCT_FISCAL_TYPE_DEFAULT)
 
 PRODUCT_ORIGIN = [
     ('0', u'0 - Nacional, exceto as indicadas nos códigos 3 a 5'),
@@ -40,22 +35,13 @@ PRODUCT_ORIGIN = [
 class ProductTemplate(orm.Model):
     _inherit = 'product.template'
     _columns = {
-        'fiscal_type': fields.selection(PRODUCT_FISCAL_TYPE, 'Tipo Fiscal', required=True),
         'origin': fields.selection(PRODUCT_ORIGIN, 'Origem'),
         'ncm_id': fields.many2one('account.product.fiscal.classification', u'NCM'),
     }
     _defaults = {
-        'fiscal_type': PRODUCT_FISCAL_TYPE_DEFAULT,
         'origin': '0'
     }
-    
-    @api.onchange('type')
-    def _onchange_type(self):
-        if self.type == 'consu' or self.type == 'product':
-            self.fiscal_type = 'product'
-        elif self.type == 'service':
-            self.fiscal_type = 'service'   
-    
+      
     def ncm_id_change(self, cr, uid, ids, ncm_id=False, sale_tax_ids=None,
                     purchase_tax_ids=None, context=None):
         """We eventually keep the sale and purchase taxes because those

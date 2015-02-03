@@ -19,6 +19,7 @@
 
 from openerp.osv import orm, fields
 from openerp import SUPERUSER_ID
+from openerp import api
 
 from .l10n_br_account_product import (
     PRODUCT_FISCAL_TYPE,
@@ -44,10 +45,23 @@ class ProductTemplate(orm.Model):
         'ncm_id': fields.many2one('account.product.fiscal.classification', u'NCM'),
     }
     _defaults = {
-        'fiscal_type': PRODUCT_FISCAL_TYPE_DEFAULT,
+#        'fiscal_type': PRODUCT_FISCAL_TYPE_DEFAULT,
         'origin': '0'
     }
-
+    
+    @api.onchange('type')
+    def _onchange_type(self):
+        
+        if self.type == 'consu' or self.type == 'product':
+            self.fiscal_type = 'product'
+        elif self.type == 'service':
+            self.fiscal_type = 'service'
+        
+        #result = {'value': {}}
+        #result['value']['fiscal_type'] = 0
+        #self.message = "Dear %s" % (self.partner_id.name or "")
+    
+    
     def ncm_id_change(self, cr, uid, ids, ncm_id=False, sale_tax_ids=None,
                     purchase_tax_ids=None, context=None):
         """We eventually keep the sale and purchase taxes because those

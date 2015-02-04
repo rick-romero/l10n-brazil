@@ -31,6 +31,49 @@ PRODUCT_ORIGIN = [
     ('7', u'7 - Estrangeira - Adquirida no mercado interno, sem similar nacional, constante em lista de Resolução CAMEX')
 ]
 
+class ProductProduct(orm.Model):
+    _inherit = 'product.product'
+    _columns = {
+        'origin': fields.selection(PRODUCT_ORIGIN, 'Origem'),
+        'ncm_id': fields.many2one('account.product.fiscal.classification', u'NCM'),
+    }
+    
+    def ncm_id_change(self, cr, uid, ids, ncm_id=False, sale_tax_ids=None,
+                    purchase_tax_ids=None, context=None):
+        """We eventually keep the sale and purchase taxes because those
+        are not company wise in OpenERP. So if we choose a different
+        fiscal position for a different company, we don't want to override
+        other's companies setting"""
+        if not context:
+            context = {}
+
+        if not sale_tax_ids:
+            sale_tax_ids = [[6, 0, []]]
+
+        if not purchase_tax_ids:
+            purchase_tax_ids = [[6, 0, []]]
+
+        result = {'value': {}}
+        if ncm_id:
+            fclass = self.pool.get('account.product.fiscal.classification')
+            fiscal_classification = fclass.browse(
+                cr, uid, ncm_id, context=context)
+
+            current_company_id = self.pool.get('res.users').browse(
+                cr, uid, uid).company_id.id
+            to_keep_sale_tax_ids = self.pool.get('account.tax').search(
+                cr, SUPERUSER_ID, [('id', 'in', sale_tax_ids[0][2]),
+                    ('company_id', '!=', current_company_id)],
+                        context=context)
+            to_keep_purchase_tax_ids = self.pool.get('account.tax').search(
+                cr, SUPERUSER_ID, [('id', 'in', purchase_tax_ids[0][2]),
+                    ('company_id', '!=', current_company_id)],
+                        context=context)
+
+            result['value']['taxes_id'] = list(set(to_keep_sale_tax_ids + [x.id for x in fiscal_classification.sale_base_tax_ids]))
+            result['value']['supplier_taxes_id'] = list(set(to_keep_purchase_tax_ids + [x.id for x in fiscal_classification.purchase_base_tax_ids]))
+        return result
+    
 
 class ProductTemplate(orm.Model):
     _inherit = 'product.template'

@@ -28,6 +28,19 @@ PRODUCT_FISCAL_TYPE = [
 PRODUCT_FISCAL_TYPE_DEFAULT = PRODUCT_FISCAL_TYPE[0][0]
 
 class ProductTemplate(orm.Model):
+    _inherit = 'product.product'
+    _columns = {
+        'fiscal_category_default_ids': fields.one2many(
+            'l10n_br_account.product.category', 'product_tmpl_id',
+            u'Categoria de Operação Fiscal Padrões'),
+        'fiscal_type': fields.selection(
+            PRODUCT_FISCAL_TYPE, 'Tipo Fiscal', required=True),
+    }
+    _defaults = {
+        'fiscal_type': PRODUCT_FISCAL_TYPE_DEFAULT
+    }
+    
+class ProductTemplate(orm.Model):
     _inherit = 'product.template'
     _columns = {
         'fiscal_category_default_ids': fields.one2many(

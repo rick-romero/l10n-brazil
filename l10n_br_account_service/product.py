@@ -20,6 +20,11 @@
 from openerp.osv import orm, fields
 
 class ProductTemplate(orm.Model):
+    _inherit = 'product.product'
+    _columns = {
+        'service_type_id': fields.many2one('l10n_br_account_service.service.type', u'Tipo de Serviço'),
+    }
+class ProductTemplate(orm.Model):
     _inherit = 'product.template'
     _columns = {
         'service_type_id': fields.many2one('l10n_br_account_service.service.type', u'Tipo de Serviço'),

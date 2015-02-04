@@ -24,6 +24,8 @@
 			<field name="inherit_id" ref="account.product_template_form_view" />
 			<field name="arch" type="xml">
 				<page string="Accounting" position="inside">
+					<group string="Dados Fiscais">
+					</group>
 					<field colspan="4" nolabel="1" name="fiscal_category_default_ids">
 						<tree string="Operações Padrões" editable="top">
 							<field name="fiscal_category_source_id" required="1" />

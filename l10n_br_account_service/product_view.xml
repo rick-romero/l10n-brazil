@@ -5,9 +5,9 @@
 		<record id="l10n_br_account_product_template_form" model="ir.ui.view">
 			<field name="name">l10n_br_account_product.template.form</field>
 			<field name="model">product.template</field>
-			<field name="inherit_id" ref="account.product_template_form_view"/>
+			<field name="inherit_id" ref="l10n_br_account.l10n_br_account_product_template_form_view"/>
 			<field name="arch" type="xml">
-					<group string="Dados Fiscais" position="inside" col="2">
+					<group string="Dados Fiscais">
 							<field name="service_type_id" attrs="{'invisible': [('type', '!=', 'service')],}" domain="[('internal_type', '=', 'normal')]"/>
 					</group>
 			</field>

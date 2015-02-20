@@ -22,17 +22,17 @@
 #
 ##############################################################################
 
-from openerp.osv import orm
+from openerp import models, api, fields
 
 
-class res_company(orm.Model):
+class res_company(models.Model):
     _inherit = 'res.company'
 
-    def zip_search(self, cr, uid, ids, context=None):
-        obj_zip = self.pool.get('l10n_br.zip')
-        for res_company in self.browse(cr, uid, ids):
+    @api.multi
+    def zip_search(self):
+        obj_zip = self.env['l10n_br.zip']
+        for res_company in self:
             zip_ids = obj_zip.zip_search_multi(
-                cr, uid, ids, context,
                 country_id=res_company.country_id.id,
                 state_id=res_company.state_id.id,
                 l10n_br_city_id=res_company.l10n_br_city_id.id,
@@ -41,19 +41,19 @@ class res_company(orm.Model):
                 zip_code=res_company.zip,
             )
 
-            zip_data = obj_zip.read(cr, uid, zip_ids, False, context)
-            obj_zip_result = self.pool.get('l10n_br.zip.result')
+            zip_data = obj_zip.read(zip_ids, False)
+            obj_zip_result = self.env['l10n_br.zip.result']
             zip_ids = obj_zip_result.map_to_zip_result(
-                cr, uid, 0, context, zip_data, self._name, ids[0])
+                                    zip_data, self._name, res_company.id)
 
-            if len(zip_ids) == 1:  # FIXME
-                result = obj_zip.set_result(cr, uid, ids, context, zip_data[0])
-                self.write(cr, uid, [res_company.id], result, context)
+            if len(zip_ids) == 1:
+                result = obj_zip.set_result(zip_data[0])
+                self.write([res_company.id], result)
                 return True
             else:
                 if len(zip_ids) > 1:
                     return obj_zip.create_wizard(
-                        cr, uid, ids, context, self._name,
+                        self._name,
                         country_id=res_company.country_id.id,
                         state_id=res_company.state_id.id,
                         l10n_br_city_id=res_company.l10n_br_city_id.id,

@@ -149,13 +149,13 @@ class L10n_brZipResult(osv.TransientModel):
             domain="[('state_id', '=', state_id)]", readonly=True),
         }
 
-    def map_to_zip_result(self, cr, uid, ids, context,
-                            zip_data, object_name, address_id):
+    def map_to_zip_result(self, cr, uid, ids, 
+                            zip_data, object_name, address_id, context=None):
         obj_zip = self.pool.get('l10n_br.zip')
         result = []
 
         for zip_read in zip_data:
-            zip_data = obj_zip.set_result(cr, uid, ids, context, zip_read)
+            zip_data = obj_zip.set_result(zip_read)
             zip_result_data = zip_data
             zip_result_data['object_name'] = object_name
             zip_result_data['address_id'] = address_id

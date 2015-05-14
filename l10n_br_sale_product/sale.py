@@ -367,5 +367,7 @@ class SaleOrderLine(orm.Model):
         if line.product_id.fiscal_type == 'product':
             fp_id = line.fiscal_position or result.get('fiscal_position', False) or False
             if fp_id:
+                if type(fp_id) is int:
+                    fp_id = self.pool['account.fiscal.position'].browse(cr, uid, fp_id, context) 
                 result['cfop_id'] = fp_id.cfop_id.id
         return result

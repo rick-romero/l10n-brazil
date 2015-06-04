@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+
+		<record id="l10n_br.account_template_3010103030000" model="account.account.template">
+			<field name="type">view</field>
+		</record>
+		
+		<record id="account_template_3010103030100" model="account.account.template">			
+			<field name="code">3.01.01.03.03.01.00</field>
+			<field name="name">Custo de aquisição das mercadorias</field>
+			<field name="note">Conta que contabiliza o custo de aquisição de mercadorias</field>
+			<field name="type">other</field>
+			<field name="user_type" ref="account.data_account_type_view" />			
+			<field name="parent_id" ref="l10n_br.account_template_3010103030000" />
+		</record>
+		
+		<record id="account_template_3010103030200" model="account.account.template">			
+			<field name="code">3.01.01.03.03.02.00</field>
+			<field name="name">Fretes</field>
+			<field name="note">Conta que contabiliza fretes da nota de saída</field>
+			<field name="type">other</field>
+			<field name="user_type" ref="account.data_account_type_view" />			
+			<field name="parent_id" ref="l10n_br.account_template_3010103030000" />
+		</record>
+		
+		<record id="account_template_3010103030300" model="account.account.template">			
+			<field name="code">3.01.01.03.03.03.00</field>
+			<field name="name">Seguros</field>
+			<field name="note">Conta que contabiliza seguros da nota de saída</field>
+			<field name="type">other</field>
+			<field name="user_type" ref="account.data_account_type_view" />
+			<field name="parent_id" ref="l10n_br.account_template_3010103030000" />
+		</record>
+		
+		<record id="account_template_3010103030400" model="account.account.template">			
+			<field name="code">3.01.01.03.03.04.00</field>
+			<field name="name">Outros custos</field>
+			<field name="note">Conta que contabiliza outros custos da nota de saída</field>
+			<field name="type">other</field>
+			<field name="user_type" ref="account.data_account_type_view" />			
+			<field name="parent_id" ref="l10n_br.account_template_3010103030000" />
+		</record>
+		
+		
+	</data>
+</openerp>

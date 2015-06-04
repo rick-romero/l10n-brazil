@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+
+		<record id="tax_code_template_transportes" model="account.tax.code.template">
+			<field name="code">TRANSPORTES</field>
+			<field name="name">TRANSPORTES</field>
+			<field name="sign">1</field>
+			<field name="tax_discount" eval="0" />
+		</record>
+		
+		<record id="tax_code_template_frete" model="account.tax.code.template">
+			<field name="code">FRETE</field>
+			<field name="name">FRETE</field>
+			<field name="domain">freight</field>
+			<field name="sign">1</field>
+			<field name="tax_discount" eval="0" />
+			<field name="parent_id" ref="tax_code_template_transportes" />
+		</record>
+		
+		<record id="tax_code_template_seguro" model="account.tax.code.template">
+			<field name="code">SEGURO</field>
+			<field name="name">SEGURO</field>
+			<field name="domain">insurance</field>
+			<field name="sign">1</field>
+			<field name="tax_discount" eval="0" />
+			<field name="parent_id" ref="tax_code_template_transportes" />
+		</record>
+		
+		<record id="tax_code_template_outros_custos" model="account.tax.code.template">
+			<field name="code">OUTROS CUSTOS</field>
+			<field name="name">OUTROS CUSTOS</field>
+			<field name="domain">other_costs</field>
+			<field name="sign">1</field>
+			<field name="tax_discount" eval="0" />
+			<field name="parent_id" ref="tax_code_template_transportes" />
+		</record>		
+		
+	</data>
+</openerp>

@@ -21,17 +21,10 @@ from openerp.osv import orm, fields
 from lxml import etree
 
 OPERATION_TYPE = {
-    'out_invoice': 'output',
-    'in_invoice': 'input',
-    'out_refund': 'input',
-    'in_refund': 'output'
-}
-
-JOURNAL_TYPE = {
-    'out_invoice': 'sale',
-    'in_invoice': 'purchase',
-    'out_refund': 'sale_refund',
-    'in_refund': 'purchase_refund'
+    'out_invoice': 'input',
+    'in_invoice': 'output',
+    'out_refund': 'output',
+    'in_refund': 'input'
 }
 
 class account_invoice_refund(orm.TransientModel):
@@ -73,7 +66,11 @@ class account_invoice_refund(orm.TransientModel):
                     bank = invoice.partner_bank_id.id
                 else:
                     bank = False
-                onchange = inv_obj.onchange_partner_id(cr, uid, [invoice.id], 'out_refund', invoice.partner_id.id, invoice.date_invoice, payment_term, bank, invoice.company_id.id, fiscal_category_id)
+                onchange = inv_obj.onchange_partner_id(cr, uid, [invoice.id], 'out_refund', invoice.partner_id.id, 
+                                                       date_invoice=invoice.date_invoice, payment_term=payment_term, 
+                                                       partner_bank_id=bank, company_id=invoice.company_id.id,
+                                                       context={ 'fiscal_category_id': fiscal_category_id })
+                
                 onchange['value']['fiscal_category_id'] = fiscal_category_id
 
                 for idx, send_line in enumerate(send_invoice.invoice_line):
@@ -95,7 +92,10 @@ class account_invoice_refund(orm.TransientModel):
         if not context:
             context = {}
         type = context.get('type', 'out_invoice')
-        journal_type = JOURNAL_TYPE[type]
+        journal_type = (type == 'out_invoice') and 'sale_refund' or \
+                       (type == 'out_refund') and 'sale' or \
+                       (type == 'in_invoice') and 'purchase_refund' or \
+                       (type == 'in_refund') and 'purchase'
         type = OPERATION_TYPE[type]
         eview = etree.fromstring(res['arch'])
         fiscal_categ = eview.xpath("//field[@name='fiscal_category_id']")

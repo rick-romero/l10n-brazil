@@ -66,7 +66,11 @@ class account_invoice_refund(orm.TransientModel):
                     bank = invoice.partner_bank_id.id
                 else:
                     bank = False
-                onchange = inv_obj.onchange_partner_id(cr, uid, [invoice.id], 'out_refund', invoice.partner_id.id, invoice.date_invoice, payment_term, bank, invoice.company_id.id, fiscal_category_id)
+                onchange = inv_obj.onchange_partner_id(cr, uid, [invoice.id], 'out_refund', invoice.partner_id.id, 
+                                                       date_invoice=invoice.date_invoice, payment_term=payment_term, 
+                                                       partner_bank_id=bank, company_id=invoice.company_id.id,
+                                                       context={ 'fiscal_category_id': fiscal_category_id })
+                
                 onchange['value']['fiscal_category_id'] = fiscal_category_id
 
                 for idx, send_line in enumerate(send_invoice.invoice_line):

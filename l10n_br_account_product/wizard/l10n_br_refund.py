@@ -36,11 +36,38 @@ JOURNAL_TYPE = {
 
 class account_invoice_refund(orm.TransientModel):
 
+    def _default_fiscal_category(self, cr, uid, context=None):
+
+        DEFAULT_FCATEGORY_PRODUCT = {
+            'out_invoice': 'out_refund_fiscal_category_id',
+            'in_invoice': 'in_refund_fiscal_category_id',
+        }
+
+        default_fo_category = {
+           'product': DEFAULT_FCATEGORY_PRODUCT,
+        }
+
+        invoice_type = context.get('type', 'out_invoice')
+        invoice_fiscal_type = context.get('fiscal_type', 'product')
+
+        user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
+        fcategory = self.pool.get('res.company').read(
+            cr, uid, user.company_id.id,
+            [default_fo_category[invoice_fiscal_type][invoice_type]],
+            context=context)[default_fo_category[invoice_fiscal_type][
+                invoice_type]]
+
+        return fcategory and fcategory[0] or False
+
     _inherit = "account.invoice.refund"
     _columns = {
         'fiscal_category_id': fields.many2one(
             'l10n_br_account.fiscal.category', 'Categoria Fiscal',
             domain="[('journal_type', '=', 'sale_refund'), ('fiscal_type', '=', 'product')]", required=True),
+    }
+    
+    _defaults = {
+        'fiscal_category_id': _default_fiscal_category,
     }
 
 

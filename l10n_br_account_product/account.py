@@ -112,7 +112,8 @@ class AccountTax(models.Model):
     def compute_all(self, cr, uid, taxes, price_unit, quantity,
                     product=None, partner=None, force_excluded=False,
                     fiscal_position=False, insurance_value=0.0,
-                    freight_value=0.0, other_costs_value=0.0):
+                    freight_value=0.0, other_costs_value=0.0,
+                    consumidor=False):
         """Compute taxes
 
         Returns a dict of the form::
@@ -171,7 +172,7 @@ class AccountTax(models.Model):
 
         # Calcula ICMS
         specific_icms = [tx for tx in result['taxes'] if tx['domain'] == 'icms']
-        if fiscal_position and fiscal_position.asset_operation:
+        if consumidor and consumidor == '1':
             total_base = result['total'] + insurance_value + \
             freight_value + other_costs_value + ipi_value
         else:
@@ -221,11 +222,12 @@ class AccountTax(models.Model):
     def compute_all(self, price_unit, quantity,
                     product=None, partner=None, force_excluded=False,
                     fiscal_position=False, insurance_value=0.0,
-                    freight_value=0.0, other_costs_value=0.0):
+                    freight_value=0.0, other_costs_value=0.0, consumidor=False):
         return self._model.compute_all(
             self._cr, self._uid, self, price_unit, quantity,
             product=product, partner=partner, force_excluded=force_excluded,
             fiscal_position=fiscal_position, insurance_value=insurance_value,
-            freight_value=freight_value, other_costs_value=other_costs_value)
+            freight_value=freight_value, other_costs_value=other_costs_value,
+            consumidor=consumidor)
 
         

@@ -793,6 +793,16 @@ class AccountInvoiceLine(models.Model):
 
         if not values.get('invoice_line_tax_id'):
             return result #FIXME
+        if not values.get('ind_final'):
+            if values.get('invoice_id'):                
+                ind_final = self.pool['account.invoice'].browse(
+                    cr, uid, values.get('invoice_id')).ind_final
+                values.update({ 'ind_final': ind_final })
+            elif values.get('id'):
+                ind_final = self.browse(
+                    cr, uid, values.get('id')).invoice_id.ind_final
+                values.update({ 'ind_final': ind_final })
+            
         taxes = tax_obj.browse(
             cr, uid, values.get('invoice_line_tax_id')[0][2])
         fiscal_position = self.pool.get('account.fiscal.position').browse(
@@ -807,7 +817,8 @@ class AccountInvoiceLine(models.Model):
             fiscal_position=fiscal_position,
             insurance_value=values.get('insurance_value', 0.0),
             freight_value=values.get('freight_value', 0.0),
-            other_costs_value=values.get('other_costs_value', 0.0))
+            other_costs_value=values.get('other_costs_value', 0.0),
+            consumidor=values.get('ind_final', False))
 
         if values.get('product_id'):
             obj_product = self.pool.get('product.product').browse(
@@ -875,7 +886,8 @@ class AccountInvoiceTax(models.Model):
                 fiscal_position=line.fiscal_position,
                insurance_value=line.insurance_value,
                 freight_value=line.freight_value,
-                other_costs_value=line.other_costs_value)['taxes']:
+                other_costs_value=line.other_costs_value,
+                consumidor=inv.ind_final)['taxes']:
                 val = {}
                 val['invoice_id'] = inv.id
                 val['name'] = tax['name']

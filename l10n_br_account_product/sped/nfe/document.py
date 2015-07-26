@@ -436,9 +436,10 @@ class NFe200(FiscalDocument):
         #
         # Dados da Transportadora e veiculo relacionados ao módulo delivery
         #
-        if inv.carrier_id:
 
-            self.nfe.infNFe.transp.modFrete.valor = inv.incoterm and inv.incoterm.freight_responsibility or '9'
+        self.nfe.infNFe.transp.modFrete.valor = inv.incoterm and inv.incoterm.freight_responsibility or '9'
+
+        if inv.carrier_id:
 
             if inv.carrier_id.partner_id.is_company:
                 self.nfe.infNFe.transp.transporta.CNPJ.valor = \

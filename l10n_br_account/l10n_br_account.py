@@ -55,7 +55,7 @@ class L10n_brAccountInvoiceCancel(models.Model):
     justificative = fields.Char('Justificativa', size=255, readonly=True,
         states={'draft': [('readonly', False)]}, required=True)
     cancel_document_event_ids = fields.One2many(
-        'l10n_br_account.document_event', 'document_event_ids', u'Eventos')
+        'l10n_br_account.document_event', 'cancel_document_event_id', u'Eventos')
     state = fields.Selection(
         [('draft', 'Rascunho'), ('cancel', 'Cancelado'),
         ('done', u'Concluído')], 'Status', required=True)
@@ -119,6 +119,10 @@ class L10n_brDocumentEvent(models.Model):
         'Status', select=True, readonly=True, default='draft')
     document_event_ids = fields.Many2one(
         'account.invoice', 'Documentos')
+    cancel_document_event_id = fields.Many2one(
+        'l10n_br_account.invoice.cancel', 'Documentos')
+    invalid_number_document_event_id = fields.Many2one(
+        'l10n_br_account.invoice.invalid.number', 'Documentos')
 
     _order = "write_date desc"
 
@@ -305,8 +309,8 @@ class L10n_brAccountInvoiceInvalidNumber(models.Model):
         readonly=True, states={'draft': [('readonly', False)]},
         required=True)
     invalid_number_document_event_ids = fields.One2many(
-        'l10n_br_account.document_event', 'document_event_ids',
-        u'Eventos')
+        'l10n_br_account.document_event', 'invalid_number_document_event_id',
+        u'Eventos', states={'done':[('readonly',True)]})
 
     _sql_constraints = [
         ('number_uniq',

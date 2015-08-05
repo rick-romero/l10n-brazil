@@ -284,6 +284,39 @@ class NFe200(FiscalDocument):
             self.nfe.infNFe.ide.tpNF.valor = '0'
         else:
             self.nfe.infNFe.ide.tpNF.valor = '1'
+    
+    def _get_nfe_identification(self, cr, uid, pool, context=None):
+
+        # Identificação da NF-e
+        #
+        res = {}
+
+        fiscal_doc_ids = pool.get('l10n_br_account.fiscal.document').search(
+            cr, uid, [('code', '=', self.nfe.infNFe.ide.mod.valor)])
+
+        res['fiscal_document_id'] = \
+            fiscal_doc_ids[0] if fiscal_doc_ids else False
+
+        document_serie_ids = pool.get('l10n_br_account.document.serie').search(
+            cr, uid, [('code', '=', self.nfe.infNFe.ide.serie.valor)])
+
+        res['document_serie_id'] = \
+            document_serie_ids[0] if document_serie_ids else False
+
+        res['internal_number'] = self.nfe.infNFe.ide.nNF.valor
+        res['date_invoice'] = self.nfe.infNFe.ide.dEmi.valor
+        res['date_in_out'] = self.nfe.infNFe.ide.dSaiEnt.valor
+        res['nfe_purpose'] = str(self.nfe.infNFe.ide.finNFe.valor)
+
+        # TODO: Campo importante para o SPED
+        # self.nfe.infNFe.ide.indPag.valor =
+        # inv.payment_term and inv.payment_term.indPag or '0'
+        # TODO: Adicionar campo nfe_enviroment na invoice assim como foi feito
+        # TODO: com a versão da nfe
+        # self.nfe.infNFe.ide.tpAmb.valor = nfe_environment
+
+        return res
+
 
     def _in_out_adress(self, cr, uid, ids, inv, context=None):
 

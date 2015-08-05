@@ -1136,6 +1136,60 @@ class NFe200(FiscalDocument):
         nfe.set_xml(nfe_string)
         return nfe
 
+    def set_txt(self, nfe_string, context=None):
+        """"""
+        raise orm.except_orm(_(u'Erro!'), _(u"Biblioteca PySPED não "
+                                            u"suporta a importaçao "
+                                            u"de TXT"))
+        #nfe = self.get_NFe()
+        #nfe.set_txt(nfe_string)
+        #return nfe
+        
+    def parse_edoc(self, filebuffer, ftype):
+
+        import base64
+        filebuffer = base64.standard_b64decode(filebuffer)
+        edoc_file = tempfile.NamedTemporaryFile()
+        edoc_file.write(filebuffer)
+        edoc_file.flush()
+        edocs = []
+        if ftype == '.zip':
+            raise orm.except_orm(_(u'Erro!'), _(u"Importação de zip em "
+                                                u"desenvolvimento"))
+            #TODO: Unzip and return a list of edoc
+        elif ftype == '.xml':
+            edocs.append(self.set_xml(edoc_file.name))
+        elif ftype == '.txt':
+            edocs.append(self.set_txt(edoc_file.name))
+        return edocs
+
+    def import_edoc(self, cr, uid, filebuffer, ftype, context):
+
+        edocs = self.parse_edoc(filebuffer, ftype)
+        result = []
+        for edoc in edocs:
+            docid, docaction = self._deserializer(cr, uid, edoc, context)
+            result.append({
+                'id': docid,
+                'action': docaction
+            })
+        return result
+
+    @staticmethod
+    def _mask_cnpj_cpf(is_company, cnpj_cpf):
+
+        if cnpj_cpf:
+            val = re.sub('[^0-9]', '', cnpj_cpf)
+
+            if is_company and len(val) == 14:
+                cnpj_cpf = "%s.%s.%s/%s-%s" % (val[0:2], val[2:5], val[5:8],
+                                               val[8:12], val[12:14])
+            elif not is_company and len(val) == 11:
+                cnpj_cpf = "%s.%s.%s-%s" % (val[0:3], val[3:6], val[6:9],
+                                            val[9:11])
+
+        return cnpj_cpf
+
 
 class NFe310(NFe200):
 

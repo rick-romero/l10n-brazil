@@ -988,6 +988,21 @@ class NFe200(FiscalDocument):
         self.vol.pesoL.valor = str("%.2f" % inv.weight)
         self.vol.pesoB.valor = str("%.2f" % inv.weight_net)
 
+    def _get_weight_data(self, cr, uid, ids, inv, context=None):
+        #
+        # Campos do Transporte da NF-e Bloco 381
+        #
+        weight_data = {
+            'number_of_packages': self.vol.qVol.valor,
+            'kind_of_packages': self.vol.esp.valor,
+            'brand_of_packages': self.vol.marca.valor,
+            'notation_of_packages': self.vol.nVol.valor,
+            'weight': self.vol.pesoL.valor,
+            'weight_net': self.vol.pesoB.valor
+        }
+        return weight_data
+
+
     def _additional_information(self, cr, uid, ids, inv, context=None):
 
         #
@@ -995,6 +1010,18 @@ class NFe200(FiscalDocument):
         #
         self.nfe.infNFe.infAdic.infAdFisco.valor = inv.fiscal_comment or ''
         self.nfe.infNFe.infAdic.infCpl.valor = inv.comment or ''
+
+    def _get_additional_information(self, cr, uid, ids, inv, context=None):
+
+        #
+        # Informações adicionais
+        #
+        additional_information = {
+            'fiscal_comment': self.nfe.infNFe.infAdic.infAdFisco.valor,
+            'comment': self.nfe.infNFe.infAdic.infCpl.valor
+        }
+        return additional_information
+
 
     def _total(self, cr, uid, ids, inv, context=None):
 
@@ -1015,6 +1042,28 @@ class NFe200(FiscalDocument):
         self.nfe.infNFe.total.ICMSTot.vCOFINS.valor = str("%.2f" % inv.cofins_value)
         self.nfe.infNFe.total.ICMSTot.vOutro.valor = str("%.2f" % inv.amount_costs)
         self.nfe.infNFe.total.ICMSTot.vNF.valor = str("%.2f" % inv.amount_total)
+
+    def _get_total(self, cr, uid, context=None):
+        #
+        # Totais
+        #
+        total = {
+            'icms_base': self.nfe.infNFe.total.ICMSTot.vBC.valor,
+            'icms_value': self.nfe.infNFe.total.ICMSTot.vICMS.valor,
+            'icms_st_base': self.nfe.infNFe.total.ICMSTot.vBCST.valor,
+            'icms_st_value': self.nfe.infNFe.total.ICMSTot.vST.valor,
+            'amount_gross': self.nfe.infNFe.total.ICMSTot.vProd.valor,
+            'amount_freight': self.nfe.infNFe.total.ICMSTot.vFrete.valor,
+            'amount_insurance': self.nfe.infNFe.total.ICMSTot.vSeg.valor,
+            'amount_discount': self.nfe.infNFe.total.ICMSTot.vDesc.valor,
+            'ii_value': self.nfe.infNFe.total.ICMSTot.vII.valor,
+            'ipi_value': self.nfe.infNFe.total.ICMSTot.vIPI.valor,
+            'pis_value': self.nfe.infNFe.total.ICMSTot.vPIS.valor,
+            'cofins_value': self.nfe.infNFe.total.ICMSTot.vCOFINS.valor,
+            'amount_costs': self.nfe.infNFe.total.ICMSTot.vOutro.valor,
+            'amount_total': self.nfe.infNFe.total.ICMSTot.vNF.valor,
+        }
+        return total
 
     def get_NFe(self):
 

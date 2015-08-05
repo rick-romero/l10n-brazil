@@ -475,14 +475,20 @@ class AccountInvoiceLine(models.Model):
         context.update({'use_domain': ('use_invoice', '=', True)})
         kwargs.update({'context': context})
         result['value']['cfop_id'] = False
-
-        obj_fp_rule = self.env['account.fiscal.position.rule']
-        result_rule = obj_fp_rule.apply_fiscal_mapping(
-            result, **kwargs)
+        
+        fiscal_position_id = kwargs.get('fiscal_position', False)
+        
+        if not fiscal_position_id:
+            obj_fp_rule = self.env['account.fiscal.position.rule']
+            result.update(obj_fp_rule.apply_fiscal_mapping(
+                result, **kwargs))
+        else:
+            result['value'].update({ 'fiscal_position': fiscal_position_id })
+            
         if result['value'].get('fiscal_position', False):
             obj_fp = self.env['account.fiscal.position'].browse(
                 result['value'].get('fiscal_position', False))
-            result_rule['value'][
+            result['value'][
                 'cfop_id'] = obj_fp.cfop_id and obj_fp.cfop_id.id or False
             if kwargs.get('product_id', False):
                 obj_product = self.env['product.product'].browse(
@@ -503,11 +509,11 @@ class AccountInvoiceLine(models.Model):
                                 kwargs.get('account_id',
                                            False)).tax_ids or False)
                 tax_ids = obj_fp.map_tax(taxes).ids
-                result_rule['value']['invoice_line_tax_id'] = tax_ids
+                result['value']['invoice_line_tax_id'] = tax_ids
                 result['value'].update(
                     self._get_tax_codes(kwargs.get('product_id'), obj_fp,
                                         tax_ids, kwargs.get('company_id')))
-        return result_rule
+        return result
 
     @api.multi
     def product_id_change(self, product, uom, qty=0, name='',
@@ -566,13 +572,13 @@ class AccountInvoiceLine(models.Model):
     @api.multi
     def onchange_fiscal_position(self, partner_id, company_id,
                                 product_id, fiscal_category_id,
-                                account_id, context):
+                                account_id, fiscal_position=False, context=None):
         result = {'value': {}}
         return self._fiscal_position_map(
             result, context, partner_id=partner_id,
             partner_invoice_id=partner_id, company_id=company_id,
             fiscal_category_id=fiscal_category_id, product_id=product_id,
-            account_id=account_id)
+            fiscal_position=fiscal_position, account_id=account_id)
 
     @api.multi
     def onchange_account_id(self, product_id, partner_id,

@@ -1212,6 +1212,20 @@ class NFe310(NFe200):
         # self.nfe.infNFe.ide.hSaiEnt.valor = datetime.strptime(
         #     inv.date_in_out[-8:], '%H:%M:%S')
 
+    def _get_nfe_identification(self, cr, uid, pool, context=None):
+
+        res = super(NFe310, self)._get_nfe_identification(
+            cr, uid, pool, context)
+
+        res['ind_final'] = self.nfe.infNFe.ide.indFinal.valor
+        res['ind_pres'] = self.nfe.infNFe.ide.indPres.valor
+        res['date_hour_invoice'] = self.nfe.infNFe.ide.dhEmi.valor
+        res['date_in_out'] = self.nfe.infNFe.ide.dhSaiEnt.valor
+        # TODO: Encontrar uma maneira de importar a posicao fiscal
+        # self.nfe.infNFe.ide.idDest.valor = inv.fiscal_position.id_dest or ''
+
+        return res
+
 
     def get_NFe(self):
 

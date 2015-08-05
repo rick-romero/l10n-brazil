@@ -20,6 +20,7 @@
 import re
 import string
 from datetime import datetime
+import tempfile
 
 from openerp import pooler
 from openerp.osv import orm
@@ -107,6 +108,155 @@ class NFe200(FiscalDocument):
             nfes.append(self.nfe)
 
         return nfes
+    
+    def _deserializer(self, cr, uid, nfe, context):
+        if not context:
+            context = {'lang': 'pt_BR'}
+        if nfe.infNFe.ide.tpNF.valor == 0:
+            action = ('account', 'action_invoice_tree1')
+        elif nfe.infNFe.ide.tpNF.valor == 1:
+            action = ('account', 'action_invoice_tree2')
+
+        self.nfe = nfe
+        nfref = self._get_NFRef()
+        nfref.xml = nfe.xml
+        self.nfref = nfref
+
+        self.dup = self._get_Dup()
+        self.dup.xml = nfe.xml
+
+        pool = pooler.get_pool(cr.dbname)
+        invoice_obj = pool.get('account.invoice')
+
+        try:
+            nfe_references = self._get_nfe_references(
+                cr, uid, pool, context=context)
+            fiscal_doc_obj = pool.get('l10n_br_account_product.document.related')
+            fiscal_doc_id = fiscal_doc_obj.create(cr, uid, nfe_references)
+        except AttributeError:
+            pass
+
+        # invoice_vals = {
+        #     'nfe_access_key': False,
+        #     'comment': u'',
+        #     'vendor_serie': False,
+        #     'check_total': 101.8,
+        #     'number_of_packages': 0,
+        #     # 'partner_bank_id': <openerp.osv.orm.browse_null object at 0x7f9ebd9ac750>,
+        #     'supplier_invoice_number': False,
+        #     'ind_final': u'0',
+        #     'icms_base_other': 0.0,
+        #     'amount_gross': 101.8,
+        #     'ipi_base': 0.0,
+        #     'amount_freight': 0.0,
+        #     # 'fiscal_category_id': browse_record(l10n_br_account.fiscal.category,21),
+        #     'fiscal_type': u'product',
+        #     'issuer': u'1',
+        #     'user_id': 16,
+        #     'reference': u'EPC00420',
+        #     # 'payment_mode_id': <openerp.osv.orm.browse_null object at 0x7f9ebd9ac910>,
+        #     'company_id': 1,
+        #     'amount_tax': 0.0,
+        #     # 'move_id': <openerp.osv.orm.browse_null object at 0x7f9ebd9ac990>,
+        #     'cofins_base': 0.0,
+        #     'type': u'out_invoice',
+        #     'sent': False,
+        #     # 'incoterm': <openerp.osv.orm.browse_null object at 0x7f9ebd9ac9d0>,
+        #     'internal_number': False,
+        #     'account_id': 96,
+        #     'pis_value': 0.0,
+        #     'notation_of_packages': False,
+        #     'nfe_export_date': False,
+        #     'number': False,
+        #     'date_invoice': False,
+        #     #'period_id': <openerp.osv.orm.browse_null object at
+        #     # 0x7f9ebd9aca90>,
+        #     'icms_st_value': 0.0,
+        #     'fiscal_document_electronic': True,
+        #     'origin': u'EPC00420',
+        #     'amount_total': 101.8,
+        #     'amount_discount': 0.0,
+        #     'name': u'EPC00420',
+        #     # 'partner_shipping_id': in_out_data['partner_shipping_id'],
+        #     'ipi_base_other': 0.0,
+        #     # 'payment_term': browse_record(account.payment.term, 6),
+        #     'amount_insurance': 0.0,
+        #     'carrier_name': False,
+        #     # 'commercial_partner_id': browse_record(res.partner, 899),
+        #     'ii_value': 0.0,
+        #     'date_due': False,
+        #     'weight': 0.0,
+        #     'currency_id': 7,
+        #     'nfe_purpose': u'1',
+        #     # 'vehicle_state_id': <openerp.osv.orm.browse_null object at 0x7f9ebd9acb10>,
+        #     # 'partner_id': 899,
+        #     # 'id': 74,
+        #     # 'vehicle_id': <openerp.osv.orm.browse_null object at 0x7f9ebd9acd10>,
+        #     'amount_costs': 0.0,
+        #     'amount_untaxed': 101.8,
+        #     'document_serie_id': 2,
+        #     'brand_of_packages': False,
+        #     'reference_type': u'none',
+        #     'journal_id': 22,
+        #     'ind_pres': u'0',
+        #     'state': u'draft',
+        #     # 'vehicle_l10n_br_city_id': <openerp.osv.orm.browse_null object at 0x7f9ebd9b8110>,
+        #     'nfe_date': False,
+        #     'cofins_value': 0.0,
+        #     'reconciled': False,
+        #     'pis_base': 0.0,
+        #     'kind_of_packages': False,
+        #     'date_in_out': False,
+        #     'weight_net': 0.0,
+        #     'residual': 0.0,
+        #     'move_name': False,
+        #     # except'section_id': <openerp.osv.orm.browse_null object at 0x7f9ebd9b8150>,
+        #     # 'fiscal_position': browse_record(account.fiscal.position, 29),
+        #     # 'agent_id': <openerp.osv.orm.browse_null object at 0x7f9ebd9b8190>,
+        #     'ipi_value': 0.0,
+        #     'vehicle_plate': False,
+        #     'icms_st_base': 0.0,
+        #     'nfe_status': False,
+        #     'nfe_version': u'3.10',
+        #     'icms_base': 0.0,
+        #     'date_hour_invoice': False,
+        #     'fiscal_comment': False,
+        #     'icms_value': 0.0,
+        #     'nfe_protocol_number': False,
+        #     'fiscal_document_id': fiscal_doc_id or False,
+        # }
+
+        invoice_vals = {
+            'account_id': 96
+        }
+
+        carrier_data = self._get_carrier_data(cr, uid, pool, context=context)
+        in_out_data = self._get_in_out_adress(cr, uid, pool, context=context)
+        receiver = self._get_receiver(cr, uid, pool, context=context)
+        nfe_identification = self._get_nfe_identification(
+            cr, uid, pool, context=context)
+
+        emmiter = self._get_emmiter(cr, uid, pool, context=context)
+        encashment_data = self._get_encashment_data(
+            cr, uid, pool, context=context)
+
+        invoice_vals.update(carrier_data)
+        invoice_vals.update(in_out_data)
+        invoice_vals.update(receiver)
+        invoice_vals.update(nfe_identification)
+        invoice_vals.update(emmiter)
+        invoice_vals.update(encashment_data)
+
+        inv_line_ids = []
+        for det in self.nfe.infNFe.det:
+            self.det = det
+            inv_line_ids += self._get_details(cr, uid, pool, context=context)
+
+        invoice_vals['invoice_line'] = inv_line_ids
+        invoice_id = invoice_obj.create(cr, uid, invoice_vals, context=context)
+
+        return invoice_id, action
+
 
 
     def _nfe_identification(self, cr, uid, ids, inv, company, nfe_environment, context=None):

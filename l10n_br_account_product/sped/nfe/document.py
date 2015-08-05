@@ -499,6 +499,22 @@ class NFe200(FiscalDocument):
         if inv.company_id.partner_id.inscr_mun:
             self.nfe.infNFe.emit.CNAE.valor = re.sub('[%s]' % re.escape(string.punctuation), '', inv.company_id.cnae_main_id.code or '')
 
+    def _get_emmiter(self, cr, uid, pool, context=None):
+
+        #
+        # Emitente
+        #
+        emmiter = {}
+        partner_obj = pool.get('res.partner')
+        cnpj = self._mask_cnpj_cpf(True, self.nfe.infNFe.emit.CNPJ.valor)
+
+        emitter_partner_ids = partner_obj.search(
+            cr, uid, [('cnpj_cpf', '=', cnpj)])
+
+        emmiter['company_id'] = \
+            emitter_partner_ids[0] if emitter_partner_ids else False
+
+        return emmiter
 
     def _receiver(self, cr, uid, ids, inv, company, nfe_environment, context=None):
 
@@ -547,6 +563,39 @@ class NFe200(FiscalDocument):
         self.nfe.infNFe.dest.enderDest.xPais.valor = inv.partner_id.country_id.name or ''
         self.nfe.infNFe.dest.enderDest.fone.valor = re.sub('[%s]' % re.escape(string.punctuation), '', str(inv.partner_id.phone or '').replace(' ',''))
         self.nfe.infNFe.dest.email.valor = inv.partner_id.email or ''
+
+    def _get_receiver(self, cr, uid, pool, context=None):
+        #
+        # Destinatário
+        #
+        receiver = {}
+
+        cnpj_cpf = ''
+
+        if self.nfe.infNFe.dest.CNPJ.valor:
+            cnpj_cpf = self._mask_cnpj_cpf(True, self.nfe.infNFe.dest.CNPJ.valor)
+
+        elif self.nfe.infNFe.dest.CPF.valor:
+            cnpj_cpf = self._mask_cnpj_cpf(False,
+                                           self.nfe.infNFe.dest.CPF.valor)
+
+        receiver_partner_ids = pool.get('res.partner').search(
+            cr, uid, [('cnpj_cpf', '=', cnpj_cpf)])
+
+        # Quando o cliente é estrangeiro, ele nao possui cnpj. Por isso
+        # realizamos a busca usando como chave de busca o nome da empresa ou
+        # a sua razao social
+        if not receiver_partner_ids:
+            aux = ['|',
+                   ('legal_name', '=', self.nfe.infNFe.dest.xNome.valor),
+                   ('legal_name', '=', self.nfe.infNFe.dest.xNome.valor)]
+            receiver_partner_ids = pool.get('res.partner').search(
+                cr, uid, aux)
+
+        receiver['partner_id'] = \
+            receiver_partner_ids[0] if receiver_partner_ids else False
+        print receiver['partner_id']
+        return receiver
 
 
     def _details(self, cr, uid, ids, inv, inv_line, i, context=None):

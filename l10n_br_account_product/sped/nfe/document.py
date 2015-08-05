@@ -836,12 +836,37 @@ class NFe200(FiscalDocument):
         self.di.UFDesemb.valor = inv_di.state_id.code or ''
         self.di.dDesemb.valor = inv_di.date_release or ''
         self.di.cExportador.valor = inv_di.exporting_code
+        
+    def _get_di(self, cr, uid, pool, i, context=None):
+
+        state_ids = pool.search(
+            cr, uid, [('code', '=', self.di.UFDesemb.valor)])
+
+        di = {
+            'name': self.di.nDI.valor,
+            'date_registration': self.di.dDI.valor,
+            'location': self.di.xLocDesemb.valor,
+            'state_id': state_ids[0] if state_ids else False,
+            # self.di.UFDesemb.valor = inv_di.state_id.code or ''
+            'date_release': self.di.dDesemb.valor,
+            'exporting_code': self.di.cExportador.valor
+        }
+        return di
 
     def _addition(self, cr, uid, ids, inv, inv_line, inv_di, inv_di_line, i, context=None):
         self.di_line.nAdicao.valor = inv_di_line.name
         self.di_line.nSeqAdic.valor = inv_di_line.sequence
         self.di_line.cFabricante.valor = inv_di_line.manufacturer_code
         self.di_line.vDescDI.valor = str("%.2f" % inv_di_line.amount_discount)
+
+    def _get_addition(self, cr, uid, ids, inv, inv_line, inv_di, inv_di_line, i, context=None):
+        addition = {
+            'name': self.di_line.nAdicao.valor,
+            'sequence': self.di_line.nSeqAdic.valor,
+            'manufacturer_code': self.di_line.cFabricante.valor,
+            'amount_discount': self.di_line.vDescDI.valor
+        }
+        return addition
 
     def _encashment_data(self, cr, uid, ids, inv, line, context=None):
 
@@ -852,6 +877,45 @@ class NFe200(FiscalDocument):
         self.dup.nDup.valor = line.name
         self.dup.dVenc.valor = line.date_maturity or inv.date_due or inv.date_invoice
         self.dup.vDup.valor = str("%.2f" % (line.debit or line.credit))
+
+    def _get_encashment_data(self, cr, uid, pool, context=None):
+
+        #
+        # Dados de Cobrança
+        #
+
+        # Realizamos a busca da move line a partir do nome da mesma
+        # account_move_line_ids = pool.get('account.move.line').search(
+        #     cr, uid, [('name', '=', self.dup.nDup.valor)])
+        #
+        # if not account_move_line_ids:
+        #     # Se nao encontrarmos a move line, nos devemos cria-la
+        #     vals = {
+        #         'name': self.dup.nDup.valor,
+        #         'date_maturity': self.dup.dVenc.valor,
+        #         'debit': self.dup.vDup.valor,
+        #         # 'journal_id': 1,
+        #     }
+        #
+        #     # Inserimos em um lista para que account_move_line_ids continue
+        #     # representando uma lista
+        #     context['journal_id'] = 1
+        #     context['period_id'] = 1
+        #     account_move_line_ids = [pool.get('account.move.line').create(
+        #         cr, uid, vals, context=context)]
+        #
+        # encashment_data = {
+        #     'move_line_receivable_id': account_move_line_ids[0] if
+        #     account_move_line_ids else False,
+        #     'date_due': self.dup.dVenc.valor,
+        # }
+
+        # Nao conseguimos obter todos os campos necessarios para criacao
+        # do account.move.line
+        encashment_data = {}
+
+        return encashment_data
+
 
     def _carrier_data(self, cr, uid, ids, inv, context=None):
 
@@ -880,6 +944,38 @@ class NFe200(FiscalDocument):
             self.nfe.infNFe.transp.veicTransp.placa.valor = inv.vehicle_id.plate or ''
             self.nfe.infNFe.transp.veicTransp.UF.valor = inv.vehicle_id.plate.state_id.code or ''
             self.nfe.infNFe.transp.veicTransp.RNTC.valor = inv.vehicle_id.rntc_code or ''
+
+    def _get_carrier_data(self, cr, uid, pool, context=None):
+
+        res = {}
+
+        cnpj_cpf = ''
+
+        # Realizamos a importacao da transportadora
+        if self.nfe.infNFe.transp.transporta.CNPJ.valor:
+            cnpj_cpf = self.nfe.infNFe.transp.transporta.CNPJ.valor
+            cnpj_cpf = self._mask_cnpj_cpf(True, cnpj_cpf)
+
+        elif self.nfe.infNFe.transp.transporta.CPF.valor:
+            cnpj_cpf = self.nfe.infNFe.transp.transporta.CPF.valor
+            cnpj_cpf = self._mask_cnpj_cpf(False, cnpj_cpf)
+
+        carrier_ids = pool.get('delivery.carrier').search(
+            cr, uid, [('partner_id.cnpj_cpf', '=', cnpj_cpf)])
+
+        # Realizamos a busca do veiculo pelo numero da placa
+        placa = self.nfe.infNFe.transp.veicTransp.placa.valor
+
+        vehicle_ids = pool.get('l10n_br_delivery.carrier.vehicle').search(
+            cr, uid, [('plate', '=', placa)])
+
+        # Ao encontrarmos o carrier com o partner especificado, basta
+        # retornarmos seu id que o restantes dos dados vem junto
+        res['carrier_id'] = carrier_ids[0] if carrier_ids else False
+        res['vehicle_id'] = vehicle_ids[0] if vehicle_ids else False
+
+        return res
+
 
     def _weight_data(self, cr, uid, ids, inv, context=None):
         #

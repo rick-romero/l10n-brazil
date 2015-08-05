@@ -344,6 +344,18 @@ class NFe200(FiscalDocument):
                     self.nfe.infNFe.entrega.xMun.valor = inv.partner_shipping_id.l10n_br_city_id.name or ''
                     self.nfe.infNFe.entrega.UF.valor = inv.partner_shipping_id.state_id.code or ''
 
+    def _get_in_out_adress(self, cr, uid, pool, context=None):
+
+        if self.nfe.infNFe.ide.tpNF.valor == '0':
+            cnpj = self._mask_cnpj_cpf(True, self.nfe.infNFe.retirada.CNPJ.valor)
+        else:
+            print self.nfe.infNFe.entrega.CNPJ.valor
+            cnpj = self._mask_cnpj_cpf(True, self.nfe.infNFe.entrega.CNPJ.valor)
+
+        partner_ids = pool.get('res.partner').search(
+            cr, uid, [('cnpj_cpf', '=', cnpj)])
+
+        return {'partner_shipping_id': partner_ids[0] if partner_ids else False}
 
     def _nfe_references(self, cr, uid, ids, inv_related, context=None):
 
@@ -382,6 +394,82 @@ class NFe200(FiscalDocument):
             self.nfref.refECF.mod.valor = inv_related.fiscal_document_id and inv_related.fiscal_document_id.code or ''
             self.nfref.refECF.nECF.valor = inv_related.internal_number
             self.nfref.refECF.nCOO.valor = inv_related.serie
+
+    def _get_nfe_references(self, cr, uid, pool, context=None):
+
+        #
+        # Documentos referenciadas
+        #
+        nfe_reference = {}
+        state_obj = pool.get('res.country.state')
+        fiscal_doc_obj = pool.get('l10n_br_account_product.document.related')
+
+        if self.nfref.refNF.CNPJ.valor:
+
+            state_ids = state_obj.search(cr, uid, [
+                ('ibge_code', '=', self.nfref.refNF.cUF.valor)])
+
+            fiscal_doc_ids = fiscal_doc_obj.search(cr, uid, [
+                ('code', '=', self.nfref.refNF.mod.valor)])
+
+            nfe_reference.update({
+                'document_type': 'nf',
+                'state_id': state_ids[0] if state_ids else False,
+                'date': self.nfref.refNF.AAMM.valor or False,
+                'cnpj_cpf': self._mask_cnpj_cpf(True, self.nfref.refNF.CNPJ.valor) or False,
+                'fiscal_document_id': fiscal_doc_ids[0] if fiscal_doc_ids
+                else False,
+                'serie': self.nfref.refNF.serie.valor or False,
+                'internal_number': self.nfref.refNF.nNF.valor or False,
+            })
+
+        elif self.nfref.refNFP.CNPJ.valor:
+
+            state_ids = state_obj.search(cr, uid, [
+                ('ibge_code', '=', self.nfref.refNFP.cUF.valor)])
+            fiscal_doc_ids = fiscal_doc_obj.search(cr, uid, [
+                ('code', '=', self.nfref.refNFP.mod.valor)])
+
+            cnpj = self._mask_cnpj_cpf(True, self.nfref.refNFP.CNPJ.valor)
+            cpf = self._mask_cnpj_cpf(False, self.nfref.refNFP.CPF.valor)
+            cnpj_cpf = (cnpj or cpf)
+
+            nfe_reference.update({
+                'document_type': 'nfrural',
+                'state_id': state_ids[0] if state_ids else False,
+                'date': self.nfref.refNFP.AAMM.valor,
+                'inscr_est': self.nfref.refNFP.IE.valor,
+                'fiscal_document_id': fiscal_doc_ids[0] if fiscal_doc_ids
+                else False,
+                'serie': self.nfref.refNFP.serie.valor,
+                'internal_number': self.nfref.refNFP.nNF.valor,
+                'cnpj_cpf': cnpj_cpf,
+            })
+        elif self.nfref.refNFe.valor:
+            nfe_reference.update({
+                'document_type': 'nfe',
+                'access_key': self.nfref.refNFe.valor,
+            })
+        elif self.nfref.refCTe.valor:
+            nfe_reference.update({
+                'document_type': 'cte',
+                'access_key': self.nfref.refCTe.valor,
+            })
+        elif self.nfref.refECF:
+            fiscal_document_ids = \
+                pool.get('l10n_br_account.fiscal.document').search(
+                    cr, uid, [('code', '=', self.nfref.refECF.mod.valor)])
+
+            nfe_reference.update({
+                'document_type': 'cf',
+                'fiscal_document_id': fiscal_document_ids[0] if
+                fiscal_document_ids else False,
+                'serie': self.nfref.refNF.serie.valor,
+                'internal_number': self.nfref.refNF.nNF.valor,
+            })
+
+        return nfe_reference
+
 
 
     def _emmiter(self, cr, uid, ids, inv, company, context=None):

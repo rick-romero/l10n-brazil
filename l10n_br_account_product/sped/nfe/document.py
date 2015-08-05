@@ -702,6 +702,132 @@ class NFe200(FiscalDocument):
         self.det.imposto.COFINSST.vAliqProd.valor = ''
         self.det.imposto.COFINSST.vCOFINS.valor = str("%.2f" % inv_line.cofins_st_value)
 
+    def _get_details(self, cr, uid, pool, context=None):
+        #
+        # Detalhes
+        #
+        # Importamos dados da invoice line
+        inv_line = {}
+
+        product_ids = pool.get('product.product').search(
+            cr, uid, [('default_code', '=', self.det.prod.cProd.valor)])
+
+        inv_line['product_id'] = product_ids[0] if product_ids else False
+        inv_line['name'] = ''
+
+        fiscal_classification_ids = \
+            pool.get('account.product.fiscal.classification').search(cr, uid, [])
+
+        # Verificar se a busca pela classificacao fiscal nao sera custosa
+        for fc_ids in fiscal_classification_ids:
+            obj_fc = pool.get(
+                'account.product.fiscal.classification').browse(cr, uid, fc_ids)
+            aux = re.sub('[%s]' % re.escape(string.punctuation), '',
+                         obj_fc.name or '')[:8]
+
+            if self.det.prod.NCM.valor == aux:
+                inv_line['fiscal_classification'] = fc_ids
+
+        cfop_ids = pool.get('l10n_br_account_product.cfop').search(
+            cr, uid, [('code', '=', self.det.prod.CFOP.valor)])
+
+        inv_line['cfop_id'] = cfop_ids[0] if cfop_ids else False
+
+        cfop_ids = pool.get('product.uom').search(
+            cr, uid, [('name', '=', self.det.prod.uCom.valor)])
+
+        inv_line['uos_id'] = cfop_ids[0] if cfop_ids else False
+        inv_line['quantity'] = float(self.det.prod.qCom.valor)
+        inv_line['price_unit'] = float(self.det.prod.vUnCom.valor)
+        inv_line['price_gross'] = float(self.det.prod.vProd.valor)
+
+        inv_line['freight_value'] = float(self.det.prod.vFrete.valor)
+        inv_line['insurance_value'] = float(self.det.prod.vSeg.valor)
+        inv_line['discount_value'] = float(self.det.prod.vDesc.valor)
+        inv_line['other_costs_value'] = float(self.det.prod.vOutro.valor)
+
+        if self.det.imposto.ICMS.orig.valor:
+            inv_line['icms_origin'] = str(self.det.imposto.ICMS.orig.valor)
+
+            if self.det.imposto.ICMS.CSOSN.valor > 100:
+                icms_cst_ids = pool.get('account.tax.code').search(
+                    cr, uid, [('code', '=', self.det.imposto.ICMS.CSOSN.valor)])
+
+            inv_line['icms_cst_id'] = icms_cst_ids[0] if icms_cst_ids else False
+            inv_line['icms_percent'] = self.det.imposto.ICMS.pCredSN.valor
+            inv_line['icms_value'] = self.det.imposto.ICMS.vCredICMSSN.valor
+
+            inv_line['icms_base_type'] = str(self.det.imposto.ICMS.modBC.valor)
+            inv_line['icms_base'] = self.det.imposto.ICMS.vBC.valor
+            inv_line['icms_percent_reduction'] = self.det.imposto.ICMS.pRedBC.valor
+            inv_line['icms_percent'] = self.det.imposto.ICMS.pICMS.valor
+            inv_line['icms_value'] = self.det.imposto.ICMS.vICMS.valor
+
+            #
+            # # ICMS ST
+            #
+            inv_line['icms_st_base_type'] = str(self.det.imposto.ICMS.modBCST.valor)
+            inv_line['icms_st_mva'] = self.det.imposto.ICMS.pMVAST.valor
+            inv_line['icms_st_percent_reduction'] = self.det.imposto.ICMS.pRedBCST.valor
+            inv_line['icms_st_base'] = self.det.imposto.ICMS.vBCST.valor
+            inv_line['icms_st_percent'] = self.det.imposto.ICMS.pICMSST.valor
+            inv_line['icms_st_value'] = self.det.imposto.ICMS.vICMSST.valor
+
+            #
+            # # IPI
+            #
+            if self.det.imposto.IPI.vBC.valor and self.det.imposto.IPI.pIPI.valor:
+                inv_line['ipi_type'] = 'percent'
+                inv_line['ipi_base'] = self.det.imposto.IPI.vBC.valor
+                inv_line['ipi_percent'] = self.det.imposto.IPI.pIPI.valor
+
+            elif self.det.imposto.IPI.qUnid.valor and \
+                    self.det.imposto.IPI.vUnid.valor:
+                inv_line['ipi_percent'] = self.det.imposto.IPI.vUnid.valor
+
+            inv_line['ipi_value'] = self.det.imposto.IPI.vIPI.valor
+
+        else:
+            #
+            # # ISSQN
+            #
+            inv_line['issqn_base'] = self.det.imposto.ISSQN.vBC.valor
+            inv_line['issqn_percent'] = self.det.imposto.ISSQN.vAliq.valor
+            inv_line['issqn_value'] = self.det.imposto.ISSQN.vISSQN.valor
+            inv_line['issqn_type'] = self.det.imposto.ISSQN.cSitTrib.valor
+
+        # PIS
+        pis_cst_ids = pool.get('account.tax.code').search(
+            cr, uid, [('code', '=', self.det.imposto.PIS.CST.valor)])
+
+        inv_line['pis_cst_id'] = pis_cst_ids[0] if pis_cst_ids else False
+        inv_line['pis_base'] = self.det.imposto.PIS.vBC.valor
+        inv_line['pis_percent'] = self.det.imposto.PIS.pPIS.valor
+        inv_line['pis_value'] = self.det.imposto.PIS.vPIS.valor
+
+        # PISST
+        inv_line['pis_st_base'] = self.det.imposto.PISST.vBC.valor
+        inv_line['pis_st_percent'] = self.det.imposto.PISST.pPIS.valor
+        inv_line['pis_st_value'] = self.det.imposto.PISST.vPIS.valor
+
+        # COFINS
+        cofins_cst_ids = pool.get('account.tax.code').search(
+            cr, uid, [('code', '=', self.det.imposto.COFINS.CST.valor)])
+
+        inv_line['cofins_cst_id'] = \
+            cofins_cst_ids[0] if cofins_cst_ids else False
+        inv_line['cofins_base'] = self.det.imposto.COFINS.vBC.valor
+        inv_line['cofins_percent'] = self.det.imposto.COFINS.pCOFINS.valor
+        inv_line['cofins_value'] = self.det.imposto.COFINS.vCOFINS.valor
+
+        # COFINSST
+        inv_line['cofins_st_base'] = self.det.imposto.COFINSST.vBC.valor
+        inv_line['cofins_st_percent'] = self.det.imposto.COFINSST.pCOFINS.valor
+        inv_line['cofins_st_value'] = self.det.imposto.COFINSST.vCOFINS.valor
+
+        return [(0, 0, inv_line)]
+
+
 
     def _di(self, cr, uid, ids, inv, inv_line, inv_di, i, context=None):
         self.di.nDI.valor = inv_di.name

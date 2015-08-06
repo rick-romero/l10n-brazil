@@ -479,6 +479,10 @@ class NFe200(FiscalDocument):
         self.nfe.infNFe.total.ICMSTot.vCOFINS.valor = str("%.2f" % inv.cofins_value)
         self.nfe.infNFe.total.ICMSTot.vOutro.valor = str("%.2f" % inv.amount_costs)
         self.nfe.infNFe.total.ICMSTot.vNF.valor = str("%.2f" % inv.amount_total)
+        total_tax = 0.0
+        for line in inv.tax_line:
+            total_tax += line.amount
+        self.nfe.infNFe.total.ICMSTot.vTotTrib.valor = str("%.2f" % total_tax)
 
     def get_NFe(self):
 

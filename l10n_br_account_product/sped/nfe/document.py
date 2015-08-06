@@ -467,6 +467,8 @@ class NFe200(FiscalDocument):
         
         # Informações de compra
         self.nfe.infNFe.compra.xPed.valor = inv.name or ''
+        info = u'Referência: {0}|'.format(self.nfe.infNFe.compra.xPed.valor)
+        self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + info
 
     def _additional_information(self, cr, uid, ids, inv, context=None):
 

@@ -176,6 +176,9 @@ class NFe200(FiscalDocument):
             self.nfref.refNF.mod.valor = inv_related.fiscal_document_id and inv_related.fiscal_document_id.code or ''
             self.nfref.refNF.serie.valor = inv_related.serie or ''
             self.nfref.refNF.nNF.valor = inv_related.internal_number or ''
+            info = u'NFe Ref: Série: {0} Número: {1} Emitida em: {2}|'.format(inv_related.serie, 
+                    inv_related.internal_number, inv_related.date)
+            self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + info
 
         elif inv_related.document_type == 'nfrural':
             self.nfref.refNFP.cUF.valor = inv_related.state_id and inv_related.state_id.ibge_code or '',
@@ -189,9 +192,18 @@ class NFe200(FiscalDocument):
                 self.nfref.refNFP.CNPJ.valor = re.sub('[%s]' % re.escape(string.punctuation), '', inv_related.cnpj_cpf or '')
             else:
                 self.nfref.refNFP.CPF.valor = re.sub('[%s]' % re.escape(string.punctuation), '', inv_related.cnpj_cpf or '')
-
+            
+            info = u'NFe Ref: Série: {0} Número: {1} Emitida em: {2}|'.format(inv_related.serie, 
+                    inv_related.internal_number, inv_related.date)
+            self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + info
+            
         elif inv_related.document_type == 'nfe':
             self.nfref.refNFe.valor = inv_related.access_key or ''
+            nfe_key = inv_related.access_key
+            info = u'NFe Ref: Serie: {0} Número: {1} Emitida em: {2} - {3}|'.format(
+                    nfe_key[22:25], nfe_key[25:34], nfe_key[2:6], nfe_key)
+            self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + info
+
 
         elif inv_related.document_type == 'cte':
             self.nfref.refCTe.valor = inv_related.access_key or ''
@@ -200,6 +212,9 @@ class NFe200(FiscalDocument):
             self.nfref.refECF.mod.valor = inv_related.fiscal_document_id and inv_related.fiscal_document_id.code or ''
             self.nfref.refECF.nECF.valor = inv_related.internal_number
             self.nfref.refECF.nCOO.valor = inv_related.serie
+            info = u'NFe Ref: ECF: {0} COO: {1}|'.format(inv_related.internal_number, 
+                    inv_related.serie)
+            self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + info
 
 
     def _emmiter(self, cr, uid, ids, inv, company, context=None):
@@ -458,7 +473,7 @@ class NFe200(FiscalDocument):
         # Informações adicionais
         #
         self.nfe.infNFe.infAdic.infAdFisco.valor = inv.fiscal_comment or ''
-        self.nfe.infNFe.infAdic.infCpl.valor = inv.comment or ''
+        self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + (inv.comment or '')
 
     def _total(self, cr, uid, ids, inv, context=None):
 

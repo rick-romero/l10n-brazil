@@ -64,11 +64,18 @@ class NFe200(FiscalDocument):
             self._emmiter(cr, uid, ids, inv, company, context)
             self._receiver(cr, uid, ids, inv, company, nfe_environment, context)
 
+            total_tax = 0.0
+            for line in inv.tax_line:
+                total_tax += line.amount
             i = 0
             for inv_line in inv.invoice_line:
                 i += 1
                 self.det = self._get_Det()
-                self._details(cr, uid, ids, inv, inv_line, i, context)
+                
+                percent = 0.0
+                if inv.amount_gross > 0:
+                    percent = inv_line.price_gross / inv.amount_gross 
+                self._details(cr, uid, ids, inv, inv_line, i, (total_tax * percent), context)
 
                 for inv_di in inv_line.import_declaration_ids:
 
@@ -101,7 +108,7 @@ class NFe200(FiscalDocument):
 
             self._purchase_information(cr, uid, ids, inv, context)
             self._additional_information(cr, uid, ids, inv, context)
-            self._total(cr, uid, ids, inv, context)
+            self._total(cr, uid, ids, inv, total_tax, context)
 
             # Gera Chave da NFe
             self.nfe.gera_nova_chave()
@@ -294,7 +301,7 @@ class NFe200(FiscalDocument):
         self.nfe.infNFe.dest.email.valor = inv.partner_id.email or ''
 
 
-    def _details(self, cr, uid, ids, inv, inv_line, i, context=None):
+    def _details(self, cr, uid, ids, inv, inv_line, i, total_tax,context=None):
 
         #
         # Detalhe
@@ -318,7 +325,8 @@ class NFe200(FiscalDocument):
         self.det.prod.vFrete.valor = str("%.2f" % inv_line.freight_value)
         self.det.prod.vSeg.valor = str("%.2f" % inv_line.insurance_value)
         self.det.prod.vDesc.valor = str("%.2f" % inv_line.discount_value)
-        self.det.prod.vOutro.valor = str("%.2f" % inv_line.other_costs_value)
+        self.det.prod.vOutro.valor = str("%.2f" % inv_line.other_costs_value)        
+        self.det.imposto.vTotTrib.valor = str("%.2f" % total_tax)
         #
         # Produto entra no total da NF-e
         #
@@ -466,8 +474,9 @@ class NFe200(FiscalDocument):
         
         # Informações de compra
         self.nfe.infNFe.compra.xPed.valor = inv.name or ''
-        info = u'Referência: {0}|'.format(self.nfe.infNFe.compra.xPed.valor)
-        self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + info
+        if self.nfe.infNFe.compra.xPed.valor:
+            info = u'Referência: {0}|'.format(self.nfe.infNFe.compra.xPed.valor)
+            self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + info
 
     def _additional_information(self, cr, uid, ids, inv, context=None):
 
@@ -477,7 +486,7 @@ class NFe200(FiscalDocument):
         self.nfe.infNFe.infAdic.infAdFisco.valor = inv.fiscal_comment or ''
         self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + (inv.comment or '')
 
-    def _total(self, cr, uid, ids, inv, context=None):
+    def _total(self, cr, uid, ids, inv, total_tax, context=None):
 
         #
         # Totais
@@ -496,9 +505,6 @@ class NFe200(FiscalDocument):
         self.nfe.infNFe.total.ICMSTot.vCOFINS.valor = str("%.2f" % inv.cofins_value)
         self.nfe.infNFe.total.ICMSTot.vOutro.valor = str("%.2f" % inv.amount_costs)
         self.nfe.infNFe.total.ICMSTot.vNF.valor = str("%.2f" % inv.amount_total)
-        total_tax = 0.0
-        for line in inv.tax_line:
-            total_tax += line.amount
         self.nfe.infNFe.total.ICMSTot.vTotTrib.valor = str("%.2f" % total_tax)
 
     def get_NFe(self):

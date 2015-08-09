@@ -500,21 +500,36 @@ class NFe200(FiscalDocument):
             self.nfe.infNFe.emit.CNAE.valor = re.sub('[%s]' % re.escape(string.punctuation), '', inv.company_id.cnae_main_id.code or '')
 
     def _get_emmiter(self, cr, uid, pool, context=None):
-
         #
-        # Emitente
+        # Emitente da nota é o fornecedor
         #
-        emmiter = {}
-        partner_obj = pool.get('res.partner')
-        cnpj = self._mask_cnpj_cpf(True, self.nfe.infNFe.emit.CNPJ.valor)
+        emitter = {}
 
-        emitter_partner_ids = partner_obj.search(
-            cr, uid, [('cnpj_cpf', '=', cnpj)])
+        cnpj_cpf = ''
 
-        emmiter['company_id'] = \
-            emitter_partner_ids[0] if emitter_partner_ids else False
+        if self.nfe.infNFe.emit.CNPJ.valor:
+            cnpj_cpf = self._mask_cnpj_cpf(True, self.nfe.infNFe.emit.CNPJ.valor)
 
-        return emmiter
+        elif self.nfe.infNFe.emit.CPF.valor:
+            cnpj_cpf = self._mask_cnpj_cpf(False,
+                                           self.nfe.infNFe.emit.CPF.valor)
+
+        receiver_partner_ids = pool.get('res.partner').search(
+            cr, uid, [('cnpj_cpf', '=', cnpj_cpf)])
+
+        # Quando o cliente é estrangeiro, ele nao possui cnpj. Por isso
+        # realizamos a busca usando como chave de busca o nome da empresa ou
+        # a sua razao social
+        if not receiver_partner_ids:
+            aux = ['|',
+                   ('legal_name', '=', self.nfe.infNFe.dest.xNome.valor),
+                   ('legal_name', '=', self.nfe.infNFe.dest.xNome.valor)]
+            receiver_partner_ids = pool.get('res.partner').search(
+                cr, uid, aux)
+
+        emitter['partner_id'] = \
+            receiver_partner_ids[0] if receiver_partner_ids else False        
+        return receiver
 
     def _receiver(self, cr, uid, ids, inv, company, nfe_environment, context=None):
 
@@ -566,35 +581,24 @@ class NFe200(FiscalDocument):
 
     def _get_receiver(self, cr, uid, pool, context=None):
         #
-        # Destinatário
+        # Recebedor da mercadoria é a empresa
         #
         receiver = {}
+        partner_obj = pool.get('res.partner')
+        cnpj = self._mask_cnpj_cpf(True, self.nfe.infNFe.dest.CNPJ.valor)
 
-        cnpj_cpf = ''
+        emitter_partner_ids = partner_obj.search(
+            cr, uid, [('cnpj_cpf', '=', cnpj)])
 
-        if self.nfe.infNFe.dest.CNPJ.valor:
-            cnpj_cpf = self._mask_cnpj_cpf(True, self.nfe.infNFe.dest.CNPJ.valor)
+        if len(emitter_partner_ids) > 0:
+            receiver['company_id'] = emitter_partner_ids[0] if \
+                                    emitter_partner_ids else False
+        else:
+            raise Exception('O xml a ser importado foi emitido para o CNPJ {0} - {1}\n'\
+                            'o qual não corresponde ao CNPJ cadastrado na empresa\n'\
+                            'O arquivo não será importado.'.format(cnpj, self.nfe.infNFe.dest.xNome.valor))
+        
 
-        elif self.nfe.infNFe.dest.CPF.valor:
-            cnpj_cpf = self._mask_cnpj_cpf(False,
-                                           self.nfe.infNFe.dest.CPF.valor)
-
-        receiver_partner_ids = pool.get('res.partner').search(
-            cr, uid, [('cnpj_cpf', '=', cnpj_cpf)])
-
-        # Quando o cliente é estrangeiro, ele nao possui cnpj. Por isso
-        # realizamos a busca usando como chave de busca o nome da empresa ou
-        # a sua razao social
-        if not receiver_partner_ids:
-            aux = ['|',
-                   ('legal_name', '=', self.nfe.infNFe.dest.xNome.valor),
-                   ('legal_name', '=', self.nfe.infNFe.dest.xNome.valor)]
-            receiver_partner_ids = pool.get('res.partner').search(
-                cr, uid, aux)
-
-        receiver['partner_id'] = \
-            receiver_partner_ids[0] if receiver_partner_ids else False
-        print receiver['partner_id']
         return receiver
 
 
@@ -715,28 +719,24 @@ class NFe200(FiscalDocument):
         inv_line['product_id'] = product_ids[0] if product_ids else False
         inv_line['name'] = ''
 
-        fiscal_classification_ids = \
-            pool.get('account.product.fiscal.classification').search(cr, uid, [])
+        
+        ncm = self.det.prod.NCM.valor
+        ncm = ncm[:4] + '.' + ncm[4:6] + '.' + ncm[6:]
+        fc_id = pool.get('account.product.fiscal.classification').search(
+                        cr, uid, [('name', '=', '5555555555')]
+        )
 
-        # Verificar se a busca pela classificacao fiscal nao sera custosa
-        for fc_ids in fiscal_classification_ids:
-            obj_fc = pool.get(
-                'account.product.fiscal.classification').browse(cr, uid, fc_ids)
-            aux = re.sub('[%s]' % re.escape(string.punctuation), '',
-                         obj_fc.name or '')[:8]
-
-            if self.det.prod.NCM.valor == aux:
-                inv_line['fiscal_classification'] = fc_ids
+        inv_line['fiscal_classification'] = fc_id[0] if len(fc_id) > 0 else False 
 
         cfop_ids = pool.get('l10n_br_account_product.cfop').search(
             cr, uid, [('code', '=', self.det.prod.CFOP.valor)])
 
-        inv_line['cfop_id'] = cfop_ids[0] if cfop_ids else False
+        inv_line['cfop_id'] = cfop_ids[0] if len(cfop_ids) > 0 else False
 
-        cfop_ids = pool.get('product.uom').search(
-            cr, uid, [('name', '=', self.det.prod.uCom.valor)])
+        uom_ids = pool.get('product.uom').search(
+            cr, uid, [('name', '=like', self.det.prod.uCom.valor)])
 
-        inv_line['uos_id'] = cfop_ids[0] if cfop_ids else False
+        inv_line['uos_id'] = uom_ids[0] if len(uom_ids)> 0 else False
         inv_line['quantity'] = float(self.det.prod.qCom.valor)
         inv_line['price_unit'] = float(self.det.prod.vUnCom.valor)
         inv_line['price_gross'] = float(self.det.prod.vProd.valor)

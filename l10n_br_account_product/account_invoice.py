@@ -355,6 +355,7 @@ class AccountInvoice(models.Model):
         result = txt.validate(cr, uid, ids, context)
         return result
 
+
     @api.multi
     def action_date_assign(self, *args):
 

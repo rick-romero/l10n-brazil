@@ -369,7 +369,7 @@ class AccountInvoice(models.Model):
         # data do vencimento:
         for inv in self.browse(cr, uid, ids):
             if inv.date_in_out:
-                inv.date_invoice = datetime.datetime.strptime(inv.date_in_out, '%Y-%m-%d').date()
+                inv.date_invoice = datetime.datetime.strptime(inv.date_in_out, '%Y-%m-%d %H:%M:%S').date()
             res = self.onchange_payment_term_date_invoice(cr, uid, inv.id, inv.payment_term.id, inv.date_invoice)
 
             if res and res['value']:

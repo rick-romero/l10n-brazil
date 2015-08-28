@@ -173,7 +173,17 @@ class AccountInvoice(models.Model):
         'l10n_br_account_product.document.related', 'invoice_id',
         'Fiscal Document Related', readonly=True,
         states={'draft': [('readonly', False)]})
-    carrier_name = fields.Char('Nome Transportadora', size=32)
+    freight_responsibility = fields.Selection(
+        selection=[('0', u'Emitente'),
+                   ('1', u'Destinatário'),
+                   ('2', u'Terceiros'),
+                   ('9', u'Sem Frete')],
+        string=u'Frete por Conta',
+        required=True, default='9')       
+    partner_carrier_id = fields.Many2one(
+        'res.partner', u'Transportadora', readonly=True,
+        states={'draft': [('readonly', False)]},
+        domain=[('is_carrier', '=', True)])
     vehicle_plate = fields.Char('Placa do Veiculo', size=7)
     vehicle_state_id = fields.Many2one(
         'res.country.state', 'UF da Placa')
@@ -367,10 +377,8 @@ class AccountInvoice(models.Model):
     def action_date_assign(self, cr, uid, ids, *args):
 
         for inv in self.browse(cr, uid, ids):
-            if inv.date_hour_invoice:
-                aux = datetime.datetime.strptime(inv.date_hour_invoice, '%Y-%m-%d %H:%M:%S').date()
-                inv.date_invoice = str(aux)
-
+            if inv.date_in_out:
+                inv.date_invoice = datetime.datetime.strptime(inv.date_in_out, '%Y-%m-%d %H:%M:%S').date()
             res = self.onchange_payment_term_date_invoice(cr, uid, inv.id, inv.payment_term.id, inv.date_invoice)
 
             if res and res['value']:

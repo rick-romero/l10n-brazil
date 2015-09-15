@@ -43,19 +43,15 @@ class StockPicking(models.Model):
     def _default_fiscal_category(self):
         user = self.env['res.users'].browse(self._uid).with_context(
             dict(self._context))
-
-        stock_fiscal_category = user.company_id.stock_fiscal_category_id
-        stock_fiscal_category_id = user.company_id.stock_fiscal_category_id.id
-
-        return stock_fiscal_category and stock_fiscal_category_id or False
+        return user.company_id.stock_fiscal_category_id 
 
     fiscal_category_id = fields.Many2one(
         comodel_name='l10n_br_account.fiscal.category',
         string=u'Categoria Fiscal',
         readonly=True,
         domain="[('state', '=', 'approved')]",
-        states={'draft': [('readonly', False)]}
-     #   default='_default_fiscal_category'
+        states={'draft': [('readonly', False)]},
+        default=_default_fiscal_category
     )
 
     fiscal_position = fields.Many2one(
@@ -78,22 +74,10 @@ class StockPicking(models.Model):
         help=u'Indicador de presença do comprador no estabelecimento '
              u'comercial no momento da operação.')
 
-    @api.multi
-    def onchange_partner_id(self, partner_id, company_id, context=None):
-
-        if context is None:
-            context = {}
-
-        result = super(StockPicking, self).onchange_partner_id(
-            self._cr, self._uid, self._ids, partner_id=partner_id,
-            company_id=company_id)
-
-        if not partner_id or not company_id or 'fiscal_category_id' not in \
-                context:
-            return result
-
-        result['value'].update(context['fiscal_category_id'])
-        return result
+    @api.onchange('partner_id')
+    def onchange_partner_id(self, **kwargs):
+        kwargs.update({'fiscal_category_id': self.fiscal_category_id.id}) 
+        super(StockPicking, self).onchange_partner_id(**kwargs)
 
     @api.multi
     def onchange_fiscal_category_id(self, partner_id, company_id=False,

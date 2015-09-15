@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
 	<data>
+
 		<record model="ir.ui.view" id="l10n_br_account_product_fiscal_classification_form_view">
             <field name="name">l10n_br_account_product_fiscal_classification_form_view</field>
             <field name="model">product.product</field>
@@ -10,6 +11,7 @@
 				</field>
             </field>
         </record>
+
 		<record id="l10n_br_account_product_template_form" model="ir.ui.view">
 			<field name="name">l10n_br_account_product.product.template.form</field>
 			<field name="model">product.template</field>

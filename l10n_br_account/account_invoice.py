@@ -513,10 +513,11 @@ class AccountInvoiceLine(models.Model):
     def product_id_change(self, product, uom, qty=0, name='',
                           type='out_invoice', partner_id=False,
                           fposition_id=False, price_unit=False,
-                          currency_id=False, context=None, company_id=False,
-                          parent_fiscal_category_id=False,
-                          parent_fposition_id=False):
+                          currency_id=False, company_id=False,
+                          context=None):
 
+        parent_fiscal_category_id = self._context.get('fiscal_category_id', False)
+        parent_fposition_id = self._context.get('fiscal_category_id', False)
         result = super(AccountInvoiceLine, self).product_id_change(
             product, uom, qty=qty, name=name, type=type, partner_id=partner_id,
             fposition_id=fposition_id, price_unit=price_unit, currency_id=currency_id,

@@ -1,7 +1,8 @@
 # -*- encoding: utf-8 -*-
 ###############################################################################
 #                                                                             #
-# Copyright (C) 2011  Fabio Negrini - Akretion                                #
+# Copyright (C) 2015 KMEE - www.kmee.com.br                                   #
+#              Michell Stuttgart <michell.stuttgart@kmee.com.br>              #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU Affero General Public License as published by #
@@ -11,29 +12,11 @@
 # This program is distributed in the hope that it will be useful,             #
 # but WITHOUT ANY WARRANTY; without even the implied warranty of              #
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
-# GNU Affero General Public License for more details.                         #
+# GNU General Public License for more details.                                #
 #                                                                             #
-# You should have received a copy of the GNU Affero General Public License    #
+# You should have received a copy of the GNU General Public License           #
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
 ###############################################################################
 
-{
-    'name': 'Brazilian Localization CRM Zip',
-    'description': "ZIP Search Integration for Brazilian Localization of CRM module",
-    'category': 'Localization',
-    'license': 'AGPL-3',
-    'author': 'Fabio Negrini - OpenERP Brasil',
-    'website': 'http://openerpbrasil.org',
-    'version': '8.0',
-    'depends': [
-        'l10n_br_zip',
-        'l10n_br_crm',
-    ],
-    'data': [
-        'views/crm_lead_view.xml',
-        'views/crm_opportunity_view.xml',
-    ],
-    'test': ['test/crm_zip_test.yml'],
-    'installable': True,
-    'auto_install': True,
-}
+from . import crm_lead

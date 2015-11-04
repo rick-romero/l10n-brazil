@@ -23,7 +23,7 @@ from openerp import SUPERUSER_ID
 
 from openerp import models, fields
 from openerp.addons import decimal_precision as dp
-from openerp import api
+from openerp import api, tools
 
 from .l10n_br_account_product import (
     PRODUCT_FISCAL_TYPE,
@@ -90,7 +90,6 @@ class AccountInvoice(models.Model):
             result[tax.invoice_id.id] = True
         return list(result.keys())
 
-
     nfe_version = fields.Selection(
         [('1.10', '1.10'), ('2.00', '2.00'), ('3.10', '3.10')],
         u'Versão NFe', readonly=True,
@@ -133,6 +132,7 @@ class AccountInvoice(models.Model):
         ('sefaz_export', 'Enviar para Receita'),
         ('sefaz_exception', u'Erro de autorização da Receita'),
         ('sefaz_cancelled', 'Cancelado no Sefaz'),
+        ('sefaz_denied', 'Denegada no Sefaz'),
         ('open', 'Open'),
         ('paid', 'Paid'),
         ('cancel', 'Cancelled')
@@ -355,37 +355,38 @@ class AccountInvoice(models.Model):
         result = txt.validate(cr, uid, ids, context)
         return result
 
-    def action_move_create(self, cr, uid, ids, *args):
-        result = super(AccountInvoice, self).action_move_create(
-            cr, uid, ids, *args)
 
-        user = self.pool.get('res.users').browse(cr, uid, uid)
-        obj_company = self.pool.get('res.company')
-        company_id = obj_company.browse(cr, uid, user.company_id.id).id
-
-        for invoice in self.browse(cr, uid, ids):
-            date_time_now = fields.datetime.now()
-
-            if not invoice.date_hour_invoice:
-                self.write(cr, uid, [invoice.id], {'date_hour_invoice': date_time_now})
-
-            if not invoice.date_in_out:
-                self.write(cr, uid, [invoice.id], {'date_in_out': date_time_now})
-
-        return result
-
-    def action_date_assign(self, cr, uid, ids, *args):
-        # data de contabilização:
-        # data de entrada:
-        # data do vencimento:
-        for inv in self.browse(cr, uid, ids):
-            if inv.date_in_out:
-                inv.date_invoice = datetime.datetime.strptime(inv.date_in_out, '%Y-%m-%d %H:%M:%S').date()
-
-            res = self.onchange_payment_term_date_invoice(cr, uid, inv.id, inv.payment_term.id, inv.date_invoice)
-
+    @api.multi
+    def action_date_assign(self, *args):
+        
+        for inv in self:
+            if not inv.date_hour_invoice:
+                date_hour_invoice = fields.Datetime.context_timestamp(
+                    self, datetime.datetime.now())
+            else:
+                if inv.issuer == '1':
+                    date_move = inv.date_in_out
+                else:
+                    date_move = inv.date_hour_invoice
+                date_hour_invoice = fields.Datetime.context_timestamp(
+                    self, datetime.datetime.strptime(
+                        date_move, tools.DEFAULT_SERVER_DATETIME_FORMAT
+                    )
+                )
+            date_invoice = date_hour_invoice.strftime(
+                tools.DEFAULT_SERVER_DATE_FORMAT)
+            res = self.onchange_payment_term_date_invoice(
+                inv.payment_term.id, date_invoice)
             if res and res['value']:
-                self.write(cr, uid, [inv.id], res['value'])
+                res['value'].update({
+                    'date_invoice': date_invoice
+                })
+                date_time_now = fields.datetime.now()
+                if not inv.date_hour_invoice:
+                    res['value'].update({'date_hour_invoice': date_time_now})
+                if not inv.date_in_out:
+                    res['value'].update({'date_in_out': date_time_now})
+                inv.write(res['value'])
         return True
 
     @api.model
@@ -433,12 +434,13 @@ class AccountInvoiceLine(models.Model):
     fiscal_position = fields.Many2one(
         'account.fiscal.position', u'Posição Fiscal',
         domain="[('fiscal_category_id','=',fiscal_category_id)]")
+    cfop_id = fields.Many2one('l10n_br_account_product.cfop', 'CFOP')
+    fiscal_classification_id = fields.Many2one(
+        'account.product.fiscal.classification', 'Classificação Fiscal')
+    fci = fields.Char('FCI do Produto', size=36)
     import_declaration_ids = fields.One2many(
         'l10n_br_account_product.import.declaration',
         'invoice_line_id', u'Declaração de Importação')
-    cfop_id = fields.Many2one('l10n_br_account_product.cfop', 'CFOP')
-    fiscal_classification_id = fields.Many2one(
-        'account.product.fiscal.classification', u'Classificação Fiscal')
     product_type = fields.Selection(
         [('product', 'Produto'), ('service', u'Serviço')],
         'Tipo do Produto', required=True)
@@ -786,8 +788,9 @@ class AccountInvoiceLine(models.Model):
 
         result = {
             'product_type': 'product',
-            'service_type_id': False,
-            'fiscal_classification_id': False
+            'service_type_id': None,
+            'fiscal_classification_id': None,
+            'fci': None,
         }
 
         if values.get('partner_id') and values.get('company_id'):
@@ -842,6 +845,9 @@ class AccountInvoiceLine(models.Model):
             if obj_product.ncm_id:
                 result['fiscal_classification_id'] = obj_product.ncm_id.id
 
+            if obj_product.fci:
+                result['fci'] = obj_product.fci
+
             result['icms_origin'] = obj_product.origin
 
         for tax in taxes_calculed['taxes']:
@@ -873,6 +879,13 @@ class AccountInvoiceLine(models.Model):
         vals.update(self._validate_taxes(cr, uid, vals, context))
         return super(AccountInvoiceLine, self).write(
             cr, uid, ids, vals, context)
+
+    def copy(self, cr, uid, id, default={}, context=None):
+        default.update({
+            'date_in_out': False,
+            'date_hour_invoice': False,
+        })
+        return super(AccountInvoice, self).copy(cr, uid, id, default, context)
 
 
 class AccountInvoiceTax(models.Model):

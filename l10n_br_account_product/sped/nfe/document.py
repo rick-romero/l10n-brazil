@@ -158,7 +158,7 @@ class NFe200(FiscalDocument):
                     self.nfe.infNFe.retirada.xBairro.valor = inv.partner_shipping_id.district or 'Sem Bairro'
                     self.nfe.infNFe.retirada.cMun.valor = '%s%s' % (inv.partner_shipping_id.state_id.ibge_code, inv.partner_shipping_id.l10n_br_city_id.ibge_code)
                     self.nfe.infNFe.retirada.xMun.valor = inv.partner_shipping_id.l10n_br_city_id.name or ''
-                    self.nfe.infNFe.retirada.UF.valor = inv.address_invoice_id.state_id.code or ''
+                    self.nfe.infNFe.retirada.UF.valor = inv.partner_shipping_id.state_id.code or ''
                 else:
                     self.nfe.infNFe.entrega.CNPJ.valor = re.sub('[%s]' % re.escape(string.punctuation), '', inv.partner_shipping_id.cnpj_cpf or '')
                     self.nfe.infNFe.entrega.xLgr.valor = inv.partner_shipping_id.street or ''
@@ -167,7 +167,7 @@ class NFe200(FiscalDocument):
                     self.nfe.infNFe.entrega.xBairro.valor = inv.partner_shipping_id.district or 'Sem Bairro'
                     self.nfe.infNFe.entrega.cMun.valor = '%s%s' % (inv.partner_shipping_id.state_id.ibge_code, inv.partner_shipping_id.l10n_br_city_id.ibge_code)
                     self.nfe.infNFe.entrega.xMun.valor = inv.partner_shipping_id.l10n_br_city_id.name or ''
-                    self.nfe.infNFe.entrega.UF.valor = inv.address_invoice_id.state_id.code or ''
+                    self.nfe.infNFe.entrega.UF.valor = inv.partner_shipping_id.state_id.code or ''
 
 
     def _nfe_references(self, cr, uid, ids, inv_related, context=None):
@@ -313,6 +313,7 @@ class NFe200(FiscalDocument):
         self.det.prod.xProd.valor = inv_line.product_id.name[:120] or ''
         self.det.prod.NCM.valor = re.sub('[%s]' % re.escape(string.punctuation), '', inv_line.fiscal_classification_id.name or '')[:8]
         self.det.prod.EXTIPI.valor = ''
+        self.det.prod.nFCI.valor = inv_line.fci or ''
         self.det.prod.CFOP.valor = inv_line.cfop_id.code
         self.det.prod.uCom.valor = inv_line.uos_id.name or ''
         self.det.prod.qCom.valor = str("%.4f" % inv_line.quantity)
@@ -504,6 +505,7 @@ class NFe200(FiscalDocument):
             info = u'Referência: {0}|'.format(self.nfe.infNFe.compra.xPed.valor)
             self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + info
 
+
     def _additional_information(self, cr, uid, ids, inv, context=None):
 
         #
@@ -621,6 +623,11 @@ class NFe310(NFe200):
         self.nfe.infNFe.ide.indPres.valor = inv.ind_pres or ''
         self.nfe.infNFe.ide.dhEmi.valor = datetime.strptime(inv.date_hour_invoice, '%Y-%m-%d %H:%M:%S')
         self.nfe.infNFe.ide.dhSaiEnt.valor = datetime.strptime(inv.date_in_out, '%Y-%m-%d %H:%M:%S')
+        self.nfe.infNFe.ide.hSaiEnt.valor = datetime.strptime(inv.date_in_out, '%Y-%m-%d %H:%M:%S')
+        #
+        # self.nfe.infNFe.ide.hSaiEnt.valor = datetime.strptime(
+        #     inv.date_in_out[-8:], '%H:%M:%S')
+
 
     def get_NFe(self):
 

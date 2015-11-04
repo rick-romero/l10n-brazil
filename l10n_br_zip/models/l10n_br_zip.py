@@ -35,7 +35,7 @@ class L10n_brZip(models.Model):
     street_type = fields.Char('Tipo', size=26)
     street = fields.Char('Logradouro', size=72)
     district = fields.Char('Bairro', size=72)
-    country_id = fields.Many2one('res.country', 'Country')
+    country_id = fields.Many2one('res.country', u'País')
     state_id = fields.Many2one(
         'res.country.state', 'Estado',
         domain="[('country_id','=',country_id)]")
@@ -54,7 +54,7 @@ class L10n_brZip(models.Model):
             if not state_id or not l10n_br_city_id or \
                     len(street or '') == 0:
                 raise except_orm(
-                    u'Parametros insuficientes',
+                    u'Parâmetros insuficientes',
                     u'Necessário informar Estado, município e logradouro')
 
             if country_id:
@@ -81,7 +81,8 @@ class L10n_brZip(models.Model):
                 'l10n_br_city_id': zip_obj.l10n_br_city_id.id,
                 'district': zip_obj.district,
                 'street': ((zip_obj.street_type or '') +
-                           ' ' + (zip_obj.street or '')),
+                           ' ' + (zip_obj.street or '')) if
+                zip_obj.street_type else (zip_obj.street or ''),
                 'zip': zip_code,
             }
         else:

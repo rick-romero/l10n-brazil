@@ -20,6 +20,7 @@
 import re
 import string
 from datetime import datetime
+from decimal import Decimal
 
 from openerp import pooler
 from openerp.osv import orm
@@ -68,14 +69,21 @@ class NFe200(FiscalDocument):
             for line in inv.tax_line:
                 total_tax += line.amount
             i = 0
+            remaining = Decimal(str("%.2f" % total_tax))
+
             for inv_line in inv.invoice_line:
                 i += 1
                 self.det = self._get_Det()
                 
                 percent = 0.0
                 if inv.amount_gross > 0:
-                    percent = inv_line.price_gross / inv.amount_gross 
-                self._details(cr, uid, ids, inv, inv_line, i, (total_tax * percent), context)
+                    percent = inv_line.price_gross / inv.amount_gross
+
+                tax_item = Decimal(str("%.2f" % (total_tax * percent)))
+                if len(inv.invoice_line) == i:
+                    tax_item = remaining
+                remaining = remaining - tax_item
+                self._details(cr, uid, ids, inv, inv_line, i, tax_item, context)
 
                 for inv_di in inv_line.import_declaration_ids:
 
@@ -136,7 +144,7 @@ class NFe200(FiscalDocument):
         self.nfe.infNFe.ide.tpAmb.valor = nfe_environment
         self.nfe.infNFe.ide.finNFe.valor = inv.nfe_purpose
         self.nfe.infNFe.ide.procEmi.valor = 0
-        self.nfe.infNFe.ide.verProc.valor = 'OpenERP Brasil v7'
+        self.nfe.infNFe.ide.verProc.valor = 'Odoo Brasil 8.0'
 
         if inv.cfop_ids[0].type in ("input"):
             self.nfe.infNFe.ide.tpNF.valor = '0'

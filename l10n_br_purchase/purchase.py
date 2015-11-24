@@ -369,20 +369,21 @@ class PurchaseOrderLine(models.Model):
             'fiscal_category_id': fiscal_category_id,
             'context': context,
         })
-
-        result.update(self._fiscal_position_map(result, **kwargs))
-        fiscal_position = result['value'].get('fiscal_position')
+        if not fiscal_position:
+            result.update(self._fiscal_position_map(result, **kwargs))
+            fiscal_position = result['value'].get('fiscal_position')
+        else:
+            result['value'].update({'fiscal_position': fiscal_position})
 
         if product_id and fiscal_position:
-            obj_fposition = self.env['account.fiscal.position'].browse(
-                fiscal_position)
             obj_product = self.env['product.product'].browse(
                 product_id)
-            context = {'fiscal_type': obj_product.fiscal_type,
-                       'type_tax_use': 'purchase'}
+            ctx = {'fiscal_type': obj_product.fiscal_type,
+                    'type_tax_use': 'purchase'}
+            obj_fposition = self.env['account.fiscal.position'].with_context(ctx).browse(
+                fiscal_position)
             taxes = obj_product.supplier_taxes_id or False
-            taxes_ids = self.env['account.fiscal.position'].map_tax(
-                obj_fposition, taxes, context=context)
+            taxes_ids = obj_fposition.map_tax(taxes)
 
             result['value']['taxes_id'] = taxes_ids
 

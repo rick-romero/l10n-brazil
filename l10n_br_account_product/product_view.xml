@@ -22,7 +22,7 @@
 							<field name="origin" attrs="{'required': [('fiscal_type', '=', 'product')]}" />
 						</group>
 						<group>
-							<field name="ncm_id" attrs="{'required': [('fiscal_type', '=', 'product')]}" on_change="ncm_id_change(ncm_id, taxes_id, supplier_taxes_id, context)" domain="[('type', '=', 'normal')]"/>
+							<field name="ncm_id" attrs="{'required': [('fiscal_type', '=', 'product')]}" on_change="ncm_id_change(ncm_id, taxes_id, supplier_taxes_id, context)" domain="[('type','=','normal'),'|',('company_id','=',company_id),('company_id','=',False)]"/>
 							<field name="service_type_id" attrs="{'invisible': [('fiscal_type', '=', 'product')]}" domain="[('internal_type', '=', 'normal')]"/>
 						</group>	
 					</group>

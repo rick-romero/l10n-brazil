@@ -20,8 +20,8 @@
 from openerp.osv import orm, fields
 
 FC_SQL_CONSTRAINTS = [
-        ('account_fiscal_classfication_code_uniq', 'unique (name)',
-         u'Já existe um classificação fiscal com esse código!')
+        ('account_fiscal_classfication_code_uniq', 'unique (name, company_id)',
+         u'Já existe um classificação fiscal com esse código, para essa empresa!')
     ]
 
 
@@ -142,7 +142,7 @@ class AccountProductFiscalClassification(orm.Model):
             domain="[('type', 'in', ('view', 'normal'))]", select=True),
         'child_ids': fields.one2many('account.product.fiscal.classification',
                                      'parent_id',
-                                     'Child Fiscal Classifications'),
+                                     'Child Fiscal Classifications'),              
         'sale_tax_definition_line': fields.one2many(
             'l10n_br_tax.definition.sale',
             'fiscal_classification_id', 'Taxes Definitions'),
@@ -151,7 +151,7 @@ class AccountProductFiscalClassification(orm.Model):
             u'Copiar Observação no Documento Fiscal'),
         'sale_base_tax_ids': fields.function(
             _get_taxes, method=True, type='many2many',
-            relation='account.tax', string='Sale Taxes', multi='all'),
+            relation='account.tax', string='Sale Taxes', multi='all'),    
         'purchase_tax_definition_line': fields.one2many(
             'l10n_br_tax.definition.purchase',
             'fiscal_classification_id', 'Taxes Definitions'),
@@ -204,7 +204,7 @@ class L10n_brTaxDefinitionSale(orm.Model):
     _columns = {
         'fiscal_classification_id': fields.many2one(
             'account.product.fiscal.classification',
-            'Parent Fiscal Classification', select=True)
+            'Parent Fiscal Classification', select=True),
     }
     _sql_constraints = [
         ('l10n_br_tax_definition_tax_id_uniq', 'unique (tax_id,\

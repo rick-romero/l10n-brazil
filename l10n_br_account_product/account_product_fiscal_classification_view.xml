@@ -101,6 +101,7 @@
 			<field name="model">l10n_br_tax.definition.sale</field>
 			<field name="arch" type="xml">
 				<form string="Definição de Impostos">
+					<field name="company_id" invisible="1"/>
 					<field name="tax_id" on_change="onchange_tax_id(tax_id)" domain="[('type_tax_use', 'in', ('sale', 'all'))]" select="1" />
 					<field name="tax_domain" invisible="1"/>
 					<field name="tax_code_id" domain="[('domain', '=', tax_domain)]" select="1" />
@@ -113,6 +114,7 @@
 			<field name="model">l10n_br_tax.definition.sale</field>
 			<field name="arch" type="xml">
 				<tree string="Definição de Impostos" editable="bottom">
+					<field name="company_id" groups="base.group_multi_company" />
 					<field name="tax_id" on_change="onchange_tax_id(tax_id)" domain="[('type_tax_use', 'in', ('sale', 'all'))]" select="1"/>
 					<field name="tax_domain" invisible="1"/>
 					<field name="tax_code_id" domain="[('domain', '=', tax_domain)]" select="1" />

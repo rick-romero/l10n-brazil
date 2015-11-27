@@ -438,8 +438,9 @@ class L10n_brTaxDefinition(models.Model):
     tax_code_id = fields.Many2one(
         'account.tax.code', u'Código de Imposto')
     company_id = fields.Many2one(
-        related='tax_id.company_id', readonly=True,
-        store=True, string='Empresa')
+        'res.company',
+        default='1',
+        store=True, required=True, string='Empresa')
 
     def onchange_tax_id(self, cr, uid, ids, tax_id=False, context=None):
         tax_domain = False

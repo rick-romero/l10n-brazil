@@ -92,13 +92,13 @@ class SaleOrder(orm.Model):
     _columns = {
         'fiscal_category_id': fields.many2one(
             'l10n_br_account.fiscal.category', 'Categoria Fiscal',
-            domain="""[('type', '=', 'output'), ('journal_type', '=', 'sale'),
-            ('state', '=', 'approved')]""",
-            readonly=True, states={'draft': [('readonly', False)]}),
+            domain="""[('type', '=', 'output'), 
+            ('journal_type', '=', 'sale'), ('state', '=', 'approved')]""",
+            readonly=True, states={'draft': [('readonly', False)]}),               
         'fiscal_position': fields.many2one(
             'account.fiscal.position', 'Fiscal Position',
-            domain="[('fiscal_category_id', '=', fiscal_category_id)]",
-            readonly=True, states={'draft': [('readonly', False)]}),
+            domain="[('company_id', '=', company_id),('fiscal_category_id', '=', fiscal_category_id)]",
+            readonly=True, states={'draft': [('readonly', False)]}),      
         'invoiced_rate': fields.function(
             _invoiced_rate, method=True, string='Invoiced', type='float'),
         'copy_note': fields.boolean(
@@ -177,12 +177,11 @@ class SaleOrder(orm.Model):
     _defaults = {
         'fiscal_category_id': _default_fiscal_category,
     }
-
+    
     @api.onchange("discount_rate")
     def onchange_discount_rate(self):
         for line in self.order_line:
             line.discount = self.discount_rate
-
 
     @api.multi
     def onchange_address_id(self, partner_invoice_id, partner_shipping_id,
@@ -217,12 +216,10 @@ class SaleOrder(orm.Model):
         return obj_fp_rule.apply_fiscal_mapping(result, **kwargs)
 
     @api.multi
-    def onchange_fiscal_category_id(self, partner_id,
+    def onchange_fiscal_category_id(self, company_id, partner_id,
                                     partner_invoice_id=False,
                                     fiscal_category_id=False, context=None):
         result = {'value': {}}
-        obj_user = self.env['res.users'].browse(self._uid)
-        company_id = obj_user.company_id.id
         return self._fiscal_position_map(result, False,
             partner_id=partner_id, partner_invoice_id=partner_id,
             company_id=company_id, fiscal_category_id=fiscal_category_id)

@@ -13,6 +13,9 @@
 				<xpath expr="//field[@name='product_uom_qty']" position="attributes">
 					<attribute name="context_br">{'parent_fiscal_category_id': parent.fiscal_category_id, 'parent_fiscal_position': False, 'partner_invoice_id': parent.partner_invoice_id}</attribute>
 				</xpath>
+				<field name='company_id' position="attributes">
+					<attribute name="attrs">{'readonly':False,'required':True}</attribute>
+				</field>
 			</field>
 		</record>
 

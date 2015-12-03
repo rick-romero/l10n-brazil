@@ -317,7 +317,7 @@
 									</group>
 									<group>
 										<field name="product_type" attrs="{'readonly': [('product_id','!=', False)]}"/>
-										<field name="fiscal_classification_id" required="True" attrs="{'readonly': [('product_id','!=', False)]}"/>
+										<field name="fiscal_classification_id" attrs="{'readonly': [('product_id','!=', False)], 'required': [('product_type','=', 'product')]}"/>
                                         <field name="fci"/>
 										<field name="fiscal_category_id" required="1" domain="[('journal_type', '=', 'sale')]" on_change="onchange_fiscal_category_id(parent.partner_id, parent.company_id, product_id, fiscal_category_id, account_id, context)"/>
 										<field name="fiscal_position" required="1" domain="[('fiscal_category_id', '=', fiscal_category_id)]" on_change="onchange_fiscal_position(parent.partner_id, parent.company_id, product_id, fiscal_category_id, account_id, fiscal_position, context)"/>

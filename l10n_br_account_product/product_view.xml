@@ -25,7 +25,8 @@
 						</group>
 						<group>
 							<field name="ncm_id" attrs="{'required': [('fiscal_type', '=', 'product')]}" on_change="ncm_id_change(ncm_id, taxes_id, supplier_taxes_id, context)" domain="[('type', '=', 'normal')]"/>
-							<field name="service_type_id" attrs="{'invisible': [('fiscal_type', '=', 'product')]}" domain="[('internal_type', '=', 'normal')]"/>
+							<field name="service_type_id" attrs="{'invisible': [('fiscal_type', '=', 'product')], 
+								'required': [('fiscal_type', '=', 'service')]}" domain="[('internal_type', '=', 'normal')]"/>
 						</group>	
 					</group>
                     <group string="Dados Fiscais de Importação">

@@ -751,6 +751,7 @@ class AccountInvoiceLine(models.Model):
         com os impostos do OpenERP"""
         if not context:
             context = {}
+        original_values = values
 
         tax_obj = self.pool.get('account.tax')
 
@@ -842,6 +843,8 @@ class AccountInvoiceLine(models.Model):
             cr, uid, values.get('product_id'), fiscal_position,
             values.get('invoice_line_tax_id')[0][2],
             company_id, context=context))
+
+        result.update(original_values)
         return result
 
     def create(self, cr, uid, vals, context=None):

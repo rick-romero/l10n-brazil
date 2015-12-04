@@ -434,7 +434,10 @@ class SaleOrderLine(orm.Model):
             'context': {}
         }
         result.update(self._fiscal_position_map(cr, uid, result, **kwargs))
-        fiscal_position = result['value'].get('fiscal_position')
+        if result['value'].get('fiscal_position'):
+            fiscal_position = result['value'].get('fiscal_position')
+        else:
+            result['value']['fiscal_position'] = fiscal_position        
 
         if product_id and fiscal_position:
             obj_fposition = self.pool.get('account.fiscal.position').browse(

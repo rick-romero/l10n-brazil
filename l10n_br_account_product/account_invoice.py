@@ -893,6 +893,7 @@ class AccountInvoiceTax(models.Model):
                 freight_value=line.freight_value,
                 other_costs_value=line.other_costs_value)['taxes']:
                 val = {}
+                val['account_tax_id'] = tax['id']
                 val['invoice_id'] = inv.id
                 val['name'] = tax['name']
                 val['amount'] = tax['amount']

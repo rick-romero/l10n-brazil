@@ -292,9 +292,14 @@ class NFe200(FiscalDocument):
         if inv.partner_id.is_company:
             self.nfe.infNFe.dest.CNPJ.valor = re.sub('[%s]' % re.escape(string.punctuation), '', inv.partner_id.cnpj_cpf or '')
             self.nfe.infNFe.dest.IE.valor = re.sub('[%s]' % re.escape(string.punctuation), '', inv.partner_id.inscr_est or '')
+            if inv.partner_id.inscr_est:
+                self.nfe.infNFe.dest.indIEDest.valor = '1'
+            else:
+                self.nfe.infNFe.dest.indIEDest.valor = '2'
         else:
             self.nfe.infNFe.dest.CPF.valor = re.sub('[%s]' % re.escape(string.punctuation), '', inv.partner_id.cnpj_cpf or '')
-
+            self.nfe.infNFe.dest.indIEDest.valor = '9'
+            
         self.nfe.infNFe.dest.enderDest.xLgr.valor = inv.partner_id.street or ''
         self.nfe.infNFe.dest.enderDest.nro.valor = inv.partner_id.number or ''
         self.nfe.infNFe.dest.enderDest.xCpl.valor = inv.partner_id.street2 or ''

@@ -19,6 +19,7 @@
 from openerp import api, models
 from openerp.osv import orm, fields
 from lxml.html.builder import INS
+from openerp.exceptions import Warning as UserError
 
 
 class AccountPaymentTerm(orm.Model):
@@ -140,8 +141,8 @@ class AccountTax(models.Model):
         precision = obj_precision.precision_get(cr, uid, 'Account')
         result = super(AccountTax, self).compute_all(cr, uid, taxes,
             price_unit, quantity, product, partner, force_excluded)
-        totaldc = icms_base = icms_value = icms_percent = 0.0
-        icms_percent_reduction = ipi_value = 0.0
+        totaldc =  icms_value =  0.0
+        ipi_value = 0.0
         calculed_taxes = []
 
         for tax in result['taxes']:
@@ -155,7 +156,7 @@ class AccountTax(models.Model):
             tax['amount_mva'] = tax_brw.amount_mva
             tax['tax_discount'] = tax_brw.base_code_id.tax_discount
 
-        common_taxes = [tx for tx in result['taxes'] if tx['domain'] not in ['icms', 'icmsst', 'ipi']]
+        common_taxes = [tx for tx in result['taxes'] if tx['domain'] not in ['icms', 'icmsst', 'ipi', 'icmsinter', 'icmsfcp', 'icmsintra']]
         result_tax = self._compute_tax(cr, uid, common_taxes, result['total'],
             product, quantity, precision)
         totaldc += result_tax['tax_discount']
@@ -170,24 +171,65 @@ class AccountTax(models.Model):
         for ipi in result_ipi['taxes']:
             ipi_value += ipi['amount']
 
-        # Calcula ICMS
-        specific_icms = [tx for tx in result['taxes'] if tx['domain'] == 'icms']
+        difa = {}
         if consumidor and consumidor == '1':
             total_base = result['total'] + insurance_value + \
-            freight_value + other_costs_value + ipi_value
+                freight_value + other_costs_value + ipi_value
+
+            specific_icms_inter = [tx for tx in result['taxes']
+                                  if tx['domain'] == 'icmsinter']
+            specific_icms_intra = [tx for tx in result['taxes']
+                                  if tx['domain'] == 'icmsintra']
+            specific_icms_fcp = [tx for tx in result['taxes']
+                                  if tx['domain'] == 'icmsfcp']
+
+            if specific_icms_inter and specific_icms_intra:
+                result_icms_inter = self._compute_tax(cr, uid, specific_icms_inter, total_base,
+                                               product, quantity, precision)
+                result_icms_intra = self._compute_tax(cr, uid, specific_icms_intra, total_base,
+                                               product, quantity, precision)
+
+                # BASE UNICA
+                difa['vBCUFDest'] = total_base
+                #ICMS origem = [BC x ALQ INTER]
+                difa['pICMSUFDest'] = specific_icms_intra[0]['percent']
+                difa['pICMSInterPart'] = 0.40
+                #ICMS interno Destino = [BC x ALQ intra]
+                difa['pICMSInter'] = specific_icms_inter[0]['percent']
+                #ICMS destino = [BC x ALQ intra] - ICMS origem
+                icms_difa = ((difa['vBCUFDest'] * difa['pICMSUFDest'])-
+                             (difa['vBCUFDest'] * difa['pICMSInter']))
+                if specific_icms_fcp:
+                    result_icms_fcp = self._compute_tax(cr, uid, specific_icms_fcp, total_base,
+                                               product, quantity, precision)
+                    # % Fundo pobreza
+                    difa['pFCPUFDest'] = specific_icms_fcp[0]['percent']
+                    difa['vFCPUFDest'] = difa['vBCUFDest'] * difa['pFCPUFDest']
+
+                    result_icms_fcp['taxes'][0]['amount'] = difa['vFCPUFDest']
+                    calculed_taxes += result_icms_fcp['taxes']
+
+                difa['vICMSUFDest'] = icms_difa * difa['pICMSInterPart']
+                difa['vICMSUFRemet'] = icms_difa * (1-difa['pICMSInterPart'])
+
+                result_icms_inter['taxes'][0]['amount'] = difa['vICMSUFRemet']
+                result_icms_intra['taxes'][0]['amount'] = difa['vICMSUFDest']
+
+                calculed_taxes += result_icms_inter['taxes']
+                calculed_taxes += result_icms_intra['taxes']
+
         else:
             total_base = result['total'] + insurance_value + \
             freight_value + other_costs_value
 
+        # Calcula ICMS
+        specific_icms = [tx for tx in result['taxes'] if tx['domain'] == 'icms']
         result_icms = self._compute_tax(cr, uid, 
             specific_icms, total_base, product, quantity, precision)
         totaldc += result_icms['tax_discount']
         calculed_taxes += result_icms['taxes']
         if result_icms['taxes']:
-            icms_base = result_icms['taxes'][0]['total_base']
             icms_value = result_icms['taxes'][0]['amount']
-            icms_percent = result_icms['taxes'][0]['percent']
-            icms_percent_reduction = result_icms['taxes'][0]['base_reduction']
 
         # Calcula ICMS ST
         specific_icmsst = [tx for tx in result['taxes'] if tx['domain'] == 'icmsst']

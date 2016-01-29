@@ -296,6 +296,8 @@ class NFe200(FiscalDocument):
                 self.nfe.infNFe.dest.indIEDest.valor = '1'
             else:
                 self.nfe.infNFe.dest.indIEDest.valor = '2'
+            if self.nfe.infNFe.ide.indFinal.valor == '1':
+                self.nfe.infNFe.dest.indIEDest.valor = '9'
         else:
             self.nfe.infNFe.dest.CPF.valor = re.sub('[%s]' % re.escape(string.punctuation), '', inv.partner_id.cnpj_cpf or '')
             self.nfe.infNFe.dest.indIEDest.valor = '9'
@@ -370,6 +372,16 @@ class NFe200(FiscalDocument):
             self.det.imposto.ICMS.vBCST.valor = str("%.2f" % inv_line.icms_st_base)
             self.det.imposto.ICMS.pICMSST.valor = str("%.2f" % inv_line.icms_st_percent)
             self.det.imposto.ICMS.vICMSST.valor = str("%.2f" % inv_line.icms_st_value)
+
+            # Informação do ICMS Interestadual nas vendas para consumidor final
+            self.det.imposto.ICMSUFDest.vBCUFDest.valor = str("%.2f" % inv_line.vBCUFDest)
+            self.det.imposto.ICMSUFDest.pFCPUFDest.valor = str("%.2f" % inv_line.pFCPUFDest)
+            self.det.imposto.ICMSUFDest.pICMSUFDest.valor = str("%.2f" % inv_line.pICMSUFDest)
+            self.det.imposto.ICMSUFDest.pICMSInter.valor = str("%.2f" % inv_line.pICMSInter)
+            self.det.imposto.ICMSUFDest.pICMSInterPart.valor = str("%.2f" % inv_line.pICMSInterPart)
+            self.det.imposto.ICMSUFDest.vFCPUFDest.valor = str("%.2f" % inv_line.vFCPUFDest)
+            self.det.imposto.ICMSUFDest.vICMSUFDest.valor = str("%.2f" % inv_line.vICMSUFDest)
+            self.det.imposto.ICMSUFDest.vICMSUFRemet.valor = str("%.2f" % inv_line.vICMSUFRemet)
 
             # IPI
             self.det.imposto.IPI.CST.valor = inv_line.ipi_cst_id.code
@@ -524,6 +536,12 @@ class NFe200(FiscalDocument):
         #
         # Informações adicionais
         #
+        if self.nfe.infNFe.ide.idDest.valor == '2' and self.nfe.infNFe.ide.indFinal.valor == '1':
+            info = u'VALOR DIFAL ICMS ORIGEM = {0:.2f} VALOR DIFAL ICMS DESTINO= {1:.2f} \
+                    VALOR FUNDO DE POBREZA DESTINO= {2:.2f}|'.format(
+                        inv.vICMSUFRemet, inv.vICMSUFDest, inv.vFCPUFDest)
+            self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + info
+
         self.nfe.infNFe.infAdic.infAdFisco.valor = inv.fiscal_comment or ''
         self.nfe.infNFe.infAdic.infCpl.valor = self.nfe.infNFe.infAdic.infCpl.valor + (inv.comment or '')
 
@@ -534,6 +552,9 @@ class NFe200(FiscalDocument):
         #
         self.nfe.infNFe.total.ICMSTot.vBC.valor = str("%.2f" % inv.icms_base)
         self.nfe.infNFe.total.ICMSTot.vICMS.valor = str("%.2f" % inv.icms_value)
+        self.nfe.infNFe.total.ICMSTot.vFCPUFDest.valor = str("%.2f" % inv.vFCPUFDest)
+        self.nfe.infNFe.total.ICMSTot.vICMSUFDest.valor = str("%.2f" % inv.vICMSUFDest)
+        self.nfe.infNFe.total.ICMSTot.vICMSUFRemet.valor = str("%.2f" % inv.vICMSUFRemet)
         self.nfe.infNFe.total.ICMSTot.vBCST.valor = str("%.2f" % inv.icms_st_base)
         self.nfe.infNFe.total.ICMSTot.vST.valor = str("%.2f" % inv.icms_st_value)
         self.nfe.infNFe.total.ICMSTot.vProd.valor = str("%.2f" % inv.amount_gross)

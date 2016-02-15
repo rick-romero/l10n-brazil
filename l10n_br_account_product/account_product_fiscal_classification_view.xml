@@ -8,6 +8,7 @@
 			<field name="inherit_id" ref="account_product_fiscal_classification.fiscal_classification_template_normal_form_view_form"/>
 			<field name="arch" type="xml">
 				<field name="description" position="after">
+					<field name="cest"/>
 					<field name="type"/>
 					<field name="parent_id"/>
 					<field name="inv_copy_note"/>
@@ -76,6 +77,7 @@
 			<field name="inherit_id" ref="account_product_fiscal_classification.fiscal_classification_normal_form_view_form"/>
 			<field name="arch" type="xml">
 				<field name="company_id" position="before">
+					<field name="cest"/>
 					<field name="type"/>
 					<field name="parent_id"/>
 				</field>

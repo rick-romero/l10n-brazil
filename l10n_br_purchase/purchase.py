@@ -87,7 +87,12 @@ class PurchaseOrder(models.Model):
             _amount_all, method=True,
             digits_compute=dp.get_precision('Purchase Price'), string='Total',
             store={'purchase.order.line': (_get_order, None, 10)},
-            multi="sums", help="The total amount")}
+            multi="sums", help="The total amount"),
+        'partner_carrier_id': fields.many2one(
+            'res.partner', u'Transportadora', readonly=True,
+            states={'draft': [('readonly', False)]},
+            domain=[('is_carrier', '=', True)]),
+                }
 
     _defaults = {
         'fiscal_category_id': _default_fiscal_category}

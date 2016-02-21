@@ -28,6 +28,10 @@
 				</xpath>
 				<xpath expr="//field[@name='order_line']/tree/field[@name='company_id']" position="replace">
 				</xpath>
+				<field name="incoterm_id" position="before">
+					<field name='partner_carrier_id'/>
+				</field>
+				
 			</field>
 		</record>
 		

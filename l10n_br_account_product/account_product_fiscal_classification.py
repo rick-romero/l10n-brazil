@@ -73,7 +73,10 @@ class AccountProductFiscalClassificationTemplate(orm.Model):
             'fiscal_classification_id', 'Taxes Definitions'),
         'purchase_base_tax_ids': fields.function(
             _get_taxes, method=True, type='many2many',
-            relation='account.tax', string='Purchase Taxes', multi='all')
+            relation='account.tax', string='Purchase Taxes', multi='all'),
+        'cest': fields.char(
+            string='CEST', size=9,
+            help=u"Código Especificador da Substituição Tributária "),
     }
     _defaults = {
         'type': 'normal'}
@@ -157,7 +160,10 @@ class AccountProductFiscalClassification(orm.Model):
             'fiscal_classification_id', 'Taxes Definitions'),
         'purchase_base_tax_ids': fields.function(
             _get_taxes, method=True, type='many2many',
-            relation='account.tax', string='Purchase Taxes', multi='all')
+            relation='account.tax', string='Purchase Taxes', multi='all'),
+        'cest': fields.char(
+            string='CEST', size=9,
+            help=u"Código Especificador da Substituição Tributária "),
     }
     _defaults = {
         'type': 'normal'}

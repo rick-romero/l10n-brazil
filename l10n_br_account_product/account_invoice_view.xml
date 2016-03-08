@@ -458,7 +458,7 @@
 									</page>
 								</notebook>
 							</page>
-							<page string="Declaração de Importação">
+							<page string="Declaração de Importação" attrs="{'invisible': [('product_type','=', 'service')]}">
 								<group>
 									<field name="import_declaration_ids" colspan="4" nolabel="1">
 										<tree>

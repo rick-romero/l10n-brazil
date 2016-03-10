@@ -62,8 +62,8 @@ class AccountInvoice(models.Model):
             self.move_line_receivable_id = New_ids
 
     def _default_fiscal_document(self):
-        fiscal_document = self.env.user.company_id.service_invoice_id
-        return fiscal_document
+        fiscal_document_serie = self.env.user.company_id.document_serie_service_id
+        return fiscal_document_serie.fiscal_document_id
 
     def _default_fiscal_document_serie(self):
         fiscal_document_serie = self.env.user.company_id.document_serie_service_id
@@ -349,6 +349,10 @@ class AccountInvoice(models.Model):
 
         obj_fp_rule = self.env['account.fiscal.position.rule']
         return obj_fp_rule.apply_fiscal_mapping(result, **kwargs)
+
+    @api.onchange('document_serie_id')
+    def onchange_document_serie_id(self):
+        self.fiscal_document_id = self.document_serie_id.fiscal_document_id
 
     @api.multi
     def onchange_partner_id(self, type, partner_id,

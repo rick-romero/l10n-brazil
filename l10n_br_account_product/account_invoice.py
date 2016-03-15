@@ -911,22 +911,6 @@ class AccountInvoiceLine(models.Model):
             other_costs_value=values.get('other_costs_value', 0.0),
             consumidor=values.get('ind_final', False))
 
-        if values.get('product_id'):
-            obj_product = self.pool.get('product.product').browse(
-                cr, uid, values.get('product_id'), context=context)
-            if obj_product.type == 'service':
-                result['product_type'] = 'service'
-                result['service_type_id'] = obj_product.service_type_id.id
-            else:
-                result['product_type'] = 'product'
-            if obj_product.ncm_id:
-                result['fiscal_classification_id'] = obj_product.ncm_id.id
-
-            if obj_product.fci:
-                result['fci'] = obj_product.fci
-
-            result['icms_origin'] = obj_product.origin
-
         for tax in taxes_calculed['taxes']:
             try:
                 amount_tax = getattr(
@@ -943,6 +927,22 @@ class AccountInvoiceLine(models.Model):
             company_id, context=context))
 
         result.update(original_values)
+        return result
+
+    @api.multi
+    def product_id_change(self, product, uom, qty=0, name='',
+                          type='out_invoice', partner_id=False,
+                          fposition_id=False, price_unit=False,
+                          currency_id=False, company_id=False,
+                          context=None):
+        result = super(AccountInvoiceLine, self).product_id_change(
+            product, uom, qty=qty, name=name, type=type, partner_id=partner_id,
+            fposition_id=fposition_id, price_unit=price_unit, currency_id=currency_id,
+            company_id=company_id)
+        if product:
+            obj_product = self.env['product.product'].browse(product)
+            if obj_product.fci:
+                result['value']['fci'] = obj_product.fci
         return result
 
     def create(self, cr, uid, vals, context=None):

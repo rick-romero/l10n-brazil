@@ -561,6 +561,20 @@ class AccountInvoiceLine(models.Model):
             'invoice_line_tax_id': [[6, 0, result['value'].get('invoice_line_tax_id')]],
         }
         result['value'].update(self._validate_taxes(values))
+        if product:
+            obj_product = self.env['product.product'].browse(product)
+            if obj_product.fiscal_type == 'service':
+                result['value']['product_type'] = 'service'
+                result['value']['service_type_id'] = obj_product.service_type_id.id
+            else:
+                result['value']['product_type'] = 'product'
+            if obj_product.ncm_id:
+                result['value']['fiscal_classification_id'] = obj_product.ncm_id.id
+            else:
+                result['value']['fiscal_classification_id'] = None
+
+            result['icms_origin'] = obj_product.origin
+
         return result
 
     @api.multi

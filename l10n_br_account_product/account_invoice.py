@@ -911,6 +911,18 @@ class AccountInvoiceLine(models.Model):
             other_costs_value=values.get('other_costs_value', 0.0),
             consumidor=values.get('ind_final', False))
 
+        if values.get('product_id'):
+            obj_product = self.pool.get('product.product').browse(
+                cr, uid, values.get('product_id'), context=context)
+            if obj_product.type == 'service':
+                result['product_type'] = 'service'
+                result['service_type_id'] = obj_product.service_type_id.id
+            else:
+                result['product_type'] = 'product'
+            if obj_product.ncm_id:
+                result['fiscal_classification_id'] = obj_product.ncm_id.id
+            result['icms_origin'] = obj_product.origin
+
         for tax in taxes_calculed['taxes']:
             try:
                 amount_tax = getattr(

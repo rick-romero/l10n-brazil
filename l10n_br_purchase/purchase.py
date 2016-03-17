@@ -214,8 +214,8 @@ class PurchaseOrder(models.Model):
 
                 if not journal_id:
                     raise except_orm(
-                        _(u'Nenhuma Diário!'),
-                        _(u"Categoria de operação fisca: '%s', não tem um \
+                        _(u'Nenhum Diário!'),
+                        _(u"Categoria de operação fiscal: '%s', não tem um \
                         diário contábil para a empresa %s") % (
                             order.fiscal_category_id.name,
                             order.company_id.name))

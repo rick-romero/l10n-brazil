@@ -294,6 +294,8 @@ class NFe200(FiscalDocument):
             self.nfe.infNFe.dest.IE.valor = re.sub('[%s]' % re.escape(string.punctuation), '', inv.partner_id.inscr_est or '')
             if inv.partner_id.inscr_est:
                 self.nfe.infNFe.dest.indIEDest.valor = '1'
+            elif address_invoice_state_code in ('AM', 'BA', 'CE', 'GO', 'MG', 'MS', 'MT', 'PE', 'RN', 'SP'):
+                self.nfe.infNFe.dest.indIEDest.valor = '9'
             else:
                 self.nfe.infNFe.dest.indIEDest.valor = '2'
             if self.nfe.infNFe.ide.indFinal.valor == '1':

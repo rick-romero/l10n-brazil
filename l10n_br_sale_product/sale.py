@@ -235,19 +235,8 @@ class SaleOrder(orm.Model):
                 \nda operação.'),
     }
 
-    def _default_ind_pres(self, cr, uid, context=None):
-        result = False
-        #shop_id = context.get("shop_id", self.default_get(
-        #    cr, uid, ["shop_id"], context)["shop_id"])
-        #if shop_id:
-        #    shop = self.pool.get("sale.shop").read(
-        #        cr, uid, [shop_id], ["default_ind_pres"])
-        #    if shop[0]["default_ind_pres"]:
-        #        result = shop[0]["default_ind_pres"][0]
-        return result
-
     _defaults = {
-        'ind_pres': _default_ind_pres,
+        'ind_pres': '0',
     }
 
     def _prepare_invoice(self, cr, uid, order, lines, context=None):

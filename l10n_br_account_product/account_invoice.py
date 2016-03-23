@@ -958,14 +958,12 @@ class AccountInvoiceLine(models.Model):
         return result
 
     def create(self, cr, uid, vals, context=None):
-        if not context:
-            context = {}
+        context = dict(context or {})
         vals.update(self._validate_taxes(cr, uid, vals, context))
         return super(AccountInvoiceLine, self).create(cr, uid, vals, context)
 
     def write(self, cr, uid, ids, vals, context=None):
-        if not context:
-            context = {}
+        context = dict(context or {})
         context.update({'invoice_line_id': ids})
         vals.update(self._validate_taxes(cr, uid, vals, context))
         return super(AccountInvoiceLine, self).write(

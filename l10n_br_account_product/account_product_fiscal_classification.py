@@ -116,6 +116,14 @@ class L10n_brTaxDefinitionPurchaseTemplate(orm.Model):
 class AccountProductFiscalClassification(orm.Model):
     _inherit = 'account.product.fiscal.classification'
 
+    def name_get(self, cr, uid, ids, context=None):
+        reads = self.read(cr, uid, ids, ['name','description', 'id'], context=context)
+        res = []
+        for record in reads:
+            name =  "%s - %s" % (record['name'], record['description'])
+            res.append((record['id'], name))
+        return res
+
     def _get_taxes(self, cr, uid, ids, name, arg, context=None):
         result = {}
         for fiscal_classification in self.browse(cr, uid, ids,

@@ -412,6 +412,15 @@ class L10n_brAccountCNAE(models.Model):
             res.append((record['id'], name))
         return res
 
+    @api.model
+    def name_search(self, name, args=None, operator='ilike', limit=100):
+        args = args or []
+        recs = self.browse()
+        if name:
+            recs = self.search([('code', 'like', name)] + args, limit=limit)
+        if not recs:
+            recs = self.search([('name', operator, name)] + args, limit=limit)
+        return recs.name_get()
 
 class L10n_brTaxDefinitionTemplate(models.Model):
     _name = 'l10n_br_tax.definition.template'

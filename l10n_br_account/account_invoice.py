@@ -598,7 +598,7 @@ class AccountInvoiceLine(models.Model):
             partner_invoice_id=partner_id, company_id=company_id,
             fiscal_category_id=fiscal_category_id, product_id=product_id,
             fiscal_position=fiscal_position, account_id=account_id)
-
+    
     @api.multi
     def onchange_account_id(self, product_id, partner_id,
                             inv_type, fposition_id, account_id=False,
@@ -606,7 +606,9 @@ class AccountInvoiceLine(models.Model):
                             company_id=False):
         result = super(AccountInvoiceLine, self).onchange_account_id(
             product_id, partner_id, inv_type, fposition_id, account_id)
-        return self._fiscal_position_map(result, context, partner_id=partner_id,
+        if not result:
+            result = {'value': {}}
+        result = self._fiscal_position_map(result, context, partner_id=partner_id,
             partner_invoice_id=partner_id, company_id=company_id,
             fiscal_category_id=fiscal_category_id, product_id=product_id,
             account_id=account_id)

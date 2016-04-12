@@ -183,7 +183,7 @@ class AccountInvoice(models.Model):
                    ('2', u'Terceiros'),
                    ('9', u'Sem Frete')],
         string=u'Frete por Conta',
-        required=True, default='9')       
+        required=True, default='9')
     partner_carrier_id = fields.Many2one(
         'res.partner', u'Transportadora', readonly=True,
         states={'draft': [('readonly', False)]},
@@ -376,7 +376,7 @@ class AccountInvoice(models.Model):
 
     @api.multi
     def action_date_assign(self, *args):
-        
+
         for inv in self:
             if not inv.date_hour_invoice:
                 date_hour_invoice = fields.Datetime.context_timestamp(
@@ -411,10 +411,10 @@ class AccountInvoice(models.Model):
     def _prepare_refund(self, invoice, date=None, period_id=None, description=None, journal_id=None):
         values = super(AccountInvoice, self)._prepare_refund(invoice, date=date, period_id=period_id,
                                                     description=description, journal_id=journal_id)
-        
-        if invoice.fiscal_document_id.electronic and invoice.nfe_access_key:            
-            values['fiscal_document_related_ids'] = [(0, 0, { 'invoice_related_id': invoice.id, 
-                            'document_type': 'nfe', 'access_key': invoice.nfe_access_key, 
+
+        if invoice.fiscal_document_id.electronic and invoice.nfe_access_key:
+            values['fiscal_document_related_ids'] = [(0, 0, { 'invoice_related_id': invoice.id,
+                            'document_type': 'nfe', 'access_key': invoice.nfe_access_key,
                             'serie': invoice.document_serie_id.code, 'internal_number': invoice.internal_number  }) ]
         values['nfe_purpose'] = '4'
         return values
@@ -809,14 +809,13 @@ class AccountInvoiceLine(models.Model):
         }
         return result
 
-
     def _get_tax_codes(self, cr, uid, product_id, fiscal_position,
-                        taxes, company_id, context=None):
+                       taxes, company_id, context=None):
 
         context = dict(context or {})
         result = {}
-
-        if fiscal_position.fiscal_category_id.journal_type in ('sale', 'sale_refund'):
+        if fiscal_position.fiscal_category_id.journal_type in ('sale',
+                                                               'sale_refund'):
             context['type_tax_use'] = 'sale'
         else:
             context['type_tax_use'] = 'purchase'
@@ -826,11 +825,14 @@ class AccountInvoiceLine(models.Model):
         tax_codes = self.pool.get('account.fiscal.position').map_tax_code(
             cr, uid, product_id, fiscal_position, company_id,
             taxes, context=context)
-
-        result['icms_cst_id'] = tax_codes.get('icms', False)
-        result['ipi_cst_id'] = tax_codes.get('ipi', False)
-        result['pis_cst_id'] = tax_codes.get('pis', False)
-        result['cofins_cst_id'] = tax_codes.get('cofins', False)
+        if tax_codes.get('icms', False):
+            result['icms_cst_id'] = tax_codes.get('icms')
+        if tax_codes.get('ipi', False):
+            result['ipi_cst_id'] = tax_codes.get('ipi')
+        if tax_codes.get('pis', False):
+            result['pis_cst_id'] = tax_codes.get('pis')
+        if tax_codes.get('cofins', False):
+            result['cofins_cst_id'] = tax_codes.get('cofins')
         return result
 
     def _validate_taxes(self, cr, uid, values, context=None):
@@ -885,7 +887,7 @@ class AccountInvoiceLine(models.Model):
         if not values.get('invoice_line_tax_id'):
             return result #FIXME
         if not values.get('ind_final'):
-            if values.get('invoice_id'):                
+            if values.get('invoice_id'):
                 ind_final = self.pool['account.invoice'].browse(
                     cr, uid, values.get('invoice_id')).ind_final
                 values.update({ 'ind_final': ind_final })
@@ -893,7 +895,7 @@ class AccountInvoiceLine(models.Model):
                 ind_final = self.browse(
                     cr, uid, values.get('id')).invoice_id.ind_final
                 values.update({ 'ind_final': ind_final })
-            
+
         taxes = tax_obj.browse(
             cr, uid, values.get('invoice_line_tax_id')[0][2])
         fiscal_position = self.pool.get('account.fiscal.position').browse(
@@ -1039,7 +1041,7 @@ class AccountInvoiceTax(models.Model):
                         round=False)
                     val['account_id'] = tax['account_paid_id'] or line.account_id.id
                     val['account_analytic_id'] = tax['account_analytic_paid_id']
-                
+
                 if not val.get('account_analytic_id') and line.account_analytic_id and val['account_id'] == line.account_id.id:
                     val['account_analytic_id'] = line.account_analytic_id.id
 

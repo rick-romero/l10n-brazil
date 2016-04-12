@@ -193,15 +193,17 @@ def validate(cr, uid, ids, context=None):
                 if not inv_line.uos_id:
                     strErro += u'Produtos e Serviços: %s - %s, Qtde: %s - Unidade de medida\n' % (inv_line.product_id.default_code, inv_line.product_id.name, inv_line.quantity)
 
-                if not inv_line.quantity:
+                # Valida Notas que não são ajuste e complementar (nfe_purpose 2 e 3)
+                if not inv_line.quantity and (inv.nfe_purpose == '1' or inv.nfe_purpose == '4'):
                     strErro += u'Produtos e Serviços: %s - %s, Qtde: %s - Quantidade\n' % (inv_line.product_id.default_code, inv_line.product_id.name, inv_line.quantity)
 
-                #Se for Documento Fiscal de Produto
+                # Se for Documento Fiscal de Produto
                 if inv.fiscal_type == 'product':
                     if not inv_line.fiscal_classification_id:
                         strErro += u'Produtos e Serviços: %s - %s, Qtde: %s - Classificação Fiscal(NCM)\n' % (inv_line.product_id.default_code, inv_line.product_id.name, inv_line.quantity)
 
-                if not inv_line.price_unit:
+                # Valida Notas que não são ajuste e complementar (nfe_purpose 2 e 3)
+                if not inv_line.price_unit and (inv.nfe_purpose == '1' or inv.nfe_purpose == '4'):
                     strErro += u'Produtos e Serviços: %s - %s, Qtde: %s - Preco unitario\n' % (inv_line.product_id.default_code, inv_line.product_id.name, inv_line.quantity)
 
                 if inv_line.product_type == 'product':

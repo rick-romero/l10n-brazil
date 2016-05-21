@@ -25,9 +25,7 @@ from openerp import SUPERUSER_ID
 
 from openerp.osv import osv
 from openerp.tools.translate import _
-from openerp import netsvc
-import openerp.pooler
-
+from openerp import pooler
 from openerp.addons.l10n_br_base.tools.misc import punctuation_rm
 
 

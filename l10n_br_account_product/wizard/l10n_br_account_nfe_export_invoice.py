@@ -23,7 +23,6 @@ import base64
 from openerp.osv import orm, fields
 from openerp.tools.translate import _
 
-
 class L10n_brAccountNfeExportInvoice(orm.TransientModel):
     """ Export fiscal eletronic file from invoice"""
     _name = 'l10n_br_account_product.nfe_export_invoice'
@@ -135,10 +134,16 @@ class L10n_brAccountNfeExportInvoice(orm.TransientModel):
                     data['file_type'])
             else:
                 name = 'nfe%s.%s' % (export_inv_numbers[0], data['file_type'])
-
+                
+            
             mod_serializer = __import__(
-                'l10n_br_account_product.sped.nfe.serializer.' +
-                data['file_type'], globals(), locals(), data['file_type'])
+                    ('openerp.addons.l10n_br_account_product'
+                     '.sped.nfe.serializer.') +
+                    data['file_type'], globals(), locals(), data['file_type'])
+            
+            #mod_serializer = __import__(
+            #    'l10n_br_account_product.sped.nfe.serializer.' +
+            #    data['file_type'], globals(), locals(), data['file_type'])
 
             func = getattr(mod_serializer, 'nfe_export')
 

@@ -367,6 +367,8 @@ class NFe200(FiscalDocument):
             self.det.imposto.ICMS.pRedBC.valor = str("%.2f" % inv_line.icms_percent_reduction)
             self.det.imposto.ICMS.pICMS.valor = str("%.2f" % inv_line.icms_percent)
             self.det.imposto.ICMS.vICMS.valor = str("%.2f" % inv_line.icms_value)
+            self.det.imposto.ICMS.orig.valor = inv_line.product_id.origin
+
 
             # ICMS ST
             self.det.imposto.ICMS.modBCST.valor = inv_line.icms_st_base_type

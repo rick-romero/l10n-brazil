@@ -40,6 +40,20 @@ class CrmLead(models.Model):
                                help="Nome utilizado em documentos fiscais")
     cpf = fields.Char('CPF', size=18)
     rg = fields.Char('RG', size=16)
+    
+    foto01 = fields.Binary('Foto 01')
+    foto02 = fields.Binary('Foto 02')
+    foto03 = fields.Binary('Foto 03')
+    
+    external_id = fields.Char('External ID', size=120)
+    comprador = fields.Char('Comprador', size=128)
+    novos_produtos = fields.Char('Autoriza Novos Produtos', size=128)
+    comprador_melhor_horario = fields.Char('Comprador Melhor Horario', size=50)
+    
+    ja_compra = fields.Boolean('Ja compra o produto')
+    ja_compra_preco = fields.Float('Preco de compra')
+    
+    calls = fields.One2many('crm.phonecall', 'opportunity_id', 'Calls', readonly=True)
 
     @api.one
     @api.constrains('cnpj')

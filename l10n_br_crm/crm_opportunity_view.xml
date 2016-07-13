@@ -53,6 +53,13 @@
                     <field name="cpf"/>
                     <field name="rg"/>
                 </field>
+                <xpath expr="//page[@string='Internal Notes']" position="before">
+			    	<page string="Fotos">
+						<field name="foto01" widget="image"/>
+                		<field name="foto02" widget="image"/>
+                		<field name="foto03" widget="image"/>			    		
+			    	</page>
+			    </xpath>
             </field>
         </record>
 

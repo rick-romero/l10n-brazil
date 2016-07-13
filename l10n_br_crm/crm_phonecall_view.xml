@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <!-- Phonecalls Form View -->
+        <record model="ir.ui.view" id="l10n_br_crm_case_phone_form_view_cust1">
+            <field name="name">l10n_br_crm.phone_cust1</field>
+            <field name="model">crm.phonecall</field>
+            <field name="inherit_id" ref="crm.crm_case_phone_form_view"/>
+            <field name="arch" type="xml">
+            	<field name="opportunity_id" position="after">
+                    <field name="ja_compra"/>
+                    <field name="comprador"/>
+                    <field name="novos_produtos"/>
+                    <field name="ja_compra_preco"/>
+                    <field name="comprador_melhor_horario"/>
+                </field>
+                <field name="description" position="after">
+                    <notebook colspan="4" class="oe_read_only">
+						<page string="Fotos">
+							<field name="foto01" widget="image"/>
+							<field name="foto02" widget="image"/>
+							<field name="foto02" widget="image"/>
+						</page>
+					</notebook>
+                </field>
+            </field>
+        </record>
+
+    </data>
+</openerp>

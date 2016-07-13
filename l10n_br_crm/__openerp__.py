@@ -20,11 +20,11 @@
 {
     'name': 'Brazilian Localization CRM',
     'description': 'Brazilian Localization for CRM module',
-    'category': 'Localisation',
+    'category': 'CRM',
     'license': 'AGPL-3',
-    'author': 'Akretion, OpenERP Brasil',
+    'author': 'Akretion, OpenERP Brasil, Rick Romero',
     'website': 'http://openerpbrasil.org',
-    'version': '8.0',
+    'version': '8.1',
     'depends': [
         'l10n_br_base',
         'crm',
@@ -32,6 +32,7 @@
     'data': [
         'crm_lead_view.xml',
         'crm_opportunity_view.xml',
+        'crm_phonecall_view.xml',
     ],
     'demo': [],
     'installable': True,

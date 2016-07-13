@@ -55,6 +55,35 @@
                     <field name="inscr_mun"/>
                     <field name="suframa"/>
                 </field>
+                <xpath expr="//page[@string='Internal Notes']" position="before">
+			    	<page string="Fotos">
+						<field name="foto01" widget="image"/>
+                		<field name="foto02" widget="image"/>
+                		<field name="foto03" widget="image"/>			    		
+			    	</page>
+			    </xpath>
+			    <xpath expr="//page[@string='Internal Notes']" position="before">
+			    	<page string="Dados de Compra">
+						<group>
+							<field name="comprador"/>
+							<field name="novos_produtos"/>
+                			<field name="comprador_melhor_horario"/>
+                			<field name="ja_compra"/>
+                			<field name="ja_compra_preco"/>
+               			</group>			    		
+		    		</page>
+			    </xpath>
+			    <xpath expr="//page[@string='Internal Notes']" position="before">
+					<page string="Calls">
+						<field name="calls">
+							<tree string="Histórico de Ligações">
+								<field name="name"/>
+								<field name="date"/>
+								<field name="description"/>
+							</tree>
+						</field>
+					</page>
+			    </xpath>
             </field>
         </record>
 

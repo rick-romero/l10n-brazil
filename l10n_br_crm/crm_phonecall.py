@@ -22,3 +22,4 @@ class PhoneCall(models.Model):
     fq_price = fields.Integer(related='opportunity_id.fq_price', string='Preco FourSquare', readonly=True)
     fq_distance = fields.Char(related='opportunity_id.fq_distance', string='Distancia')
     fq_category = fields.Char(related='opportunity_id.fq_category', string='Categoria FourSquare')
+    email_from = fields.Char(related='opportunity_id.email_from', string='E-mail')

@@ -12,6 +12,7 @@
                     <field name="ja_compra"/>
                     <field name="comprador"/>
                     <field name="novos_produtos"/>
+                    <field name="email_from"/>
                     <field name="ja_compra_preco"/>
                     <field name="comprador_melhor_horario"/>
                     <field name="fq_category"/>

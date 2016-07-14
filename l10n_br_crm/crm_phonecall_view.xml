@@ -14,6 +14,9 @@
                     <field name="novos_produtos"/>
                     <field name="ja_compra_preco"/>
                     <field name="comprador_melhor_horario"/>
+                    <field name="fq_category"/>
+                    <field name="fq_price"/>
+                    <field name="fq_distance"/>
                 </field>
                 <field name="description" position="after">
                     <notebook colspan="4" class="oe_read_only">

@@ -54,6 +54,20 @@ class CrmLead(models.Model):
     ja_compra_preco = fields.Float('Preco de compra')
     
     calls = fields.One2many('crm.phonecall', 'opportunity_id', 'Calls', readonly=True)
+    
+    fq_category = fields.Char('Categoria FourSquare', size=120)
+    fq_category_id = fields.Char('Id Categoria FourSquare', size=60)
+    
+    fq_lat = fields.Char('Latitude', size=60)
+    fq_lon = fields.Char('Longitude', size=60)
+    
+    fq_distance = fields.Char('Distancia', size=60)
+    
+    fq_price = fields.Integer('Preco FourSquare')
+    fq_id = fields.Char('Id FourSquare', size=60)
+    
+    fq_url = fields.Char('URL FourSquare', size=120)
+    fq_ranking = fields.Char('Ranking', size=5)
 
     @api.one
     @api.constrains('cnpj')

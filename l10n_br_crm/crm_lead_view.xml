@@ -54,6 +54,7 @@
                 <field name="type" position="after">
                     <field name="inscr_mun"/>
                     <field name="suframa"/>
+                    <field name="fq_url"/>
                 </field>
                 <xpath expr="//page[@string='Internal Notes']" position="before">
 			    	<page string="Fotos">
@@ -83,6 +84,20 @@
 							</tree>
 						</field>
 					</page>
+			    </xpath>
+			    <xpath expr="//page[@string='Internal Notes']" position="before">
+			    	<page string="Four Square">
+			    		<group>
+							<field name="fq_category"/>
+                			<field name="fq_price"/>
+                			<field name="fq_ranking"/>
+                		</group>	
+                		<group>
+							<field name="fq_distance"/>
+                			<field name="fq_lat"/>
+                			<field name="fq_lon"/>
+                		</group>		    		
+			    	</page>
 			    </xpath>
             </field>
         </record>

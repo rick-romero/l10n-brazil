@@ -18,3 +18,7 @@ class PhoneCall(models.Model):
     
     ja_compra = fields.Boolean(related='opportunity_id.ja_compra', string='Ja compra o produto')
     ja_compra_preco = fields.Float(related='opportunity_id.ja_compra_preco', string='Preco de compra')
+    
+    fq_price = fields.Integer(related='opportunity_id.fq_price', string='Preco FourSquare', readonly=True)
+    fq_distance = fields.Char(related='opportunity_id.fq_distance', string='Distancia')
+    fq_category = fields.Char(related='opportunity_id.fq_category', string='Categoria FourSquare')

@@ -78,7 +78,7 @@
 			    
 			    <xpath expr="//page[@string='Internal Notes']" position="after">
 					<page string="Visitas">
-						<field name="calls">
+						<field name="meetings">
 							<tree string="Histórico de Visitas">
 								<field name="l.start_date"/>
 								<field name="name"/>

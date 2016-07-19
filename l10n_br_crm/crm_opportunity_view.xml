@@ -68,8 +68,20 @@
 					<page string="Calls">
 						<field name="calls">
 							<tree string="Histórico de Ligações">
-								<field name="name"/>
 								<field name="date"/>
+								<field name="name"/>
+								<field name="description"/>
+							</tree>
+						</field>
+					</page>
+			    </xpath>
+			    
+			    <xpath expr="//page[@string='Internal Notes']" position="after">
+					<page string="Visitas">
+						<field name="calls">
+							<tree string="Histórico de Visitas">
+								<field name="l.start_date"/>
+								<field name="name"/>
 								<field name="description"/>
 							</tree>
 						</field>

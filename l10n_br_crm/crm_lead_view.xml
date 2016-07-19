@@ -78,8 +78,8 @@
 					<page string="Calls">
 						<field name="calls">
 							<tree string="Histórico de Ligações">
-								<field name="name"/>
 								<field name="date"/>
+								<field name="name"/>
 								<field name="description"/>
 							</tree>
 						</field>

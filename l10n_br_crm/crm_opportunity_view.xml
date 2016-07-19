@@ -11,7 +11,13 @@
                 <field name="city" position="replace">
                     <field name="city" invisible="1"/>
                 </field>
-
+                <field name="email_from" position="before">
+                    <field name="comprador"/>
+                    <field name="comprador_melhor_horario"/>
+                    <field name="fq_distance"/>
+                </field>
+                
+                
                 <field name="zip" position="replace"/>
                 <field name="street" position="replace">
                     <field name="zip" placeholder="CEP"/>
@@ -48,17 +54,26 @@
                     <field name="inscr_mun"/>
                     <field name="suframa"/>
                 </field>
-                <field name="email_from" position="before">
-                    <field name="name_surname"/>
-                    <field name="cpf"/>
-                    <field name="rg"/>
-                </field>
-                <xpath expr="//page[@string='Internal Notes']" position="before">
+                
+                
+                <xpath expr="//page[@string='Internal Notes']" position="after">
 			    	<page string="Fotos">
 						<field name="foto01" widget="image"/>
                 		<field name="foto02" widget="image"/>
                 		<field name="foto03" widget="image"/>			    		
 			    	</page>
+			    </xpath>
+			    
+			    <xpath expr="//page[@string='Internal Notes']" position="after">
+					<page string="Calls">
+						<field name="calls">
+							<tree string="Histórico de Ligações">
+								<field name="name"/>
+								<field name="date"/>
+								<field name="description"/>
+							</tree>
+						</field>
+					</page>
 			    </xpath>
             </field>
         </record>

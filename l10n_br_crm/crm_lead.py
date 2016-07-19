@@ -68,6 +68,8 @@ class CrmLead(models.Model):
     
     fq_url = fields.Char('URL FourSquare', size=120)
     fq_ranking = fields.Char('Ranking', size=5)
+    
+    meetings = fields.One2many('calendar.event', 'opportunity_id', 'Meetings', readonly=True)
 
     @api.one
     @api.constrains('cnpj')
